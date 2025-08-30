@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#271F30" />
+    <meta name="background-color" content="#EFEAE3" />
+    
+    <!-- iOS Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Radio Importante" />
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png" />
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/icons/apple-touch-icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon-180x180.png" />
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    
+    <title>Radio Importante</title>
+    
+    <style>
+      /* Reset básico e estilos iniciais */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background-color: #EFEAE3;
+        color: #271F30;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      
+      #app {
+        width: 100%;
+        max-width: 400px;
+        text-align: center;
+      }
+      
+      .loading {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+      }
+      
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #271F30;
+        border-top: 3px solid transparent;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div class="loading">
+        <h1>Radio Importante</h1>
+        <div class="spinner"></div>
+        <p>Carregando...</p>
+      </div>
+    </div>
+    <script type="module" src="/src/app.ts"></script>
+  </body>
+</html>

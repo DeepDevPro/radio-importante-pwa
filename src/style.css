@@ -1,0 +1,53 @@
+/* ===== iOS PWA ESPECÍFICOS ===== */
+/* Estilos específicos para iOS PWA instalado */
+.ios-pwa {
+  /* Melhorar performance e reduzir pausas */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ios-pwa audio {
+  /* Forçar hardware acceleration para áudio */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  will-change: auto;
+}
+
+/* Otimizações para background audio no iOS PWA */
+@media all and (display-mode: standalone) {
+  body {
+    /* Evitar scroll bounce que pode interferir com áudio */
+    overscroll-behavior: none;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+  
+  #app {
+    height: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Manter controles sempre visíveis em PWA */
+  .controls {
+    position: sticky;
+    bottom: 0;
+    background: rgba(39, 31, 48, 0.95);
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+  }
+}
+
+/* Garantir que áudio continue em background */
+@media all and (display-mode: standalone) and (-webkit-min-device-pixel-ratio: 2) {
+  /* iOS Retina PWA específico */
+  .ios-pwa .player-container {
+    /* Manter container sempre ativo */
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+}

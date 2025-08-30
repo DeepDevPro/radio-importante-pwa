@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste API</title>
+</head>
+<body>
+    <h1>Teste do Endpoint Save Catalog</h1>
+    <button onclick="testSave()">Testar Salvamento</button>
+    <div id="result"></div>
+
+    <script>
+        async function testSave() {
+            const testData = {
+                version: "1.0.0",
+                tracks: [
+                    {
+                        id: "test001",
+                        title: "Teste",
+                        artist: "Artista Teste",
+                        filename: "teste.mp3"
+                    }
+                ]
+            };
+
+            try {
+                console.log('Enviando teste para /api/save-catalog');
+                const response = await fetch('/api/save-catalog', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(testData)
+                });
+
+                const result = await response.text();
+                console.log('Resposta:', response.status, result);
+                document.getElementById('result').innerHTML = `<p>Status: ${response.status}</p><p>Resposta: ${result}</p>`;
+            } catch (error) {
+                console.error('Erro:', error);
+                document.getElementById('result').innerHTML = `<p>Erro: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

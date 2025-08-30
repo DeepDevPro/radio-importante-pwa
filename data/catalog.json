@@ -1,0 +1,131 @@
+{
+  "version": "1.0.0",
+  "tracks": [
+    {
+      "id": "track001",
+      "title": "Take my Time (feat. Jack Davey)",
+      "artist": "4 Hero",
+      "filename": "4-Hero-take-my-time-(feat.-jack-davey).mp3",
+      "duration": 241,
+      "format": "mp3"
+    },
+    {
+      "id": "track002",
+      "title": "Sing",
+      "artist": "Artista",
+      "filename": "Artista-Sing.mp3",
+      "duration": 308,
+      "format": "mp3"
+    },
+    {
+      "id": "track003",
+      "title": "13.6.35 (Natural Self Remix)",
+      "artist": "Belleruche",
+      "filename": "Belleruche - 13.6.35 (Natural Self Remix).mp3",
+      "duration": 253,
+      "format": "mp3"
+    },
+    {
+      "id": "track004",
+      "title": "Midnight Session",
+      "artist": "Buscemi",
+      "filename": "Buscemi - Midnight Session.mp3",
+      "duration": 311,
+      "format": "mp3"
+    },
+    {
+      "id": "track005",
+      "title": "Comadi",
+      "artist": "Céu",
+      "filename": "Ceu - Comadi.mp3",
+      "duration": 335,
+      "format": "mp3"
+    },
+    {
+      "id": "track006",
+      "title": "Beach Towel (I Cube Cosmix Marathon Remix)",
+      "artist": "Karma",
+      "filename": "Karma - Beach Towel (I Cube Cosmix Marathon Remix).mp3",
+      "duration": 265,
+      "format": "mp3"
+    },
+    {
+      "id": "track007",
+      "title": "All That (Natural Self Remix)",
+      "artist": "Lizzy Parks",
+      "filename": "Lizzy Parks - All That (Natural Self Remix).mp3",
+      "duration": 283,
+      "format": "mp3"
+    },
+    {
+      "id": "track008",
+      "title": "Bridge Through Time",
+      "artist": "Lonnie Liston Smith",
+      "filename": "Lonnie Liston Smith - Bridge Through Time.mp3",
+      "duration": 324,
+      "format": "mp3"
+    },
+    {
+      "id": "track009",
+      "title": "Nightlife",
+      "artist": "Lonnie Liston Smith",
+      "filename": "Lonnie Liston Smith - Nightlife.mp3",
+      "duration": 325,
+      "format": "mp3"
+    },
+    {
+      "id": "track010",
+      "title": "Danda Luanda",
+      "artist": "Luciana Oliveira",
+      "filename": "Luciana Oliveira - Danda Luanda.mp3",
+      "duration": 246,
+      "format": "mp3"
+    },
+    {
+      "id": "track011",
+      "title": "So Far",
+      "artist": "Lukas Greenberg",
+      "filename": "Lukas Greenberg - So Far.mp3",
+      "duration": 244,
+      "format": "mp3"
+    },
+    {
+      "id": "track012",
+      "title": "Menino",
+      "artist": "Patricia Marx, 4 Hero",
+      "filename": "Patricia Marx, 4 Hero - Menino.mp3",
+      "duration": 345,
+      "format": "mp3"
+    },
+    {
+      "id": "track013",
+      "title": "Sun is Shining",
+      "artist": "Bebel Gilberto",
+      "filename": "bebel-gilberto-sun-is-Shining.mp3",
+      "duration": 328,
+      "format": "mp3"
+    },
+    {
+      "id": "track014",
+      "title": "Welcome to the World of the Plastic Beach",
+      "artist": "Gorillaz",
+      "filename": "gorillaz-welcome_to_the_world_of_the_plastic_beach.mp3",
+      "duration": 275,
+      "format": "mp3"
+    },
+    {
+      "id": "track015",
+      "title": "Para Entrar",
+      "artist": "Bruno Morais",
+      "filename": "Para-Entrar.mp3",
+      "duration": 250,
+      "format": "mp3"
+    }
+  ],
+  "metadata": {
+    "totalTracks": 15,
+    "totalDuration": 4333,
+    "artwork": "/images/cover.jpg",
+    "radioName": "Radio Importante"
+  }
+}

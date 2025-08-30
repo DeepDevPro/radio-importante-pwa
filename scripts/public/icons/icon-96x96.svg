@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96">
+  <rect width="96" height="96" fill="#271F30" rx="16.032"/>
+  <g transform="translate(0, 0)">
+    <circle cx="48" cy="48" r="29.759999999999998" fill="none" stroke="#EFEAE3" stroke-width="4"/>
+    <circle cx="48" cy="48" r="5.76" fill="#EFEAE3"/>
+    <text x="48" y="74.88" text-anchor="middle" fill="#EFEAE3" font-family="Arial, sans-serif" font-size="9.600000000000001" font-weight="bold">Radio</text>
+    <text x="48" y="85.44" text-anchor="middle" fill="#EFEAE3" font-family="Arial, sans-serif" font-size="7.968">Importante</text>
+  </g>
+</svg>
