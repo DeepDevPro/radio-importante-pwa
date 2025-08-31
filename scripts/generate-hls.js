@@ -210,7 +210,7 @@ async function executeFFmpeg(fileListPath) {
     '-f hls',
     `-hls_time ${CONFIG.segmentTime}`,
     '-hls_playlist_type vod',
-    '-hls_flags single_file',
+    '-hls_list_size 0',
     '-hls_segment_filename',
     `"${path.join(CONFIG.outputDir, 'segment-%03d.ts')}"`,
     '-y', // Sobrescrever arquivos existentes

@@ -4,13 +4,15 @@ import { Controls } from './ui/controls';
 import { AudioPlayer } from './player/audio';
 import { StateManager } from './player/state';
 import { MediaSessionManager } from './player/mediaSession';
+import { DeviceDetection } from './platform/deviceDetection';
+import { IPhoneAudioFix } from './platform/iphoneAudioFix';
 
 console.log('🎵 Radio Importante PWA v2.0 iniciando...');
 
 // ===== DETECÇÃO E CONFIGURAÇÃO PWA =====
 function isPWAInstalled(): boolean {
   return window.matchMedia('(display-mode: standalone)').matches || 
-         Boolean((window.navigator as any).standalone);
+         Boolean((window.navigator as { standalone?: boolean }).standalone);
 }
 
 function isIOS(): boolean {
@@ -68,6 +70,8 @@ class RadioImportanteApp {
   private audioPlayer!: AudioPlayer;
   private stateManager!: StateManager;
   private mediaSession!: MediaSessionManager;
+  private deviceDetection!: DeviceDetection;
+  private iphoneAudioFix!: IPhoneAudioFix;
   private isPlayerInitialized = false;
 
   constructor() {
@@ -161,10 +165,25 @@ class RadioImportanteApp {
   }
 
   private async initializeComponents(container: HTMLElement): Promise<void> {
+    // Inicializar detecção de dispositivo
+    this.deviceDetection = DeviceDetection.getInstance();
+    this.iphoneAudioFix = new IPhoneAudioFix();
+    
+    console.log('📱 Device Detection:', this.deviceDetection.getDebugInfo());
+
     // Inicializar gerenciadores
     this.stateManager = new StateManager();
     this.audioPlayer = new AudioPlayer();
     this.mediaSession = new MediaSessionManager();
+
+    // Aplicar correções específicas para iPhone PWA se necessário
+    if (this.iphoneAudioFix.shouldApplyFixes()) {
+      console.log('🍎 Aplicando correções específicas para iPhone PWA...');
+      const audioElement = this.audioPlayer.getAudioElement();
+      if (audioElement) {
+        await this.iphoneAudioFix.initialize(audioElement);
+      }
+    }
 
     // Inicializar controles
     this.controls = new Controls(container);
@@ -238,10 +257,22 @@ class RadioImportanteApp {
 
   private async handlePlay(): Promise<void> {
     try {
+      // Log específico para iPhone PWA
+      if (this.deviceDetection.isIPhonePWA()) {
+        console.log('🍎 iPhone PWA: handlePlay() chamado');
+      }
+
       // Inicializar player na primeira reprodução (após gesto do usuário)
       if (!this.isPlayerInitialized) {
+        console.log('🎵 Inicializando player pela primeira vez...');
         await this.audioPlayer.initialize();
         this.isPlayerInitialized = true;
+        
+        // Para iPhone PWA, aguardar um momento após inicialização
+        if (this.deviceDetection.isIPhonePWA()) {
+          console.log('🍎 iPhone PWA: Aguardando após inicialização...');
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
       }
 
       // Carregar faixa atual se necessário
@@ -256,9 +287,12 @@ class RadioImportanteApp {
       const currentAudioSrc = this.audioPlayer.getState().src;
       const currentTrackUrl = this.stateManager.getCurrentTrackUrl();
       
-      console.log('🔍 Debug - currentAudioSrc:', currentAudioSrc);
-      console.log('🔍 Debug - currentTrackUrl:', currentTrackUrl);
-      console.log('🔍 Debug - track.filename:', track.filename);
+      if (this.deviceDetection.isIPhonePWA()) {
+        console.log('🍎 iPhone PWA Debug:');
+        console.log('  - currentAudioSrc:', currentAudioSrc);
+        console.log('  - currentTrackUrl:', currentTrackUrl);
+        console.log('  - track.filename:', track.filename);
+      }
       
       // Comparar URLs diretamente em vez de usar includes
       const isSameTrack = currentAudioSrc && currentTrackUrl && currentAudioSrc === currentTrackUrl;
@@ -271,6 +305,18 @@ class RadioImportanteApp {
         console.log('▶️ Continuando faixa atual de onde parou');
         const currentTime = this.audioPlayer.getCurrentTime();
         console.log('🔍 Debug - posição atual antes do play:', currentTime);
+        
+        // Para iPhone PWA, verificar se o áudio está pronto antes de tocar
+        if (this.deviceDetection.isIPhonePWA()) {
+          console.log('🍎 iPhone PWA: Verificando se áudio está pronto...');
+          try {
+            await this.iphoneAudioFix.ensureReadyForPWA();
+          } catch (error) {
+            console.error('⚠️ iPhone PWA: Erro na verificação de áudio:', error);
+            // Continuar mesmo com erro de verificação
+          }
+        }
+        
         await this.audioPlayer.play();
         console.log('🔍 Debug - posição atual após o play:', this.audioPlayer.getCurrentTime());
       }
@@ -325,14 +371,40 @@ class RadioImportanteApp {
 
       console.log('🎵 Carregando faixa:', track.filename);
       
-      // Obter múltiplas URLs para tentar (com fallback)
-      const urls = this.stateManager.getCurrentTrackUrls();
-      if (urls.length === 0) {
-        throw new Error('Nenhuma URL disponível para a faixa');
+      // Para iPhone PWA, usar arquivo contínuo em vez de carregar arquivos individuais
+      if (this.deviceDetection.isIPhonePWA()) {
+        console.log('🍎 iPhone PWA: Buscando faixa no arquivo contínuo...');
+        const seekSuccess = this.audioPlayer.seekToTrackInContinuous(track.id);
+        
+        if (!seekSuccess) {
+          console.warn('⚠️ iPhone PWA: Falha ao buscar no arquivo contínuo, tentando carregamento normal');
+          // Fallback para carregamento normal
+          const urls = this.stateManager.getCurrentTrackUrls();
+          if (urls.length === 0) {
+            throw new Error('Nenhuma URL disponível para a faixa');
+          }
+          await this.audioPlayer.loadTrackWithFallback(urls);
+        }
+      } else {
+        // Dispositivos não-iPhone PWA: usar carregamento normal
+        const urls = this.stateManager.getCurrentTrackUrls();
+        if (urls.length === 0) {
+          throw new Error('Nenhuma URL disponível para a faixa');
+        }
+        await this.audioPlayer.loadTrackWithFallback(urls);
       }
-
-      // Tentar carregar com fallback de múltiplas URLs
-      await this.audioPlayer.loadTrackWithFallback(urls);
+      
+      // Para iPhone PWA, verificar se o áudio está pronto antes de tocar
+      if (this.deviceDetection.isIPhonePWA()) {
+        console.log('🍎 iPhone PWA: Verificando se áudio carregado está pronto...');
+        try {
+          await this.iphoneAudioFix.ensureReadyForPWA();
+        } catch (error) {
+          console.error('⚠️ iPhone PWA: Erro na verificação de áudio carregado:', error);
+          // Continuar mesmo com erro de verificação
+        }
+      }
+      
       await this.audioPlayer.play();
       console.log('✅ Faixa carregada e tocando');
       
@@ -397,6 +469,12 @@ class RadioImportanteApp {
   }
 
   private handleTimeUpdate(currentTime: number, duration: number): void {
+    // Se estamos em background no iOS PWA, fazer apenas o mínimo necessário
+    if (isIOS() && isPWAInstalled() && document.hidden) {
+      // Durante screen lock, evitar todas as atualizações que possam causar problemas
+      return;
+    }
+    
     this.stateManager.updateState({ currentTime, duration });
     this.controls.updateProgress(currentTime, duration);
     this.mediaSession.updatePositionState(duration, 1, currentTime);

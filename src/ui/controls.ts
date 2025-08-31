@@ -42,10 +42,13 @@ export class Controls {
           </div>
         </div>
 
-        <!-- Header with Title and Admin Button -->
+        <!-- Header with Title and Utility Buttons -->
         <div class="header">
           <h1 class="app-title">Radio Importante</h1>
-          <button class="admin-btn" id="adminButton" title="Acessar Administração">⚙️</button>
+          <div class="utility-buttons">
+            <button class="utility-btn debug-btn" id="debugButton" title="Debug Console">🐛</button>
+            <button class="utility-btn admin-btn" id="adminButton" title="Administração">⚙️</button>
+          </div>
         </div>
 
         <!-- Track Information -->
@@ -125,6 +128,12 @@ export class Controls {
     const adminButton = this.container.querySelector('#adminButton') as HTMLButtonElement;
     adminButton.addEventListener('click', () => {
       window.open('/admin.html', '_blank');
+    });
+
+    // Debug button
+    const debugButton = this.container.querySelector('#debugButton') as HTMLButtonElement;
+    debugButton.addEventListener('click', () => {
+      window.open('/debug.html', '_blank');
     });
 
     // Click outside modal to close
