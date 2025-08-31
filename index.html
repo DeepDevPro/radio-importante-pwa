@@ -112,6 +112,50 @@
         background: rgba(39, 31, 48, 0.1);
         transform: scale(1.1);
       }
+
+      /* Header with utility buttons */
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+      }
+
+      .utility-buttons {
+        display: flex;
+        gap: 8px;
+      }
+
+      .utility-btn {
+        background: transparent;
+        border: 1px solid rgba(39, 31, 48, 0.2);
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 14px;
+        opacity: 0.6;
+      }
+
+      .utility-btn:hover {
+        opacity: 1;
+        background: rgba(39, 31, 48, 0.1);
+        transform: scale(1.1);
+      }
+
+      .debug-btn {
+        background: transparent;
+        color: #666;
+      }
+
+      .debug-btn:hover {
+        background: rgba(102, 102, 102, 0.1);
+        color: #444;
+      }
       
       /* Track Info */
       .track-info {

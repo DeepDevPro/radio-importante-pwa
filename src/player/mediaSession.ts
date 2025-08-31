@@ -19,6 +19,7 @@ export class MediaSessionManager {
   private handlers: MediaSessionHandlers = {};
   private isIOSPWA: boolean;
   private currentMetadata: MediaMetadata | null = null;
+  private staticMode = false; // Para metadados estáticos durante screen lock
 
   constructor() {
     // Verificar se Media Session API é suportada
@@ -29,9 +30,9 @@ export class MediaSessionManager {
       console.log('✅ Media Session API suportada');
       if (this.isIOSPWA) {
         console.log('🍎 iOS PWA detectado - configurando Media Session otimizada');
+        this.setupStaticModeForScreenLock();
       }
       this.setupActionHandlers();
-      this.setupIOSPWAOptimizations();
     } else {
       console.warn('⚠️ Media Session API não suportada neste browser');
     }
@@ -41,33 +42,50 @@ export class MediaSessionManager {
     this.handlers = handlers;
   }
 
-  private setupIOSPWAOptimizations(): void {
+  private setupStaticModeForScreenLock(): void {
     if (!this.isIOSPWA || !this.isSupported) return;
 
-    // Forçar atualização contínua da Media Session em iOS PWA
-    setInterval(() => {
-      if (this.currentMetadata && navigator.mediaSession?.metadata) {
-        // Re-aplicar metadata a cada 30 segundos para evitar que desapareça
-        navigator.mediaSession.metadata = this.currentMetadata;
-      }
-    }, 30000);
+    // Configurar metadados estáticos para evitar updates durante screen lock
+    const staticMetadata = new MediaMetadata({
+      title: 'Radio Importante',
+      artist: 'Streaming Contínuo',
+      album: 'PWA Music Player',
+      artwork: [
+        { src: '/icons/icon-192x192.svg', sizes: '192x192', type: 'image/svg+xml' },
+        { src: '/icons/icon-512x512.svg', sizes: '512x512', type: 'image/svg+xml' }
+      ]
+    });
 
-    // Listener para mudanças de visibilidade - crítico para iOS PWA
+    // Aplicar metadados estáticos imediatamente
+    navigator.mediaSession!.metadata = staticMetadata;
+    this.staticMode = true;
+    
+    console.log('🍎 iOS PWA: Metadados estáticos configurados para screen lock');
+
+    // Listener para visibilidade - alternar entre estático e dinâmico
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && this.currentMetadata) {
-        // Quando o app volta para foreground, restaurar metadata
-        setTimeout(() => {
-          if (navigator.mediaSession) {
-            navigator.mediaSession.metadata = this.currentMetadata;
-            console.log('🍎 iOS PWA: Metadata restaurada após retorno para foreground');
-          }
-        }, 100);
+      if (document.hidden) {
+        // App indo para background - usar metadados estáticos
+        if (navigator.mediaSession && this.staticMode) {
+          navigator.mediaSession.metadata = staticMetadata;
+          console.log('🍎 iOS PWA: Background - usando metadados estáticos');
+        }
+      } else {
+        // App voltando para foreground - permitir metadados dinâmicos
+        this.staticMode = false;
+        console.log('🍎 iOS PWA: Foreground - metadados dinâmicos habilitados');
       }
     });
   }
 
   public updateMetadata(title: string, artist: string, artwork?: string): void {
     if (!this.isSupported) {
+      return;
+    }
+
+    // No iOS PWA, não atualizar metadados durante background (modo estático)
+    if (this.isIOSPWA && this.staticMode) {
+      console.log('🍎 iOS PWA: Modo estático ativo - ignorando atualização de metadados');
       return;
     }
 

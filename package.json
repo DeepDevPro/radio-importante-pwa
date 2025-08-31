@@ -13,6 +13,8 @@
     "format": "prettier --write 'src/**/*.{ts,tsx,css,html}'",
     "catalog": "node scripts/generateCatalog.js",
     "catalog:watch": "npm run catalog && npm run dev",
+    "audio": "node scripts/generate-audio.js",
+    "audio:analyze": "node scripts/generate-audio.js --analyze-only",
     "hls:generate": "node scripts/generate-hls.js",
     "hls:clean": "rm -rf public/audio/hls"
   },

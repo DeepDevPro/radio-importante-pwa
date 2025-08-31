@@ -1,0 +1,158 @@
+{
+  "mode": "continuous",
+  "totalDuration": 900,
+  "trackCount": 15,
+  "generatedAt": "2025-08-31T01:12:46.413Z",
+  "tracks": [
+    {
+      "id": "track001",
+      "title": "Take My Time",
+      "artist": "4 Hero feat. Jack Davey",
+      "genre": "Electronic",
+      "startTime": 0,
+      "endTime": 60,
+      "duration": 60,
+      "filename": "4-Hero-take-my-time-(feat.-jack-davey).mp3"
+    },
+    {
+      "id": "track002",
+      "title": "Sing",
+      "artist": "Artista",
+      "genre": "Pop",
+      "startTime": 60,
+      "endTime": 120,
+      "duration": 60,
+      "filename": "Artista-Sing.mp3"
+    },
+    {
+      "id": "track003",
+      "title": "13.6.35",
+      "artist": "Belleruche (Natural Self Remix)",
+      "genre": "Electronic",
+      "startTime": 120,
+      "endTime": 180,
+      "duration": 60,
+      "filename": "Belleruche - 13.6.35 (Natural Self Remix).mp3"
+    },
+    {
+      "id": "track004",
+      "title": "Midnight Session",
+      "artist": "Buscemi",
+      "genre": "Downtempo",
+      "startTime": 180,
+      "endTime": 240,
+      "duration": 60,
+      "filename": "Buscemi - Midnight Session.mp3"
+    },
+    {
+      "id": "track005",
+      "title": "Comadi",
+      "artist": "Céu",
+      "genre": "MPB",
+      "startTime": 240,
+      "endTime": 300,
+      "duration": 60,
+      "filename": "Ceu - Comadi.mp3"
+    },
+    {
+      "id": "track006",
+      "title": "Beach Towel",
+      "artist": "Karma (I Cube Cosmix Marathon Remix)",
+      "genre": "Electronic",
+      "startTime": 300,
+      "endTime": 360,
+      "duration": 60,
+      "filename": "Karma - Beach Towel (I Cube Cosmix Marathon Remix).mp3"
+    },
+    {
+      "id": "track007",
+      "title": "All That",
+      "artist": "Lizzy Parks (Natural Self Remix)",
+      "genre": "Electronic",
+      "startTime": 360,
+      "endTime": 420,
+      "duration": 60,
+      "filename": "Lizzy Parks - All That (Natural Self Remix).mp3"
+    },
+    {
+      "id": "track008",
+      "title": "Bridge Through Time",
+      "artist": "Lonnie Liston Smith",
+      "genre": "Jazz",
+      "startTime": 420,
+      "endTime": 480,
+      "duration": 60,
+      "filename": "Lonnie Liston Smith - Bridge Through Time.mp3"
+    },
+    {
+      "id": "track009",
+      "title": "Nightlife",
+      "artist": "Lonnie Liston Smith",
+      "genre": "Jazz",
+      "startTime": 480,
+      "endTime": 540,
+      "duration": 60,
+      "filename": "Lonnie Liston Smith - Nightlife.mp3"
+    },
+    {
+      "id": "track010",
+      "title": "Danda Luanda",
+      "artist": "Luciana Oliveira",
+      "genre": "World",
+      "startTime": 540,
+      "endTime": 600,
+      "duration": 60,
+      "filename": "Luciana Oliveira - Danda Luanda.mp3"
+    },
+    {
+      "id": "track011",
+      "title": "So Far",
+      "artist": "Lukas Greenberg",
+      "genre": "Indie",
+      "startTime": 600,
+      "endTime": 660,
+      "duration": 60,
+      "filename": "Lukas Greenberg - So Far.mp3"
+    },
+    {
+      "id": "track012",
+      "title": "Para Entrar",
+      "artist": "Artista Desconhecido",
+      "genre": "World",
+      "startTime": 660,
+      "endTime": 720,
+      "duration": 60,
+      "filename": "Para-Entrar.mp3"
+    },
+    {
+      "id": "track013",
+      "title": "Menino",
+      "artist": "Patricia Marx & 4 Hero",
+      "genre": "Electronic",
+      "startTime": 720,
+      "endTime": 780,
+      "duration": 60,
+      "filename": "Patricia Marx, 4 Hero - Menino.mp3"
+    },
+    {
+      "id": "track014",
+      "title": "Sun Is Shining",
+      "artist": "Bebel Gilberto",
+      "genre": "Bossa Nova",
+      "startTime": 780,
+      "endTime": 840,
+      "duration": 60,
+      "filename": "bebel-gilberto-sun-is-Shining.mp3"
+    },
+    {
+      "id": "track015",
+      "title": "Welcome to the World of the Plastic Beach",
+      "artist": "Gorillaz",
+      "genre": "Alternative",
+      "startTime": 840,
+      "endTime": 900,
+      "duration": 60,
+      "filename": "gorillaz-welcome_to_the_world_of_the_plastic_beach.mp3"
+    }
+  ]
+}

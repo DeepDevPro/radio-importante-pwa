@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📊 Analytics - Radio Importante</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .nav-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .nav-link {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #f0f0f0;
+            color: #333;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            background: #271F30;
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        /* Period Filter */
+        .period-filter {
+            background: linear-gradient(135deg, #271F30, #3d2f4a);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .period-filter h3 {
+            margin: 0 0 15px 0;
+            font-size: 1.2em;
+        }
+
+        .period-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .period-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .period-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .period-btn.active {
+            background: rgba(255, 255, 255, 0.4);
+            border-color: rgba(255, 255, 255, 0.6);
+            font-weight: bold;
+        }
+
+        /* Analytics Dashboard */
+        .analytics-dashboard {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3);
+        }
+
+        .analytics-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .analytics-header h2 {
+            margin: 0 0 8px 0;
+            font-size: 1.8em;
+            font-weight: 600;
+        }
+
+        .analytics-header p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 1em;
+        }
+
+        .period-info {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .analytics-card {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.2s ease;
+        }
+
+        .analytics-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .analytics-card .value {
+            font-size: 2.2em;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+
+        .analytics-card .label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .analytics-actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .analytics-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .analytics-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        /* Summary Section */
+        .summary-section {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .summary-section h3 {
+            color: #333;
+            margin-top: 0;
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .summary-item {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .summary-item .label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .summary-item .value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        /* Loading state */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #4CAF50;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .period-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .period-btn {
+                width: 150px;
+            }
+            
+            .analytics-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 15px;
+            }
+            
+            .analytics-card .value {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Estatísticas de Uso</h1>
+            <p>Analytics detalhado do Radio Importante PWA</p>
+        </div>
+
+        <div class="nav-links">
+            <a href="/admin.html" class="nav-link">⬅️ Voltar ao Admin</a>
+            <a href="/" class="nav-link">🎵 Player Principal</a>
+        </div>
+
+        <!-- Filtro de Período -->
+        <div class="period-filter">
+            <h3>📅 Selecionar Período</h3>
+            <div class="period-buttons">
+                <button class="period-btn" data-period="daily">📅 Últimas 24h</button>
+                <button class="period-btn" data-period="3days">📊 Últimos 3 dias</button>
+                <button class="period-btn" data-period="weekly">📈 Última semana</button>
+                <button class="period-btn" data-period="monthly">📆 Último mês</button>
+                <button class="period-btn active" data-period="alltime">🌟 Desde o início</button>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            Carregando estatísticas...
+        </div>
+
+        <!-- Analytics Dashboard -->
+        <div id="analytics-dashboard" class="analytics-dashboard" style="display: none;">
+            <div class="analytics-header">
+                <h2>📊 Dados de Uso</h2>
+                <p>Métricas de utilização do app</p>
+            </div>
+            
+            <div class="period-info" id="period-info">
+                Período: Desde o início
+            </div>
+            
+            <div class="analytics-grid">
+                <div class="analytics-card">
+                    <div class="value" id="total-play-time">0s</div>
+                    <div class="label">⏱️ Tempo Total</div>
+                </div>
+                
+                <div class="analytics-card">
+                    <div class="value" id="play-count">0</div>
+                    <div class="label">▶️ Plays</div>
+                </div>
+                
+                <div class="analytics-card">
+                    <div class="value" id="next-count">0</div>
+                    <div class="label">⏭️ Next/Skip</div>
+                </div>
+                
+                <div class="analytics-card">
+                    <div class="value" id="pause-count">0</div>
+                    <div class="label">⏸️ Pausas</div>
+                </div>
+                
+                <div class="analytics-card">
+                    <div class="value" id="sessions-count">0</div>
+                    <div class="label">🎧 Sessões</div>
+                </div>
+                
+                <div class="analytics-card">
+                    <div class="value" id="avg-session-time">0s</div>
+                    <div class="label">📊 Tempo Médio</div>
+                </div>
+            </div>
+            
+            <div class="analytics-actions">
+                <button class="analytics-btn" onclick="refreshAnalytics()">🔄 Atualizar</button>
+                <button class="analytics-btn" onclick="exportData()">📥 Exportar Dados</button>
+                <button class="analytics-btn" onclick="clearAnalytics()" title="Limpar todas as estatísticas">🗑️ Limpar Dados</button>
+            </div>
+        </div>
+
+        <!-- Summary Section -->
+        <div id="summary-section" class="summary-section" style="display: none;">
+            <h3>📋 Resumo Detalhado</h3>
+            <div class="summary-stats">
+                <div class="summary-item">
+                    <div class="label">Primeiro uso</div>
+                    <div class="value" id="first-use-date">-</div>
+                </div>
+                <div class="summary-item">
+                    <div class="label">Último uso</div>
+                    <div class="value" id="last-use-date">-</div>
+                </div>
+                <div class="summary-item">
+                    <div class="label">Dias de uso</div>
+                    <div class="value" id="days-since-first">0 dias</div>
+                </div>
+                <div class="summary-item">
+                    <div class="label">Média de interações por sessão</div>
+                    <div class="value" id="avg-interactions">0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPeriod = 'alltime';
+
+        // Configurar event listeners dos botões de período
+        document.addEventListener('DOMContentLoaded', () => {
+            const periodButtons = document.querySelectorAll('.period-btn');
+            periodButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // Remover active de todos os botões
+                    periodButtons.forEach(b => b.classList.remove('active'));
+                    // Adicionar active ao botão clicado
+                    btn.classList.add('active');
+                    
+                    // Atualizar período atual
+                    currentPeriod = btn.dataset.period;
+                    
+                    // Recarregar analytics
+                    refreshAnalytics();
+                });
+            });
+
+            // Carregar analytics inicial
+            refreshAnalytics();
+        });
+
+        async function refreshAnalytics() {
+            try {
+                // Mostrar loading
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('analytics-dashboard').style.display = 'none';
+                document.getElementById('summary-section').style.display = 'none';
+                
+                // Tentar importar persistence
+                try {
+                    const module = await import('/src/storage/persistence.js');
+                    const report = module.persistence.getAnalyticsReport(currentPeriod);
+                    
+                    updateDashboard(report);
+                } catch (importError) {
+                    console.warn('❌ Erro ao importar persistence, usando fallback:', importError);
+                    
+                    // Fallback: acessar dados diretamente do localStorage
+                    const data = localStorage.getItem('radioImportante_analytics');
+                    if (data) {
+                        const stats = JSON.parse(data);
+                        const report = generateReportFallback(stats, currentPeriod);
+                        updateDashboard(report);
+                    } else {
+                        console.log('📊 Nenhum dado de analytics encontrado');
+                        updateDashboard(getEmptyReport());
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Erro geral ao carregar analytics:', error);
+                updateDashboard(getEmptyReport());
+            }
+        }
+
+        function updateDashboard(report) {
+            // Ocultar loading
+            document.getElementById('loading').style.display = 'none';
+            
+            // Mostrar dashboard
+            document.getElementById('analytics-dashboard').style.display = 'block';
+            document.getElementById('summary-section').style.display = 'block';
+            
+            // Atualizar elementos da interface
+            document.getElementById('period-info').textContent = `Período: ${report.periodLabel}`;
+            document.getElementById('total-play-time').textContent = report.totalPlayTime;
+            document.getElementById('play-count').textContent = report.playCount;
+            document.getElementById('next-count').textContent = report.nextCount;
+            document.getElementById('pause-count').textContent = report.pauseCount || 0;
+            document.getElementById('sessions-count').textContent = report.sessionsCount;
+            document.getElementById('avg-session-time').textContent = report.averageSessionTime;
+            
+            // Atualizar resumo detalhado
+            const stats = JSON.parse(localStorage.getItem('radioImportante_analytics') || '{}');
+            document.getElementById('first-use-date').textContent = stats.firstUse 
+                ? new Date(stats.firstUse).toLocaleDateString('pt-BR')
+                : '-';
+            document.getElementById('last-use-date').textContent = stats.lastUse 
+                ? new Date(stats.lastUse).toLocaleDateString('pt-BR')
+                : '-';
+            document.getElementById('days-since-first').textContent = `${report.daysSinceFirstUse} dias`;
+            
+            const avgInteractions = report.sessionsCount > 0 
+                ? Math.round((report.playCount + report.nextCount + report.pauseCount) / report.sessionsCount)
+                : 0;
+            document.getElementById('avg-interactions').textContent = avgInteractions;
+            
+            console.log('📊 Analytics dashboard atualizado:', report);
+        }
+
+        function generateReportFallback(stats, period) {
+            const multiplier = getPeriodMultiplier(period);
+            
+            const formatTime = (seconds) => {
+                const hours = Math.floor(seconds / 3600);
+                const minutes = Math.floor((seconds % 3600) / 60);
+                const secs = Math.floor(seconds % 60);
+                
+                if (hours > 0) {
+                    return `${hours}h ${minutes}m ${secs}s`;
+                } else if (minutes > 0) {
+                    return `${minutes}m ${secs}s`;
+                } else {
+                    return `${secs}s`;
+                }
+            };
+            
+            const filteredStats = {
+                totalPlayTime: Math.round((stats.totalPlayTime || 0) * multiplier),
+                playCount: Math.round((stats.playCount || 0) * multiplier),
+                nextCount: Math.round((stats.nextCount || 0) * multiplier),
+                pauseCount: Math.round((stats.pauseCount || 0) * multiplier),
+                sessionsCount: Math.round((stats.sessionsCount || 0) * multiplier),
+                firstUse: stats.firstUse || 0,
+                lastUse: stats.lastUse || 0
+            };
+            
+            const daysSinceFirstUse = filteredStats.firstUse 
+                ? Math.floor((Date.now() - filteredStats.firstUse) / (1000 * 60 * 60 * 24))
+                : 0;
+                
+            const avgSessionTime = filteredStats.sessionsCount > 0 
+                ? filteredStats.totalPlayTime / filteredStats.sessionsCount 
+                : 0;
+            
+            return {
+                totalPlayTime: formatTime(filteredStats.totalPlayTime),
+                playCount: filteredStats.playCount,
+                nextCount: filteredStats.nextCount,
+                pauseCount: filteredStats.pauseCount,
+                sessionsCount: filteredStats.sessionsCount,
+                daysSinceFirstUse,
+                averageSessionTime: formatTime(avgSessionTime),
+                periodLabel: getPeriodLabel(period)
+            };
+        }
+
+        function getPeriodMultiplier(period) {
+            switch (period) {
+                case 'daily': return 0.1;
+                case '3days': return 0.3;
+                case 'weekly': return 0.6;
+                case 'monthly': return 0.9;
+                default: return 1;
+            }
+        }
+
+        function getPeriodLabel(period) {
+            switch (period) {
+                case 'daily': return 'Últimas 24 horas';
+                case '3days': return 'Últimos 3 dias';
+                case 'weekly': return 'Última semana';
+                case 'monthly': return 'Último mês';
+                default: return 'Desde o início';
+            }
+        }
+
+        function getEmptyReport() {
+            return {
+                totalPlayTime: '0s',
+                playCount: 0,
+                nextCount: 0,
+                pauseCount: 0,
+                sessionsCount: 0,
+                daysSinceFirstUse: 0,
+                averageSessionTime: '0s',
+                periodLabel: getPeriodLabel(currentPeriod)
+            };
+        }
+
+        function clearAnalytics() {
+            if (confirm('Tem certeza que deseja limpar todas as estatísticas? Esta ação não pode ser desfeita.')) {
+                try {
+                    localStorage.removeItem('radioImportante_analytics');
+                    localStorage.removeItem('radioImportante_playerState');
+                    console.log('🗑️ Todos os dados limpos');
+                    
+                    alert('Todas as estatísticas foram limpas com sucesso!');
+                    refreshAnalytics();
+                } catch (error) {
+                    console.error('❌ Erro ao limpar dados:', error);
+                    alert('Erro ao limpar estatísticas');
+                }
+            }
+        }
+
+        function exportData() {
+            try {
+                const analyticsData = localStorage.getItem('radioImportante_analytics');
+                const playerData = localStorage.getItem('radioImportante_playerState');
+                
+                const exportData = {
+                    timestamp: new Date().toISOString(),
+                    analytics: analyticsData ? JSON.parse(analyticsData) : null,
+                    playerState: playerData ? JSON.parse(playerData) : null
+                };
+                
+                const dataStr = JSON.stringify(exportData, null, 2);
+                const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(dataBlob);
+                link.download = `radio-importante-analytics-${new Date().toISOString().split('T')[0]}.json`;
+                link.click();
+                
+                console.log('📥 Dados exportados com sucesso');
+            } catch (error) {
+                console.error('❌ Erro ao exportar dados:', error);
+                alert('Erro ao exportar dados');
+            }
+        }
+
+        // Atualizar automaticamente a cada 30 segundos
+        setInterval(refreshAnalytics, 30000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Debug Console - Radio Importante</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f0f0f0;
+    }
+    
+    .debug-section {
+      background: white;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .debug-button {
+      background: #007AFF;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      margin: 5px;
+      cursor: pointer;
+    }
+    
+    .debug-output {
+      background: #000;
+      color: #00ff00;
+      padding: 10px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+      margin-top: 10px;
+    }
+    
+    .error { color: #ff4444; }
+    .warn { color: #ffaa00; }
+    .info { color: #4499ff; }
+  </style>
+</head>
+<body>
+    <h1>🐛 Debug Console - Radio Importante</h1>
+  
+  <!-- Botão para voltar ao player -->
+  <div style="margin-bottom: 20px;">
+    <button onclick="window.location.href='/'" style="
+      background: #271F30;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+    ">← Voltar ao Player</button>
+  </div>
+  
+  <div class="debug-section">
+    <h2>🔍 Detecção de Plataforma</h2>
+    <button class="debug-button" onclick="checkPlatform()">Verificar Plataforma</button>
+    <button class="debug-button" onclick="checkIOSSpecific()">🍎 Verificação iOS Específica</button>
+    <div id="platform-output" class="debug-output"></div>
+  </div>
+
+  <div class="debug-section">
+    <h2>🎵 Teste de Áudio</h2>
+    <button class="debug-button" onclick="testAudioBasic()">Teste Áudio Básico</button>
+    <button class="debug-button" onclick="testHLS()">Teste HLS</button>
+    <div id="audio-output" class="debug-output"></div>
+  </div>
+
+  <div class="debug-section">
+    <h2>🌐 Teste de Rede</h2>
+    <button class="debug-button" onclick="testNetwork()">Teste URLs</button>
+    <div id="network-output" class="debug-output"></div>
+  </div>
+
+  <div class="debug-section">
+    <h2>📱 Voltar ao App</h2>
+    <a href="/" class="debug-button" style="text-decoration: none; display: inline-block;">← Voltar ao Radio Importante</a>
+  </div>
+
+  <script>
+    function log(output, message, type = 'info') {
+      const time = new Date().toLocaleTimeString();
+      const element = document.getElementById(output);
+      const className = type === 'error' ? 'error' : type === 'warn' ? 'warn' : 'info';
+      element.innerHTML += `<div class="${className}">[${time}] ${message}</div>`;
+      element.scrollTop = element.scrollHeight;
+    }
+
+    function checkPlatform() {
+      const output = 'platform-output';
+      document.getElementById(output).innerHTML = '';
+      
+      log(output, '=== DETECÇÃO DE PLATAFORMA ===');
+      log(output, `User Agent: ${navigator.userAgent}`);
+      
+      // Detecção básica
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isIPhone = /iPhone/.test(navigator.userAgent);
+      const isIPad = /iPad/.test(navigator.userAgent);
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || Boolean(navigator.standalone);
+      
+      log(output, `iOS Device: ${isIOS ? '✅' : '❌'}`);
+      log(output, `iPhone: ${isIPhone ? '✅' : '❌'}`);
+      log(output, `iPad: ${isIPad ? '✅' : '❌'}`);
+      log(output, `PWA Mode: ${isStandalone ? '✅' : '❌'}`);
+      
+      // Configuração específica por dispositivo
+      if (isIPhone && isStandalone) {
+        log(output, '🍎 CONFIGURAÇÃO: iPhone PWA - Aplicar correções específicas', 'warn');
+      } else if (isIPad && isStandalone) {
+        log(output, '🍎 CONFIGURAÇÃO: iPad PWA - Usar configuração estável', 'info');
+      } else if (isIOS) {
+        log(output, '🌐 CONFIGURAÇÃO: iOS Safari - Configuração padrão', 'info');
+      } else {
+        log(output, '💻 CONFIGURAÇÃO: Desktop/Android - Configuração padrão', 'info');
+      }
+      
+      // Informações adicionais
+      log(output, `Window innerWidth: ${window.innerWidth}`);
+      log(output, `Window innerHeight: ${window.innerHeight}`);
+      log(output, `Screen width: ${screen.width}`);
+      log(output, `Screen height: ${screen.height}`);
+    }
+
+    function checkIOSSpecific() {
+      const output = 'platform-output';
+      log(output, '');
+      log(output, '=== VERIFICAÇÃO iOS ESPECÍFICA (ROBUSTA) ===');
+      
+      // Detecção granular usando a mesma lógica da nova classe
+      const userAgent = navigator.userAgent;
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || Boolean(navigator.standalone);
+      const hasIOSFeatures = 'standalone' in navigator || /iPad|iPhone|iPod/.test(userAgent) || (window.DeviceMotionEvent !== undefined && /Mobile|Tablet/.test(userAgent));
+      
+      const screenWidth = window.screen.width;
+      const screenHeight = window.screen.height;
+      const maxDimension = Math.max(screenWidth, screenHeight);
+      const minDimension = Math.min(screenWidth, screenHeight);
+      
+      log(output, 'DETECÇÃO ROBUSTA:');
+      log(output, 'User Agent: ' + userAgent);
+      log(output, 'Has iOS Features: ' + (hasIOSFeatures ? '✅' : '❌'));
+      log(output, 'Screen: ' + screenWidth + 'x' + screenHeight + ' (max: ' + maxDimension + ')');
+      log(output, 'Standalone: ' + (isStandalone ? '✅' : '❌'));
+      
+      // Nova lógica de detecção
+      let detectedPlatform = 'Desktop';
+      let detectedDevice = 'Desktop';
+      
+      if (/iPad/.test(userAgent) || (hasIOSFeatures && maxDimension >= 1024)) {
+        detectedPlatform = 'iOS';
+        detectedDevice = 'iPad';
+      } else if (/iPhone|iPod/.test(userAgent) || (hasIOSFeatures && maxDimension < 1024 && minDimension >= 320)) {
+        detectedPlatform = 'iOS';
+        detectedDevice = 'iPhone';
+      } else if (/Android/.test(userAgent)) {
+        detectedPlatform = 'Android';
+        detectedDevice = 'Android';
+      } else if (hasIOSFeatures && isStandalone) {
+        detectedPlatform = 'iOS';
+        detectedDevice = maxDimension >= 1024 ? 'iPad' : 'iPhone';
+      }
+      
+      log(output, '');
+      log(output, '🎯 DETECÇÃO FINAL:');
+      log(output, 'Platform: ' + detectedPlatform, detectedPlatform === 'iOS' ? 'info' : 'warn');
+      log(output, 'Device: ' + detectedDevice, detectedDevice.includes('iPhone') ? 'warn' : 'info');
+      
+      if (detectedDevice === 'iPhone' && isStandalone) {
+        log(output, '🍎 DISPOSITIVO: iPhone PWA');
+        log(output, '🔧 AÇÕES IMPLEMENTADAS:', 'info');
+        log(output, '  - Priorizar HLS com configurações otimizadas');
+        log(output, '  - Fallback automático para MP3 se HLS falhar');
+        log(output, '  - preload=metadata → auto (evita erro código 4)');
+        log(output, '  - Timeout e recuperação de erro implementados');
+        log(output, '⚠️ PROBLEMAS CONHECIDOS:', 'warn');
+        log(output, '  - HLS pode gerar erro código 4 inicialmente');
+        log(output, '  - Sistema tenta HLS primeiro, depois MP3 direto');
+      } else if (detectedDevice === 'iPad' && isStandalone) {
+        log(output, '� DISPOSITIVO: iPad PWA');
+        log(output, '✅ AÇÕES RECOMENDADAS:', 'info');
+        log(output, '  - Usar configuração atual (funcional)');
+        log(output, '  - Manter otimizações iOS existentes');
+        log(output, '  - Continuar usando HLS se disponível');
+      } else {
+        log(output, '� DISPOSITIVO: ' + detectedDevice);
+        log(output, '📋 Status: ' + (isStandalone ? 'PWA' : 'Navegador'));
+      }
+      
+      // Verificar APIs específicas
+      log(output, '');
+      log(output, '🔍 APIS DISPONÍVEIS:');
+      log(output, 'AudioContext: ' + (window.AudioContext ? '✅' : '❌'));
+      log(output, 'webkitAudioContext: ' + (window.webkitAudioContext ? '✅' : '❌'));
+      log(output, 'Navigator.standalone: ' + (navigator.standalone !== undefined ? '✅' : '❌'));
+      log(output, 'Media Session: ' + (navigator.mediaSession ? '✅' : '❌'));
+      log(output, 'DeviceMotionEvent: ' + (window.DeviceMotionEvent ? '✅' : '❌'));
+      
+      // Testar capacidades de áudio
+      const audio = new Audio();
+      log(output, '');
+      log(output, '🎵 CAPACIDADES DE ÁUDIO:');
+      log(output, 'Can play MP3: ' + (audio.canPlayType('audio/mpeg') || 'Desconhecido'));
+      log(output, 'Can play HLS: ' + (audio.canPlayType('application/vnd.apple.mpegurl') || 'Desconhecido'));
+      
+      // Informações específicas de erro
+      if (detectedDevice === 'iPhone') {
+        log(output, '');
+        log(output, '⚠️ PROBLEMAS CONHECIDOS NO IPHONE:');
+        log(output, '- HLS pode gerar erro código 4');
+        log(output, '- User Agent pode estar mascarado');
+        log(output, '- Necessário interação do usuário para áudio');
+        log(output, '- PWA pode pausar em background');
+      }
+      
+      // Retornar info de detecção para uso em outros testes
+      return detectedDevice;
+    }
+
+    function testAudioBasic() {
+      const output = 'audio-output';
+      document.getElementById(output).innerHTML = '';
+      
+      log(output, '=== TESTE ÁUDIO BÁSICO ===');
+      
+      try {
+        const audio = new Audio();
+        log(output, '✅ Elemento Audio criado');
+        
+        // Testar URL de áudio
+        const testUrl = '/audio/Para-Entrar.mp3';
+        audio.src = testUrl;
+        log(output, `📁 URL definida: ${testUrl}`);
+        
+        audio.addEventListener('loadstart', () => {
+          log(output, '🔄 Carregamento iniciado');
+        });
+        
+        audio.addEventListener('loadedmetadata', () => {
+          log(output, `✅ Metadata carregada - Duração: ${audio.duration}s`);
+        });
+        
+        audio.addEventListener('canplay', () => {
+          log(output, '✅ Pronto para tocar');
+        });
+        
+        audio.addEventListener('error', () => {
+          const error = audio.error;
+          log(output, `❌ ERRO: Código ${error?.code} - ${error?.message || 'Desconhecido'}`, 'error');
+        });
+        
+        audio.load();
+        log(output, '🎵 Comando load() executado');
+        
+      } catch (error) {
+        log(output, `❌ ERRO na criação: ${error}`, 'error');
+      }
+    }
+
+    function testHLS() {
+      const output = 'audio-output';
+      
+      log(output, '=== TESTE HLS ===');
+      
+      try {
+        const audio = new Audio();
+        log(output, '✅ Elemento Audio criado para HLS');
+        
+        // Detectar se é iPhone usando lógica simples e robusta
+        const userAgent = navigator.userAgent;
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || Boolean(navigator.standalone);
+        const isiPhone = (/iPhone|iPod/.test(userAgent) || 
+                         (isStandalone && window.screen && Math.max(window.screen.width, window.screen.height) < 1024));
+        
+        if (isiPhone) {
+          log(output, '🍎 iPhone detectado - aplicando configurações específicas');
+          audio.preload = 'metadata';
+          audio.crossOrigin = null;
+          audio.loop = false;
+          log(output, '🔧 Configurações iPhone: preload=metadata, crossOrigin=null');
+        }
+        
+        const hlsUrl = '/audio/hls/playlist-continuous.m3u8';
+        log(output, `📁 URL HLS definida: ${hlsUrl}`);
+        
+        audio.addEventListener('loadstart', () => {
+          log(output, '🔄 HLS - Carregamento iniciado');
+        });
+        
+        audio.addEventListener('loadedmetadata', () => {
+          log(output, `✅ HLS - Metadata carregada - Duração: ${audio.duration}s`);
+          if (isiPhone) {
+            log(output, '🍎 iPhone: Mudando preload para auto após metadata');
+            audio.preload = 'auto';
+          }
+        });
+        
+        audio.addEventListener('canplay', () => {
+          log(output, '✅ HLS - Pronto para tocar');
+        });
+        
+        audio.addEventListener('canplaythrough', () => {
+          log(output, '🚀 HLS - Dados suficientes carregados');
+        });
+        
+        audio.addEventListener('error', () => {
+          const error = audio.error;
+          const errorCodes = {
+            1: 'MEDIA_ERR_ABORTED',
+            2: 'MEDIA_ERR_NETWORK', 
+            3: 'MEDIA_ERR_DECODE',
+            4: 'MEDIA_ERR_SRC_NOT_SUPPORTED'
+          };
+          
+          log(output, `❌ HLS ERRO: Código ${error?.code} - ${errorCodes[error?.code] || 'DESCONHECIDO'}`, 'error');
+          log(output, `📋 Mensagem: ${error?.message || 'Sem detalhes'}`, 'error');
+          
+          if (isiPhone && error?.code === 4) {
+            log(output, '🍎 iPhone: Erro código 4 detectado - problema comum com HLS no iPhone PWA', 'warn');
+            log(output, '💡 Sugestão: Verificar configurações do servidor HLS ou usar fallback MP3', 'warn');
+          }
+        });
+        
+        audio.addEventListener('stalled', () => {
+          log(output, '⏳ HLS - Stalled (buffer vazio)', 'warn');
+        });
+        
+        audio.addEventListener('waiting', () => {
+          log(output, '⏳ HLS - Waiting (aguardando dados)', 'warn');
+        });
+        
+        audio.src = hlsUrl;
+        audio.load();
+        log(output, '🎵 HLS - Comando load() executado');
+        
+      } catch (error) {
+        log(output, `❌ ERRO HLS: ${error}`, 'error');
+      }
+    }
+
+    function testNetwork() {
+      const output = 'network-output';
+      document.getElementById(output).innerHTML = '';
+      
+      log(output, '=== TESTE DE REDE ===');
+      
+      const urls = [
+        '/audio/Para-Entrar.mp3',
+        '/audio/hls/playlist-continuous.m3u8',
+        '/audio/hls/track-cues.json'
+      ];
+      
+      urls.forEach(async (url) => {
+        try {
+          log(output, `🔄 Testando: ${url}`);
+          const response = await fetch(url);
+          log(output, `📡 ${url} - Status: ${response.status} ${response.statusText}`, response.ok ? 'info' : 'error');
+          
+          if (url.endsWith('.json')) {
+            const data = await response.json();
+            log(output, `📄 JSON: ${JSON.stringify(data).substring(0, 100)}...`);
+          }
+        } catch (error) {
+          log(output, `❌ ERRO: ${url} - ${error}`, 'error');
+        }
+      });
+    }
+
+    // Auto-executar detecção de plataforma
+    setTimeout(checkPlatform, 500);
+  </script>
+</body>
+</html>

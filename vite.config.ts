@@ -20,6 +20,18 @@ export default defineConfig({
     {
       name: 'api-routes',
       configureServer(server) {
+        // Middleware para configurar MIME types para arquivos HLS
+        server.middlewares.use((req, res, next) => {
+          if (req.url?.endsWith('.m3u8')) {
+            res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
+            res.setHeader('Access-Control-Allow-Origin', '*');
+          } else if (req.url?.endsWith('.ts')) {
+            res.setHeader('Content-Type', 'video/mp2t');
+            res.setHeader('Access-Control-Allow-Origin', '*');
+          }
+          next();
+        });
+
         // Middleware para salvar catalog.json
         server.middlewares.use('/api/save-catalog', (req, res, next) => {
           if (req.method === 'POST') {
