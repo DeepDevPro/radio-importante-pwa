@@ -220,6 +220,10 @@ class RadioImportanteApp {
     this.controls.onPlay = () => this.handlePlay();
     this.controls.onPause = () => this.handlePause();
     this.controls.onNext = () => this.handleNext();
+    this.controls.getCurrentTrackInfo = () => {
+      const trackDisplay = this.stateManager.getCurrentTrackDisplay();
+      return trackDisplay ? { title: trackDisplay.title, artist: trackDisplay.artist } : null;
+    };
 
     // Configurar eventos do player de áudio
     this.audioPlayer.setEventHandlers({

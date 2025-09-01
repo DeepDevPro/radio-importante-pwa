@@ -295,8 +295,8 @@
       }
       
       .btn-play img {
-        width: 28px;
-        height: 28px;
+        width: 24px;
+        height: 24px;
       }
       
       .btn:hover:not(:disabled) img {
@@ -348,7 +348,7 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.5);
+        background: rgba(239, 234, 227, 0.5);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -357,68 +357,51 @@
       }
       
       .modal-content {
-        background: #EFEAE3;
-        border-radius: 15px;
-        width: 90%;
-        max-width: 350px;
+        background: rgba(239, 234, 227, 0.95);
+        border-radius: 0;
+        width: 380px;
+        height: 418px;
         overflow: hidden;
         box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-      }
-      
-      .modal-header {
-        background: #271F30;
-        color: #EFEAE3;
-        padding: 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-      
-      .modal-header h3 {
-        font-size: 18px;
-        font-weight: 600;
-      }
-      
-      .modal-close {
-        background: none;
-        border: none;
-        color: #EFEAE3;
-        font-size: 20px;
-        cursor: pointer;
-        padding: 5px;
-        border-radius: 50%;
-        width: 30px;
-        height: 30px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      
-      .modal-close:hover {
-        background: rgba(255, 255, 255, 0.1);
+        position: relative;
       }
       
       .modal-body {
         padding: 30px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        height: 100%;
       }
       
       .modal-track-info {
         text-align: center;
       }
       
-      .modal-title {
-        font-size: 20px;
-        font-weight: 600;
-        margin-bottom: 10px;
+      .modal-description {
+        font-size: 14px;
         color: #271F30;
-        line-height: 1.3;
+        line-height: 1.6;
+        text-align: center;
+        margin: 0 0 30px 0;
       }
       
       .modal-artist {
-        font-size: 16px;
+        font-size: 18px;
+        font-weight: 600;
+        color: #271F30;
+        margin: 0 0 8px 0;
+        text-align: center;
+      }
+      
+      .modal-song {
+        font-size: 14px;
+        font-weight: 400;
         color: #271F30;
         opacity: 0.7;
-        line-height: 1.3;
+        margin: 0;
+        text-align: center;
       }
       
       /* Loading state */
@@ -497,6 +480,11 @@
       /* Responsividade do container da imagem */
       @media (max-width: 400px) {
         .custom-image-container {
+          width: 320px;
+          height: 352px;
+        }
+        
+        .modal-content {
           width: 320px;
           height: 352px;
         }

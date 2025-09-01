@@ -13,12 +13,15 @@ export class Controls {
   private infoButton!: HTMLButtonElement;
   // private trackDisplay!: HTMLElement; // Não usado atualmente
   private infoModal!: HTMLElement;
+  private modalArtist!: HTMLElement;
+  private modalSong!: HTMLElement;
   private state: ControlsState;
 
   // Callbacks para eventos
   public onPlay: (() => void) | null = null;
   public onPause: (() => void) | null = null;
   public onNext: (() => void) | null = null;
+  public getCurrentTrackInfo: (() => { title: string; artist: string } | null) | null = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -76,19 +79,12 @@ export class Controls {
         <!-- Info Modal -->
         <div class="info-modal" id="infoModal" style="display: none;">
           <div class="modal-content">
-            <div class="modal-header">
-              <h3>Sobre o Radio Importante</h3>
-              <button class="close-btn" id="closeModal">×</button>
-            </div>
             <div class="modal-body">
-              <p>Um player de música web progressivo (PWA) com reprodução contínua.</p>
-              <p><strong>Recursos:</strong></p>
-              <ul>
-                <li>Reprodução em segundo plano</li>
-                <li>Controles na tela de bloqueio</li>
-                <li>Funciona offline</li>
-                <li>Interface responsiva</li>
-              </ul>
+              <p class="modal-description">Você está ouvindo a Rádio Importante. Todas músicas aqui são extraídas direto de vinis de época. Nosso objetivo é levar o mundo dos discos pra você. Uma curadoria com total liberdade de gêneros e época, a única regra é que seja provinda de um disco de vinyl.</p>
+              <div class="modal-track-info">
+                <p class="modal-artist" id="modalArtist">Artista</p>
+                <p class="modal-song" id="modalSong">Nome da Música</p>
+              </div>
             </div>
           </div>
         </div>
@@ -101,6 +97,8 @@ export class Controls {
     this.infoButton = this.container.querySelector('#infoButton') as HTMLButtonElement;
     // this.trackDisplay = this.container.querySelector('#trackTitle') as HTMLElement;
     this.infoModal = this.container.querySelector('#infoModal') as HTMLElement;
+    this.modalArtist = this.container.querySelector('#modalArtist') as HTMLElement;
+    this.modalSong = this.container.querySelector('#modalSong') as HTMLElement;
   }
 
   private setupEventListeners(): void {
@@ -121,12 +119,6 @@ export class Controls {
     // Info button
     this.infoButton.addEventListener('click', () => {
       this.toggleInfoModal();
-    });
-
-    // Close modal button
-    const closeButton = this.container.querySelector('#closeModal') as HTMLButtonElement;
-    closeButton.addEventListener('click', () => {
-      this.hideInfoModal();
     });
 
     // Admin button
@@ -220,8 +212,7 @@ export class Controls {
   }
 
   private toggleInfoModal(): void {
-    const isVisible = this.infoModal.style.display !== 'none';
-    if (isVisible) {
+    if (this.infoModal.style.display === 'flex') {
       this.hideInfoModal();
     } else {
       this.showInfoModal();
@@ -229,11 +220,28 @@ export class Controls {
   }
 
   private showInfoModal(): void {
+    // Atualizar informações da música atual
+    if (this.getCurrentTrackInfo) {
+      const trackInfo = this.getCurrentTrackInfo();
+      if (trackInfo) {
+        this.updateModalTrackInfo(trackInfo.artist, trackInfo.title);
+      } else {
+        this.updateModalTrackInfo('Rádio Importante', 'Aguardando música...');
+      }
+    } else {
+      this.updateModalTrackInfo('Rádio Importante', 'Música em reprodução');
+    }
+    
     this.infoModal.style.display = 'flex';
   }
 
   private hideInfoModal(): void {
     this.infoModal.style.display = 'none';
+  }
+
+  public updateModalTrackInfo(artist: string, song: string): void {
+    this.modalArtist.textContent = artist;
+    this.modalSong.textContent = song;
   }
 
   private formatTime(seconds: number): string {
