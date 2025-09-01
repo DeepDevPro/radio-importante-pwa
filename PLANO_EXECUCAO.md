@@ -2,7 +2,7 @@
 
 > **Projeto**: PWA Music Player "Radio Importante"  
 > **Data de criação**: 29/08/2025  
-> **Última atualização**: 30/08/2025  
+> **Última atualização**: 01/09/2025  
 > **Status**: 🎉 **PROJETO COMPLETAMENTE FINALIZADO E FUNCIONAL**
 
 ---
@@ -374,7 +374,8 @@ Este projeto representa uma **solução completa e definitiva** para o desafio t
 
 ### **📋 Versões Disponíveis:**
 - **`v1.0-ios-pwa-fix`**: Solução básica do iPhone PWA background audio (marco inicial)
-- **`v1.1.0`**: Sistema inteligente completo + escalabilidade + documentação (versão atual)
+- **`v1.1.0`**: Sistema inteligente completo + escalabilidade + documentação
+- **`v1.1.1`**: Melhorias de interface + container customizado + versionamento sincronizado (versão atual)
 
 ### **🔄 Sistema de Backup/Restauração:**
 
@@ -385,17 +386,22 @@ git checkout v1.0-ios-pwa-fix
 git checkout -b hotfix-v1.0 v1.0-ios-pwa-fix
 ```
 
-#### **Para voltar para v1.1.0 (sistema inteligente atual):**
+#### **Para voltar para v1.1.1 (versão atual com interface melhorada):**
+```bash
+git checkout v1.1.1
+# Ou voltar para a branch main:
+git checkout main
+```
+
+#### **Para voltar para v1.1.0 (sistema inteligente):**
 ```bash
 git checkout v1.1.0
-# Ou voltar para a branch atual:
-git checkout v1.1-intelligent-audio-system
 ```
 
 #### **Para criar próximas versões (v1.2, v2.0, etc.):**
 ```bash
-# A partir da v1.1:
-git checkout -b v1.2-nova-feature v1.1.0
+# A partir da v1.1.1 (atual):
+git checkout -b v1.2-nova-feature v1.1.1
 # Fazer mudanças...
 git add .
 git commit -m "Nova feature"
@@ -427,21 +433,24 @@ git tag -a v1.2.0 -m "Descrição da v1.2"
    ```
 
 ### **📊 Status do Versionamento:**
-- ✅ **v1.1.0 criada**: 54 arquivos versionados, 6.698 linhas adicionadas
-- ✅ **Backup seguro**: Pode voltar para v1.0 ou v1.1 a qualquer momento
-- ✅ **Branch organizada**: `v1.1-intelligent-audio-system` como branch principal
+- ✅ **v1.0-ios-pwa-fix criada**: Marco inicial com iPhone PWA fix
+- ✅ **v1.1.0 criada**: 54 arquivos versionados, 6.698 linhas adicionadas  
+- ✅ **v1.1.1 criada**: Melhorias de interface + versionamento sincronizado
+- ✅ **Backup seguro**: Pode voltar para qualquer versão a qualquer momento
+- ✅ **Package.json sincronizado**: Versão consistente em todo o projeto
 - ✅ **Tags anotadas**: Descrições completas de cada versão
 
 ---
 
 ## 🚀 **Roadmap Futuro (Próximas Versões)**
 
-### **v1.2 - Melhorias de UX (Planejado)**
+### **v1.2 - Experiência de Usuário Avançada (Planejado)**
 - **Animações suaves** de transição entre faixas
 - **Gestos de swipe** (mobile)
 - **Shortcuts de teclado** (desktop)
 - **Loading states** mais informativos
 - **Themes** personalizáveis
+- **Equalizer visual** básico
 
 ### **v1.3 - Analytics e Robustez (Planejado)**
 - **Analytics básicos** de uso
@@ -449,6 +458,7 @@ git tag -a v1.2.0 -m "Descrição da v1.2"
 - **Offline queuing** de próximas faixas
 - **Performance monitoring**
 - **Error tracking**
+- **PWA install prompts**
 
 ### **v2.0 - Funcionalidades Avançadas (Futuro)**
 - **Múltiplas playlists**
@@ -482,6 +492,26 @@ git tag -a v1.2.0 -m "Descrição da v1.2"
 - 📚 **Documentação técnica**: `AUDIO-SYSTEM-DOCS.md` completo
 - 📋 **Plano atualizado**: Reflete status final do projeto
 - 🔧 **Scripts inteligentes**: Sistema adaptativo para diferentes tamanhos de catálogo
+
+### **🎨 v1.1.1 (Interface Melhorada)**
+**Data**: 01/09/2025  
+**Conquista**: Melhorias visuais significativas + container customizado
+
+**Principais melhorias:**
+- 🖼️ **Container customizado**: Adição de container de imagem personalizada (380x418px)
+- 🔍 **Logomarcas ampliadas**: Logos 30% maiores (desktop + mobile) para melhor visibilidade
+- 📝 **Metadados otimizados**: Fonte 20% menor e em negrito para melhor hierarquia visual
+- 🎨 **Design refinado**: Remoção de sombras do player-container para visual mais limpo
+- 📱 **Responsividade aprimorada**: Container responsivo para telas menores (<400px)
+- 🔄 **Versionamento sincronizado**: package.json alinhado com tags do GitHub
+
+**Arquivos modificados:**
+```
+index.html                         # Estilos e layout aprimorados
+src/ui/controls.ts                 # Container customizado integrado
+public/img/Leo_R_161_small.webp    # Imagem personalizada adicionada
+package.json                       # Versão sincronizada (1.0.0 → 1.1.1)
+```
 
 **Arquivos principais adicionados:**
 ```
@@ -537,7 +567,8 @@ npm run build        # Build para produção
 npm run audio        # Sistema inteligente de áudio
 
 # Versionamento
-git checkout v1.1.0  # Versão atual estável
+git checkout v1.1.1  # Versão atual estável (interface melhorada)
+git checkout v1.1.0  # Sistema inteligente  
 git checkout v1.0-ios-pwa-fix  # Backup da versão inicial
 ```
 
