@@ -1,124 +1,147 @@
 {
+  "version": "1.0.0",
   "tracks": [
     {
       "id": "track001",
-      "title": "Take My Time",
-      "artist": "4 Hero feat. Jack Davey",
-      "filename": "4-Hero-take-my-time-(feat.-jack-davey).mp3",
-      "duration": "0:00",
-      "genre": "Electronic"
+      "title": "Damn feat. Kinny",
+      "artist": "TM Juke",
+      "filename": "01 Damn feat Kinny.mp3",
+      "duration": 315,
+      "format": "mp3"
     },
     {
-      "id": "track002", 
-      "title": "Sing",
-      "artist": "Artista",
-      "filename": "Artista-Sing.mp3",
-      "duration": "0:00",
-      "genre": "Pop"
+      "id": "track002",
+      "title": "Intro (A Jazz Experiment)",
+      "artist": "Drumagick",
+      "filename": "01 Intro (A Jazz Experiment).mp3",
+      "duration": 336,
+      "format": "mp3"
     },
     {
       "id": "track003",
-      "title": "13.6.35",
-      "artist": "Belleruche (Natural Self Remix)",
-      "filename": "Belleruche - 13.6.35 (Natural Self Remix).mp3",
-      "duration": "0:00",
-      "genre": "Electronic"
+      "title": "Comadi",
+      "artist": "Céu",
+      "filename": "03 Comadi 89.mp3",
+      "duration": 292,
+      "format": "mp3"
     },
     {
       "id": "track004",
-      "title": "Midnight Session", 
-      "artist": "Buscemi",
-      "filename": "Buscemi - Midnight Session.mp3",
-      "duration": "0:00",
-      "genre": "Downtempo"
+      "title": "Menino",
+      "artist": "Patricia Marx",
+      "filename": "2-03 Menino.mp3",
+      "duration": 332,
+      "format": "mp3"
     },
     {
       "id": "track005",
-      "title": "Comadi",
-      "artist": "Céu",
-      "filename": "Ceu - Comadi.mp3",
-      "duration": "0:00",
-      "genre": "MPB"
+      "title": "Take My Time feat. Jack Davey",
+      "artist": "4 Hero",
+      "filename": "4-Hero-take-my-time-(feat.-jack-davey).mp3",
+      "duration": 322,
+      "format": "mp3"
     },
     {
       "id": "track006",
-      "title": "Beach Towel",
-      "artist": "Karma (I Cube Cosmix Marathon Remix)",
-      "filename": "Karma - Beach Towel (I Cube Cosmix Marathon Remix).mp3",
-      "duration": "0:00",
-      "genre": "Electronic"
+      "title": "Sing",
+      "artist": "Artista",
+      "filename": "Artista-Sing.mp3",
+      "duration": 305,
+      "format": "mp3"
     },
     {
       "id": "track007",
-      "title": "All That",
-      "artist": "Lizzy Parks (Natural Self Remix)",
-      "filename": "Lizzy Parks - All That (Natural Self Remix).mp3",
-      "duration": "0:00",
-      "genre": "Electronic"
+      "title": "13.6.35 (Natural Self Remix)",
+      "artist": "Belleruche",
+      "filename": "Belleruche - 13.6.35 (Natural Self Remix).mp3",
+      "duration": 240,
+      "format": "mp3"
     },
     {
       "id": "track008",
-      "title": "Bridge Through Time",
-      "artist": "Lonnie Liston Smith",
-      "filename": "Lonnie Liston Smith - Bridge Through Time.mp3",
-      "duration": "0:00",
-      "genre": "Jazz"
+      "title": "Midnight Session",
+      "artist": "Buscemi",
+      "filename": "Buscemi - Midnight Session.mp3",
+      "duration": 263,
+      "format": "mp3"
     },
     {
       "id": "track009",
-      "title": "Nightlife",
-      "artist": "Lonnie Liston Smith",
-      "filename": "Lonnie Liston Smith - Nightlife.mp3",
-      "duration": "0:00",
-      "genre": "Jazz"
+      "title": "Beach Towel (I Cube Cosmix Marathon Remix)",
+      "artist": "Karma",
+      "filename": "Karma - Beach Towel (I Cube Cosmix Marathon Remix).mp3",
+      "duration": 334,
+      "format": "mp3"
     },
     {
       "id": "track010",
-      "title": "Danda Luanda",
-      "artist": "Luciana Oliveira",
-      "filename": "Luciana Oliveira - Danda Luanda.mp3",
-      "duration": "0:00",
-      "genre": "World"
+      "title": "All That (Natural Self Remix)",
+      "artist": "Lizzy Parks",
+      "filename": "Lizzy Parks - All That (Natural Self Remix).mp3",
+      "duration": 266,
+      "format": "mp3"
     },
     {
       "id": "track011",
-      "title": "So Far",
-      "artist": "Lukas Greenberg",
-      "filename": "Lukas Greenberg - So Far.mp3",
-      "duration": "0:00",
-      "genre": "Indie"
+      "title": "Bridge Through Time",
+      "artist": "Lonnie Liston Smith",
+      "filename": "Lonnie Liston Smith - Bridge Through Time.mp3",
+      "duration": 350,
+      "format": "mp3"
     },
     {
       "id": "track012",
-      "title": "Para Entrar",
-      "artist": "Artista Desconhecido",
-      "filename": "Para-Entrar.mp3",
-      "duration": "0:00",
-      "genre": "World"
+      "title": "Nightlife",
+      "artist": "Lonnie Liston Smith",
+      "filename": "Lonnie Liston Smith - Nightlife.mp3",
+      "duration": 259,
+      "format": "mp3"
     },
     {
       "id": "track013",
-      "title": "Menino",
-      "artist": "Patricia Marx & 4 Hero",
-      "filename": "Patricia Marx, 4 Hero - Menino.mp3",
-      "duration": "0:00",
-      "genre": "Electronic"
+      "title": "Danda Luanda",
+      "artist": "Luciana Oliveira",
+      "filename": "Luciana Oliveira - Danda Luanda.mp3",
+      "duration": 241,
+      "format": "mp3"
     },
     {
       "id": "track014",
-      "title": "Sun Is Shining",
-      "artist": "Bebel Gilberto",
-      "filename": "bebel-gilberto-sun-is-Shining.mp3",
-      "duration": "0:00",
-      "genre": "Bossa Nova"
+      "title": "So Far",
+      "artist": "Lukas Greenberg",
+      "filename": "Lukas Greenberg - So Far.mp3",
+      "duration": 322,
+      "format": "mp3"
     },
     {
       "id": "track015",
-      "title": "Welcome to the World of the Plastic Beach",
-      "artist": "Gorillaz",
-      "filename": "gorillaz-welcome_to_the_world_of_the_plastic_beach.mp3",
-      "duration": "0:00",
-      "genre": "Alternative"
+      "title": "Para Entrar",
+      "artist": "Bruno Morais",
+      "filename": "Para-Entrar.mp3",
+      "duration": 290,
+      "format": "mp3"
+    },
+    {
+      "id": "track016",
+      "title": "Sun Is Shining",
+      "artist": "Bebel Gilberto",
+      "filename": "bebel-gilberto-sun-is-Shining.mp3",
+      "duration": 355,
+      "format": "mp3"
+    },
+    {
+      "id": "track017",
+      "title": "Ovasoul7 feat. Nia Andrews",
+      "artist": "Koko and Lee Roe Bembe Tawiah",
+      "filename": "01_koko_and_lee_roe_w_bembe_tawiah_ovasoul7_nia_andrews.mp3",
+      "duration": 291,
+      "format": "mp3"
     }
-  ]
+  ],
+  "metadata": {
+    "totalTracks": 17,
+    "totalDuration": 5113,
+    "artwork": "/images/cover.jpg",
+    "radioName": "Radio Importante"
+  }
 }

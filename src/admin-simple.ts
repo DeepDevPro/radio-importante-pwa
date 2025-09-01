@@ -84,34 +84,13 @@ class AdminManager {
       return;
     }
 
-    // Validar nomes dos arquivos
-    const validFiles: File[] = [];
-    const invalidFiles: string[] = [];
+    // Aceitar todos os arquivos de áudio - a limpeza de nomes será feita automaticamente no upload
+    this.selectedFiles = audioFiles;
 
-    audioFiles.forEach(file => {
-      if (this.isValidFilename(file.name)) {
-        validFiles.push(file);
-      } else {
-        invalidFiles.push(file.name);
-      }
-    });
-
-    this.selectedFiles = validFiles;
-
-    if (invalidFiles.length > 0) {
-      alert(`❌ Arquivos com nomes inválidos (contêm acentos):\n${invalidFiles.join('\n')}\n\nRenomeie-os sem acentos antes de fazer upload.`);
-    }
-
-    if (validFiles.length > 0) {
-      this.updateUploadPreview(validFiles);
+    if (audioFiles.length > 0) {
+      this.updateUploadPreview(audioFiles);
       document.getElementById('upload-btn')!.style.display = 'block';
     }
-  }
-
-  private isValidFilename(filename: string): boolean {
-    // Verificar se o nome não contém acentos ou caracteres especiais problemáticos
-    const invalidChars = /[áàâãéèêíìîóòôõúùûçÁÀÂÃÉÈÊÍÌÎÓÒÔÕÚÙÛÇ\s]/;
-    return !invalidChars.test(filename);
   }
 
   private updateUploadPreview(files: File[]): void {
@@ -152,9 +131,11 @@ class AdminManager {
       }
 
       // Regenerar catálogo automaticamente após upload
+      uploadBtn.textContent = 'Atualizando catálogo...';
       const catalogResult = await this.regenerateCatalog();
       
-      // Refresh da lista após upload
+      // Refresh da lista após upload  
+      uploadBtn.textContent = 'Atualizando lista...';
       await this.refreshFileList();
       
       const uploadedCount = this.selectedFiles.length;
@@ -167,12 +148,13 @@ class AdminManager {
       // Scroll para o topo para mostrar sucesso
       window.scrollTo({ top: 0, behavior: 'smooth' });
       
-      // Mensagem mais informativa
+      // Mensagem mais informativa incluindo total atual
       let message = `✅ ${uploadedCount} arquivo(s) enviado(s) com sucesso!`;
+      message += `\n🎵 Total de músicas agora: ${this.audioFiles.length}`;
       if (catalogResult && catalogResult.preservedTracks !== undefined) {
-        message += `\n📋 Músicas existentes: ${catalogResult.preservedTracks} (ordem preservada)`;
-        message += `\n🆕 Novas músicas: ${catalogResult.newTracks} (adicionadas no final da lista)`;
+        message += `\n📋 Existentes: ${catalogResult.preservedTracks} | 🆕 Novas: ${catalogResult.newTracks}`;
       }
+      message += `\n🔄 Lista atualizada automaticamente!`;
       
       alert(message);
 
@@ -193,13 +175,17 @@ class AdminManager {
         try {
           const base64Data = (reader.result as string).split(',')[1]; // Remove data:audio/...;base64,
           
+          // Aplicar limpeza de nome de arquivo antes do upload
+          const cleanFilename = this.cleanFilenameForUpload(file.name);
+          console.log(`🧹 Limpando nome: "${file.name}" → "${cleanFilename}"`);
+          
           const response = await fetch('/api/upload', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              filename: file.name,
+              filename: cleanFilename,
               fileData: base64Data
             })
           });
@@ -249,8 +235,8 @@ class AdminManager {
   public async refreshFileList(): Promise<void> {
     console.log('📁 Carregando lista de arquivos do catálogo atual...');
     try {
-      // Carregar o catalog.json atual
-      const response = await fetch('/data/catalog.json');
+      // Carregar o catalog.json atual com cache-busting para garantir dados atualizados
+      const response = await fetch(`/data/catalog.json?t=${Date.now()}`);
       const catalog = await response.json();
       
       // Converter tracks do catálogo para o formato AudioFile
@@ -263,7 +249,7 @@ class AdminManager {
         displayName: `${track.artist} - ${track.title}`
       }));
       
-      console.log(`✅ Carregadas ${this.audioFiles.length} faixas do catálogo`);
+      console.log(`✅ Carregadas ${this.audioFiles.length} faixas do catálogo (atualização automática)`);
       this.renderFileList();
       
     } catch (error) {
@@ -344,7 +330,8 @@ class AdminManager {
                  data-index="${index}" data-field="title">
           <input type="text" placeholder="Nome de Exibição" value="${file.displayName}" 
                  data-index="${index}" data-field="displayName">
-          <button class="btn btn-danger" data-index="${index}" data-action="remove">🗑️</button>
+          <button class="btn btn-success btn-sm" data-index="${index}" data-action="save" title="Salvar alterações desta música">💾</button>
+          <button class="btn btn-danger btn-sm" data-index="${index}" data-action="remove" title="Remover arquivo">🗑️</button>
         </div>
       `;
       musicList.appendChild(fileItem);
@@ -362,12 +349,22 @@ class AdminManager {
     });
 
     // Adicionar event listeners para botões
-    const buttons = musicList.querySelectorAll('button[data-action="remove"]');
-    buttons.forEach(button => {
+    const removeButtons = musicList.querySelectorAll('button[data-action="remove"]');
+    removeButtons.forEach(button => {
       button.addEventListener('click', (e) => {
         const target = e.target as HTMLButtonElement;
         const index = parseInt(target.dataset.index!);
         this.removeFile(index);
+      });
+    });
+
+    // Adicionar event listeners para botões de save
+    const saveButtons = musicList.querySelectorAll('button[data-action="save"]');
+    saveButtons.forEach(button => {
+      button.addEventListener('click', (e) => {
+        const target = e.target as HTMLButtonElement;
+        const index = parseInt(target.dataset.index!);
+        this.saveTrackMetadata(index);
       });
     });
   }
@@ -380,6 +377,100 @@ class AdminManager {
       else if (field === 'displayName') file.displayName = value;
       
       // Preview removido - admin não precisa ver
+    }
+  }
+
+  public async saveTrackMetadata(index: number): Promise<void> {
+    console.log(`💾 Salvando metadados da faixa ${index}...`);
+    
+    const file = this.audioFiles[index];
+    if (!file) {
+      console.error('❌ Arquivo não encontrado no índice:', index);
+      return;
+    }
+
+    // Coletar dados atuais dos inputs
+    const inputs = document.querySelectorAll(`input[data-index="${index}"]`);
+    inputs.forEach(input => {
+      const field = (input as HTMLInputElement).dataset.field;
+      const value = (input as HTMLInputElement).value;
+      if (field && value !== undefined) {
+        this.updateFileMetadata(index, field, value);
+      }
+    });
+
+    try {
+      // Gerar catálogo atualizado
+      const catalog = this.generateCatalog();
+      const jsonString = JSON.stringify(catalog, null, 2);
+      
+      console.log(`📤 Salvando faixa "${file.title}" por "${file.artist}"`);
+      
+      // Enviar para endpoint
+      const response = await fetch('/api/save-catalog', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonString
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Faixa salva:', result);
+        
+        // FORÇA O PLAYER A RECARREGAR O CATÁLOGO (cache-busting)
+        try {
+          // Envia sinal para todas as abas do player atualizarem
+          const timestamp = Date.now();
+          
+          // Força reload do catálogo no player via broadcast
+          if (typeof BroadcastChannel !== 'undefined') {
+            const channel = new BroadcastChannel('radio-importante-updates');
+            channel.postMessage({
+              type: 'catalog-updated',
+              timestamp: timestamp,
+              updatedTrack: { index, title: file.title, artist: file.artist }
+            });
+            channel.close();
+            console.log('📡 Sinal enviado para atualizar player');
+          }
+          
+          // Backup: forçar reload via localStorage
+          localStorage.setItem('catalog-updated', timestamp.toString());
+          
+        } catch (error) {
+          console.warn('⚠️ Erro ao notificar player:', error);
+        }
+        
+        // Feedback visual temporário
+        const saveButton = document.querySelector(`button[data-index="${index}"][data-action="save"]`) as HTMLButtonElement;
+        if (saveButton) {
+          const originalText = saveButton.innerHTML;
+          saveButton.innerHTML = '✅';
+          saveButton.disabled = true;
+          setTimeout(() => {
+            saveButton.innerHTML = originalText;
+            saveButton.disabled = false;
+          }, 2000);
+        }
+        
+        this.showSuccessMessage(`✅ "${file.title}" salva com sucesso!`);
+        
+        // ATUALIZAR OS DADOS DO ADMIN após salvar com sucesso
+        setTimeout(async () => {
+          console.log('🔄 Recarregando dados do admin para mostrar alterações...');
+          await this.refreshFileList();
+          console.log('✅ Admin atualizado com dados salvos');
+        }, 500); // Aguardar meio segundo para garantir que o arquivo foi escrito
+        
+      } else {
+        throw new Error(`Erro ${response.status}: ${await response.text()}`);
+      }
+      
+    } catch (error) {
+      console.error('❌ Erro ao salvar faixa:', error);
+      this.showStatus('error', `❌ Erro ao salvar "${file.title}": ${error}`);
     }
   }
 
@@ -428,9 +519,11 @@ class AdminManager {
         // Mostrar notificação de sucesso
         this.showSuccessMessage('✅ Metadados salvos com sucesso! O player foi atualizado automaticamente.');
         
-        // Aguardar um momento e recarregar para mostrar os novos dados
+        // Aguardar um momento e só regenerar o catálogo sem recarregar a lista
+        // CORREÇÃO: Não recarregar a lista para preservar as alterações do usuário
         setTimeout(() => {
-          this.refreshFileList();
+          // Só indicar que foi salvo, sem recarregar
+          console.log('✅ Catálogo salvo, preservando alterações na interface');
         }, 1000);
       } else {
         const errorText = await response.text();
@@ -551,6 +644,25 @@ class AdminManager {
     setTimeout(() => {
       status.style.display = 'none';
     }, 5000);
+  }
+
+  // Método para limpar nomes de arquivos no upload
+  private cleanFilenameForUpload(filename: string): string {
+    // Remover acentos e caracteres especiais, mantendo apenas letras, números, pontos, hífens e underscores
+    return filename
+      // Normalizar acentos para forma decomposta e remover caracteres diacríticos
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      // Substituir espaços por underscores
+      .replace(/\s+/g, '_')
+      // Remover caracteres especiais problemáticos (vírgulas, aspas, parênteses, +, etc.)
+      .replace(/[,'"()[\]{}+&%$#@!]/g, '')
+      // Substituir múltiplos hífens/underscores por um único
+      .replace(/[-_]{2,}/g, '_')
+      // Garantir que não comece ou termine com hífen/underscore
+      .replace(/^[-_]+|[-_]+$/g, '')
+      // Converter para lowercase para consistência
+      .toLowerCase();
   }
 }
 

@@ -34,33 +34,24 @@ export class DeviceDetection {
     let platform: DeviceInfo['platform'] = 'Desktop';
     let device: DeviceInfo['device'] = 'Desktop';
 
-    // Detecção mais robusta para iOS (incluindo casos de User Agent spoofing)
-    const hasIOSFeatures = 'standalone' in navigator || // Feature específica iOS
-                          /iPad|iPhone|iPod/.test(userAgent) ||
-                          (window.DeviceMotionEvent !== undefined && /Mobile|Tablet/.test(userAgent));
-    
-    // Verificar características específicas de tela para iPhone vs iPad
+    // Verificar características específicas de tela
     const screenWidth = window.screen.width;
     const screenHeight = window.screen.height;
-    const maxDimension = Math.max(screenWidth, screenHeight);
-    const minDimension = Math.min(screenWidth, screenHeight);
     
-    // Detecção específica iOS com fallbacks
-    if (/iPad/.test(userAgent) || (hasIOSFeatures && maxDimension >= 1024)) {
+    // Detecção específica iOS com fallbacks RIGOROSOS
+    if (/iPad/.test(userAgent)) {
       platform = 'iOS';
       device = 'iPad';
-    } else if (/iPhone|iPod/.test(userAgent) || 
-               (hasIOSFeatures && maxDimension < 1024 && minDimension >= 320)) {
+    } else if (/iPhone|iPod/.test(userAgent)) {
       platform = 'iOS';
       device = 'iPhone';
     } else if (/Android/.test(userAgent)) {
       platform = 'Android';
       device = 'Android';
-    } else if (hasIOSFeatures && isStandalone) {
-      // Fallback para PWA iOS com User Agent mascarado
-      platform = 'iOS';
-      device = maxDimension >= 1024 ? 'iPad' : 'iPhone';
     }
+    
+    // NÃO fazer fallbacks para PWA sem user agent explícito iOS
+    // Isso evita detectar desktop como iPhone PWA
 
     return {
       platform,

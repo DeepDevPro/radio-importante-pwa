@@ -3,128 +3,144 @@
   "tracks": [
     {
       "id": "track001",
-      "title": "Take my Time (feat. Jack Davey)",
-      "artist": "4 Hero",
-      "filename": "4-Hero-take-my-time-(feat.-jack-davey).mp3",
-      "duration": 241,
+      "title": "Damn feat. Kinny",
+      "artist": "TM Juke",
+      "filename": "01 Damn feat Kinny.mp3",
+      "duration": 318,
       "format": "mp3"
     },
     {
       "id": "track002",
-      "title": "Sing",
-      "artist": "Artista",
-      "filename": "Artista-Sing.mp3",
-      "duration": 308,
+      "title": "01 Intro (A Jazz Experiment)",
+      "artist": "Artista Desconhecido",
+      "filename": "01 Intro (A Jazz Experiment).mp3",
+      "duration": 298,
       "format": "mp3"
     },
     {
       "id": "track003",
-      "title": "13.6.35 (Natural Self Remix)",
-      "artist": "Belleruche",
-      "filename": "Belleruche - 13.6.35 (Natural Self Remix).mp3",
-      "duration": 253,
-      "format": "mp3"
-    },
-    {
-      "id": "track004",
-      "title": "Midnight Session",
-      "artist": "Buscemi",
-      "filename": "Buscemi - Midnight Session.mp3",
-      "duration": 311,
-      "format": "mp3"
-    },
-    {
-      "id": "track005",
-      "title": "Comadi",
-      "artist": "Céu",
-      "filename": "Ceu - Comadi.mp3",
-      "duration": 335,
-      "format": "mp3"
-    },
-    {
-      "id": "track006",
-      "title": "Beach Towel (I Cube Cosmix Marathon Remix)",
-      "artist": "Karma",
-      "filename": "Karma - Beach Towel (I Cube Cosmix Marathon Remix).mp3",
+      "title": "03 Comadi 89",
+      "artist": "Artista Desconhecido",
+      "filename": "03 Comadi 89.mp3",
       "duration": 265,
       "format": "mp3"
     },
     {
+      "id": "track004",
+      "title": "2-03 Menino",
+      "artist": "Artista Desconhecido",
+      "filename": "2-03 Menino.mp3",
+      "duration": 336,
+      "format": "mp3"
+    },
+    {
+      "id": "track005",
+      "title": "Take My Time",
+      "artist": "4 Hero feat. Jack Davey",
+      "filename": "4-Hero-take-my-time-(feat.-jack-davey).mp3",
+      "duration": 266,
+      "format": "mp3"
+    },
+    {
+      "id": "track006",
+      "title": "Sing",
+      "artist": "Artista",
+      "filename": "Artista-Sing.mp3",
+      "duration": 302,
+      "format": "mp3"
+    },
+    {
       "id": "track007",
-      "title": "All That (Natural Self Remix)",
-      "artist": "Lizzy Parks",
-      "filename": "Lizzy Parks - All That (Natural Self Remix).mp3",
-      "duration": 283,
+      "title": "13.6.35",
+      "artist": "Belleruche (Natural Self Remix)",
+      "filename": "Belleruche - 13.6.35 (Natural Self Remix).mp3",
+      "duration": 298,
       "format": "mp3"
     },
     {
       "id": "track008",
-      "title": "Bridge Through Time",
-      "artist": "Lonnie Liston Smith",
-      "filename": "Lonnie Liston Smith - Bridge Through Time.mp3",
-      "duration": 324,
+      "title": "Midnight Session",
+      "artist": "Buscemi",
+      "filename": "Buscemi - Midnight Session.mp3",
+      "duration": 290,
       "format": "mp3"
     },
     {
       "id": "track009",
-      "title": "Nightlife",
-      "artist": "Lonnie Liston Smith",
-      "filename": "Lonnie Liston Smith - Nightlife.mp3",
-      "duration": 325,
+      "title": "Beach Towel",
+      "artist": "Karma (I Cube Cosmix Marathon Remix)",
+      "filename": "Karma - Beach Towel (I Cube Cosmix Marathon Remix).mp3",
+      "duration": 320,
       "format": "mp3"
     },
     {
       "id": "track010",
-      "title": "Danda Luanda",
-      "artist": "Luciana Oliveira",
-      "filename": "Luciana Oliveira - Danda Luanda.mp3",
-      "duration": 246,
+      "title": "All That",
+      "artist": "Lizzy Parks (Natural Self Remix)",
+      "filename": "Lizzy Parks - All That (Natural Self Remix).mp3",
+      "duration": 353,
       "format": "mp3"
     },
     {
       "id": "track011",
-      "title": "So Far",
-      "artist": "Lukas Greenberg",
-      "filename": "Lukas Greenberg - So Far.mp3",
-      "duration": 244,
+      "title": "Bridge Through Time",
+      "artist": "Lonnie Liston Smith",
+      "filename": "Lonnie Liston Smith - Bridge Through Time.mp3",
+      "duration": 311,
       "format": "mp3"
     },
     {
       "id": "track012",
-      "title": "Menino",
-      "artist": "Patricia Marx, 4 Hero",
-      "filename": "Patricia Marx, 4 Hero - Menino.mp3",
-      "duration": 345,
+      "title": "Nightlife",
+      "artist": "Lonnie Liston Smith",
+      "filename": "Lonnie Liston Smith - Nightlife.mp3",
+      "duration": 322,
       "format": "mp3"
     },
     {
       "id": "track013",
-      "title": "Sun is Shining",
-      "artist": "Bebel Gilberto",
-      "filename": "bebel-gilberto-sun-is-Shining.mp3",
-      "duration": 328,
+      "title": "Danda Luanda",
+      "artist": "Luciana Oliveira",
+      "filename": "Luciana Oliveira - Danda Luanda.mp3",
+      "duration": 344,
       "format": "mp3"
     },
     {
       "id": "track014",
-      "title": "Welcome to the World of the Plastic Beach",
-      "artist": "Gorillaz",
-      "filename": "gorillaz-welcome_to_the_world_of_the_plastic_beach.mp3",
-      "duration": 275,
+      "title": "So Far",
+      "artist": "Lukas Greenberg",
+      "filename": "Lukas Greenberg - So Far.mp3",
+      "duration": 304,
       "format": "mp3"
     },
     {
       "id": "track015",
       "title": "Para Entrar",
-      "artist": "Bruno Morais",
+      "artist": "Artista Desconhecido",
       "filename": "Para-Entrar.mp3",
-      "duration": 250,
+      "duration": 347,
+      "format": "mp3"
+    },
+    {
+      "id": "track016",
+      "title": "Sun Is Shining",
+      "artist": "Bebel Gilberto",
+      "filename": "bebel-gilberto-sun-is-Shining.mp3",
+      "duration": 274,
+      "format": "mp3"
+    },
+    {
+      "id": "track017",
+      "title": "01_koko_and_lee_roe_w_bembe_tawiah_ovasoul7_nia_andrews",
+      "artist": "Artista Desconhecido",
+      "filename": "01_koko_and_lee_roe_w_bembe_tawiah_ovasoul7_nia_andrews.mp3",
+      "duration": 265,
       "format": "mp3"
     }
   ],
   "metadata": {
-    "totalTracks": 15,
-    "totalDuration": 4333,
+    "totalTracks": 17,
+    "totalDuration": 5213,
     "artwork": "/images/cover.jpg",
     "radioName": "Radio Importante"
   }

@@ -46,6 +46,70 @@ export class StateManager {
       volume: 1,
       error: null,
     };
+
+    // Escutar atualizações do admin via BroadcastChannel
+    this.setupCatalogUpdateListeners();
+  }
+
+  private setupCatalogUpdateListeners(): void {
+    try {
+      // BroadcastChannel para comunicação entre admin e player
+      if (typeof BroadcastChannel !== 'undefined') {
+        const channel = new BroadcastChannel('radio-importante-updates');
+        channel.addEventListener('message', (event) => {
+          if (event.data?.type === 'catalog-updated') {
+            console.log('📡 Recebido sinal de atualização do catálogo do admin');
+            this.reloadCatalog();
+          }
+        });
+      }
+
+      // Backup: polling localStorage para detectar mudanças
+      let lastUpdate = localStorage.getItem('catalog-updated') || '0';
+      setInterval(() => {
+        const currentUpdate = localStorage.getItem('catalog-updated') || '0';
+        if (currentUpdate !== lastUpdate && currentUpdate !== '0') {
+          console.log('🔄 Detectada atualização do catálogo via localStorage');
+          lastUpdate = currentUpdate;
+          this.reloadCatalog();
+        }
+      }, 2000); // Verifica a cada 2 segundos
+
+    } catch (error) {
+      console.warn('⚠️ Erro ao configurar listeners de atualização:', error);
+    }
+  }
+
+  private async reloadCatalog(): Promise<void> {
+    try {
+      console.log('🔄 Recarregando catálogo...');
+      const timestamp = Date.now();
+      const response = await fetch(`/data/catalog.json?t=${timestamp}`, {
+        cache: 'no-cache',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
+      
+      if (response.ok) {
+        const newCatalog = await response.json();
+        this.catalog = newCatalog;
+        
+        // Regenerar safeFilenames
+        this.catalog.tracks.forEach(track => {
+          track.safeFilename = track.filename; // Usar filename direto (já sanitizado no admin)
+        });
+        
+        console.log(`✅ Catálogo recarregado: ${this.catalog.tracks.length} faixas`);
+        
+        // Notificar listeners sobre a atualização
+        this.notifyListeners();
+      }
+    } catch (error) {
+      console.error('❌ Erro ao recarregar catálogo:', error);
+    }
   }
 
   // Função para sanitizar nomes de arquivos (remove acentos e caracteres problemáticos)
@@ -70,11 +134,37 @@ export class StateManager {
       // Converter acentos para ASCII
       .replace(/[áàãâäåéèêëíìîïóòõôöúùûüçñÁÀÃÂÄÅÉÈÊËÍÌÎÏÓÒÕÔÖÚÙÛÜÇÑ]/g, 
         char => accentMap[char] || char)
+      // CORREÇÃO: Remover vírgulas e outros caracteres problemáticos
+      // Substituir vírgulas por hífen para manter legibilidade
+      .replace(/,/g, ' -')
       // Remover outros caracteres problemáticos (manter apenas alfanuméricos, espaços, hífens, pontos e parênteses)
       .replace(/[^a-zA-Z0-9\s\-.()[\]]/g, '')
-      // Remover espaços extras
+      // Remover espaços extras e múltiplos hífens
       .replace(/\s+/g, ' ')
+      .replace(/-+/g, '-')
       .trim();
+  }
+
+  // Nova função para limpeza AGRESSIVA de nomes (para usar na interface admin)
+  public static cleanFilenameForUpload(filename: string): string {
+    const nameWithoutExt = filename.replace(/\.[^/.]+$/, ''); // Remove extensão
+    const extension = filename.slice(nameWithoutExt.length); // Pega extensão
+    
+    const cleaned = nameWithoutExt
+      // Converter acentos
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      // Vírgulas vira hífen
+      .replace(/,/g, '-')
+      // Espaços viram underline (mais seguro para URLs)
+      .replace(/\s+/g, '_')
+      // Remover caracteres especiais exceto hífen e underscore
+      .replace(/[^a-zA-Z0-9\-_]/g, '')
+      // Limpar múltiplos separadores
+      .replace(/[-_]+/g, '_')
+      // Remover separadores do início/fim
+      .replace(/^[-_]+|[-_]+$/g, '');
+    
+    return cleaned + extension;
   }
 
   // Carrega o catálogo de músicas
@@ -93,11 +183,12 @@ export class StateManager {
         throw new Error('Catálogo inválido');
       }
       
-      // Gerar nomes sanitizados para todas as faixas
+      // CORREÇÃO: Não sanitizar novamente arquivos já limpos no upload
+      // Os arquivos do catálogo já foram sanitizados no admin, usar filename direto
       this.catalog.tracks.forEach(track => {
         if (!track.safeFilename) {
-          track.safeFilename = this.sanitizeFilename(track.filename);
-          console.log(`🔧 Sanitizado: "${track.filename}" → "${track.safeFilename}"`);
+          track.safeFilename = track.filename; // Usar filename original do catálogo
+          console.log(`🔧 Usando filename direto: "${track.filename}"`);
         }
       });
       
@@ -148,7 +239,7 @@ export class StateManager {
     const filenameForUrl = track.safeFilename || track.filename;
     
     // Aplicar encoding básico apenas para espaços e caracteres especiais restantes
-    const sanitizedUrl = `/audio/${filenameForUrl.replace(/ /g, '%20').replace(/&/g, '%26').replace(/\(/g, '%28').replace(/\)/g, '%29')}`;
+    const sanitizedUrl = `/audio/${filenameForUrl.replace(/ /g, '%20').replace(/&/g, '%26').replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/,/g, '%2C')}`;
     
     console.log('🔗 Filename original (exibição):', track.filename);
     console.log('🔗 Filename sanitizado (URL):', filenameForUrl);
@@ -168,12 +259,12 @@ export class StateManager {
     
     // 1. Tentar nome sanitizado se disponível
     if (track.safeFilename && track.safeFilename !== track.filename) {
-      const sanitizedUrl = `/audio/${track.safeFilename.replace(/ /g, '%20').replace(/&/g, '%26').replace(/\(/g, '%28').replace(/\)/g, '%29')}`;
+      const sanitizedUrl = `/audio/${track.safeFilename.replace(/ /g, '%20').replace(/&/g, '%26').replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/,/g, '%2C')}`;
       urls.push(sanitizedUrl);
     }
     
     // 2. Tentar nome original com encoding básico
-    const originalUrl = `/audio/${track.filename.replace(/ /g, '%20').replace(/&/g, '%26').replace(/\(/g, '%28').replace(/\)/g, '%29')}`;
+    const originalUrl = `/audio/${track.filename.replace(/ /g, '%20').replace(/&/g, '%26').replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/,/g, '%2C')}`;
     urls.push(originalUrl);
     
     // 3. Tentar nome original sem encoding (últico recurso)

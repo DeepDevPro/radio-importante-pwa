@@ -20,13 +20,24 @@ export default defineConfig({
     {
       name: 'api-routes',
       configureServer(server) {
-        // Middleware para configurar MIME types para arquivos HLS
+        // Middleware para configurar MIME types para arquivos HLS e áudio
         server.middlewares.use((req, res, next) => {
           if (req.url?.endsWith('.m3u8')) {
             res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
             res.setHeader('Access-Control-Allow-Origin', '*');
           } else if (req.url?.endsWith('.ts')) {
             res.setHeader('Content-Type', 'video/mp2t');
+            res.setHeader('Access-Control-Allow-Origin', '*');
+          } else if (req.url?.endsWith('.mp3')) {
+            res.setHeader('Content-Type', 'audio/mpeg');
+            res.setHeader('Access-Control-Allow-Origin', '*');
+            res.setHeader('Accept-Ranges', 'bytes');
+          } else if (req.url?.endsWith('.aac')) {
+            res.setHeader('Content-Type', 'audio/aac');
+            res.setHeader('Access-Control-Allow-Origin', '*');
+            res.setHeader('Accept-Ranges', 'bytes');
+          } else if (req.url?.endsWith('.wav')) {
+            res.setHeader('Content-Type', 'audio/wav');
             res.setHeader('Access-Control-Allow-Origin', '*');
           }
           next();
@@ -42,9 +53,9 @@ export default defineConfig({
             req.on('end', () => {
               try {
                 const catalogData = JSON.parse(body);
-                const catalogPath = path.join(__dirname, 'data', 'catalog.json');
+                const catalogPath = path.join(__dirname, 'public', 'data', 'catalog.json');
                 
-                // Garantir que a pasta data existe
+                // Garantir que a pasta public/data existe
                 const dataDir = path.dirname(catalogPath);
                 if (!fs.existsSync(dataDir)) {
                   fs.mkdirSync(dataDir, { recursive: true });
@@ -137,12 +148,113 @@ export default defineConfig({
           }
         });
 
+        // Middleware para listar arquivos de áudio reais
+        server.middlewares.use('/api/audio-files', (req, res, next) => {
+          if (req.method === 'GET') {
+            try {
+              const audioDir = path.join(__dirname, 'public', 'audio');
+              
+              if (!fs.existsSync(audioDir)) {
+                res.setHeader('Content-Type', 'application/json');
+                res.statusCode = 200;
+                res.end(JSON.stringify({ files: [] }));
+                return;
+              }
+              
+              // Listar apenas arquivos de áudio
+              const files = fs.readdirSync(audioDir)
+                .filter(file => {
+                  const ext = path.extname(file).toLowerCase();
+                  return ['.mp3', '.aac', '.wav', '.m4a', '.ogg'].includes(ext);
+                })
+                .filter(file => !file.startsWith('.')) // Ignorar arquivos ocultos
+                .sort();
+              
+              res.setHeader('Content-Type', 'application/json');
+              res.statusCode = 200;
+              res.end(JSON.stringify({ 
+                files,
+                count: files.length,
+                audioDir: audioDir
+              }));
+              
+            } catch (error) {
+              console.error('❌ Erro ao listar arquivos:', error);
+              res.setHeader('Content-Type', 'application/json');
+              res.statusCode = 500;
+              res.end(JSON.stringify({
+                error: error.message || 'Erro ao listar arquivos',
+                files: []
+              }));
+            }
+          } else {
+            next();
+          }
+        });
+
+        // Middleware para deletar arquivo de áudio
+        server.middlewares.use('/api/delete-audio', (req, res, next) => {
+          if (req.method === 'POST') {
+            let body = '';
+            req.on('data', chunk => {
+              body += chunk.toString();
+            });
+            
+            req.on('end', () => {
+              try {
+                const { filename } = JSON.parse(body);
+                
+                if (!filename) {
+                  throw new Error('Nome do arquivo não fornecido');
+                }
+                
+                // Validar nome do arquivo por segurança
+                if (filename.includes('/') || filename.includes('..') || !filename.endsWith('.mp3')) {
+                  throw new Error('Nome de arquivo inválido');
+                }
+                
+                const audioDir = path.join(__dirname, 'public', 'audio');
+                const filePath = path.join(audioDir, filename);
+                
+                // Verificar se arquivo existe
+                if (!fs.existsSync(filePath)) {
+                  throw new Error('Arquivo não encontrado');
+                }
+                
+                // Deletar arquivo físico
+                fs.unlinkSync(filePath);
+                
+                console.log(`🗑️ Arquivo deletado: ${filename}`);
+                
+                res.setHeader('Content-Type', 'application/json');
+                res.statusCode = 200;
+                res.end(JSON.stringify({
+                  success: true,
+                  message: `Arquivo ${filename} deletado com sucesso`,
+                  filename
+                }));
+                
+              } catch (error) {
+                console.error('❌ Erro ao deletar arquivo:', error);
+                res.setHeader('Content-Type', 'application/json');
+                res.statusCode = 500;
+                res.end(JSON.stringify({
+                  success: false,
+                  error: error.message || 'Erro ao deletar arquivo'
+                }));
+              }
+            });
+          } else {
+            next();
+          }
+        });
+
         // Middleware para regenerar catálogo
         server.middlewares.use('/api/regenerate-catalog', (req, res, next) => {
           if (req.method === 'POST') {
             try {
               const audioDir = path.join(__dirname, 'public', 'audio');
-              const catalogPath = path.join(__dirname, 'data', 'catalog.json');
+              const catalogPath = path.join(__dirname, 'public', 'data', 'catalog.json');
               
               if (!fs.existsSync(audioDir)) {
                 throw new Error('Pasta de áudio não encontrada');
@@ -158,9 +270,10 @@ export default defineConfig({
                 }
               }
               
-              // Ler arquivos da pasta audio
+              // Ler arquivos da pasta audio, excluindo arquivos de stream contínuo
               const files = fs.readdirSync(audioDir)
-                .filter(file => file.match(/\.(mp3|wav|ogg|aac|m4a)$/i));
+                .filter(file => file.match(/\.(mp3|wav|ogg|aac|m4a)$/i))
+                .filter(file => !file.startsWith('radio-importante-continuous')); // Excluir arquivos de stream
               
               // Separar arquivos existentes e novos
               const existingFiles: Array<{filename: string, existingTrack: any}> = [];

@@ -167,6 +167,16 @@ class RadioImportanteApp {
   private async initializeComponents(container: HTMLElement): Promise<void> {
     // Inicializar detecção de dispositivo
     this.deviceDetection = DeviceDetection.getInstance();
+    
+    // DEBUG: Log completo da detecção
+    const deviceInfo = this.deviceDetection.getDeviceInfo();
+    console.log('🔍 DEVICE DETECTION DEBUG:', {
+      userAgent: navigator.userAgent,
+      detected: deviceInfo,
+      isIPhonePWA: this.deviceDetection.isIPhonePWA(),
+      isIPhone: this.deviceDetection.isIPhone(),
+      isPWA: this.deviceDetection.isPWA()
+    });
     this.iphoneAudioFix = new IPhoneAudioFix();
     
     console.log('📱 Device Detection:', this.deviceDetection.getDebugInfo());

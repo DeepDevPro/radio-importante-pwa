@@ -35,16 +35,13 @@ export class Controls {
   private render(): void {
     this.container.innerHTML = `
       <div class="player-container">
-        <!-- Logo/Artwork -->
+        <!-- Logo da Radio Importante -->
         <div class="artwork">
-          <div class="artwork-placeholder">
-            🎵
-          </div>
+          <img src="/icons/logo-black.svg" alt="Radio Importante" class="radio-logo-main" />
         </div>
 
-        <!-- Header with Title and Utility Buttons -->
+        <!-- Header with Utility Buttons -->
         <div class="header">
-          <h1 class="app-title">Radio Importante</h1>
           <div class="utility-buttons">
             <button class="utility-btn debug-btn" id="debugButton" title="Debug Console">🐛</button>
             <button class="utility-btn admin-btn" id="adminButton" title="Administração">⚙️</button>
@@ -53,19 +50,27 @@ export class Controls {
 
         <!-- Track Information -->
         <div class="track-info">
-          <div class="track-title" id="trackTitle">Rádio Importante</div>
-          <div class="track-artist" id="trackArtist">Selecione uma música</div>
+          <div class="track-metadata" id="trackMetadata">Selecione uma música</div>
         </div>
 
         <!-- Main Controls -->
         <div class="controls">
-          <button class="control-btn play-btn" id="playButton" title="Reproduzir/Pausar">
-            <span class="play-icon">▶️</span>
-            <span class="pause-icon" style="display: none;">⏸️</span>
+          <button class="btn btn-play" id="playButton" title="Reproduzir/Pausar">
+            <img src="/icons/play.svg" class="play-icon" alt="Play" />
+            <img src="/icons/pause.svg" class="pause-icon" style="display: none;" alt="Pause" />
             <span class="loading-spinner" style="display: none;">⏳</span>
           </button>
-          <button class="control-btn next-btn" id="nextButton" title="Próxima">⏭️</button>
-          <button class="control-btn info-btn" id="infoButton" title="Informações">ℹ️</button>
+          <button class="btn btn-next" id="nextButton" title="Próxima">
+            <img src="/icons/next.svg" alt="Next" />
+          </button>
+          <button class="btn btn-info" id="infoButton" title="Informações">
+            <img src="/icons/info.svg" alt="Info" />
+          </button>
+        </div>
+
+        <!-- Container da imagem customizada -->
+        <div class="custom-image-container">
+          <img src="/img/Leo_R_161_small.webp" alt="Leo R 161" class="custom-image" />
         </div>
 
         <!-- Info Modal -->
@@ -145,11 +150,18 @@ export class Controls {
   }
 
   public updateTrackInfo(title: string, artist: string = ''): void {
-    const trackTitle = this.container.querySelector('#trackTitle') as HTMLElement;
-    const trackArtist = this.container.querySelector('#trackArtist') as HTMLElement;
+    const trackMetadata = this.container.querySelector('#trackMetadata') as HTMLElement;
     
-    if (trackTitle) trackTitle.textContent = title;
-    if (trackArtist) trackArtist.textContent = artist;
+    if (trackMetadata) {
+      if (artist && title) {
+        // Formato: Artista "Título da Música"
+        trackMetadata.textContent = `${artist} "${title}"`;
+      } else if (title) {
+        trackMetadata.textContent = `"${title}"`;
+      } else {
+        trackMetadata.textContent = 'Selecione uma música';
+      }
+    }
     
     this.state.currentTrack = title;
   }

@@ -58,13 +58,35 @@
         text-align: center;
       }
       
+      /* Logo da Radio Importante */
+      .radio-logo {
+        width: 450px; /* 346px + 30% = 449.8px arredondado */
+        height: auto;
+        margin: 20px auto 30px auto;
+        display: block;
+        filter: drop-shadow(0 4px 8px rgba(39, 31, 48, 0.1));
+        transition: transform 0.3s ease;
+      }
+      
+      .radio-logo:hover {
+        transform: scale(1.02);
+      }
+      
+      /* Responsividade da logo */
+      @media (max-width: 480px) {
+        .radio-logo {
+          width: 374px; /* 288px + 30% = 374.4px arredondado */
+          margin: 15px auto 25px auto;
+        }
+      }
+      
       /* Player Container */
       .player-container {
-        background: rgba(255, 255, 255, 0.1);
+        background: #EFEAE3;
         border-radius: 20px;
         padding: 30px;
         backdrop-filter: blur(10px);
-        box-shadow: 0 8px 32px rgba(39, 31, 48, 0.1);
+        box-shadow: none;
       }
       
       /* Artwork */
@@ -76,6 +98,27 @@
         font-size: 80px;
         margin-bottom: 15px;
         opacity: 0.8;
+      }
+      
+      /* Logo no player principal */
+      .radio-logo-main {
+        width: 337px; /* 259px + 30% = 336.7px arredondado */
+        height: auto;
+        opacity: 0.9;
+        filter: drop-shadow(0 2px 4px rgba(39, 31, 48, 0.15));
+        transition: all 0.3s ease;
+      }
+      
+      .radio-logo-main:hover {
+        opacity: 1;
+        transform: scale(1.05);
+      }
+      
+      /* Responsividade da logo no player */
+      @media (max-width: 480px) {
+        .radio-logo-main {
+          width: 263px; /* 202px + 30% = 262.6px arredondado */
+        }
       }
       
       .app-title {
@@ -160,23 +203,34 @@
       /* Track Info */
       .track-info {
         margin-bottom: 30px;
-        min-height: 60px;
+        min-height: 30px;
         display: flex;
         flex-direction: column;
         justify-content: center;
       }
       
-      .track-title {
-        font-size: 18px;
+      .track-metadata {
+        font-size: 10px; /* 12px - 20% = 9.6px arredondado */
         font-weight: 600;
-        margin-bottom: 5px;
-        line-height: 1.3;
+        opacity: 0.6;
+        line-height: 1.2;
+        text-align: center;
+      }
+      
+      .track-title {
+        font-size: 10px; /* 12px - 20% = 9.6px arredondado */
+        font-weight: 600;
+        opacity: 0.6;
+        line-height: 1.2;
+        margin-top: 0;
       }
       
       .track-artist {
-        font-size: 14px;
-        opacity: 0.7;
-        line-height: 1.3;
+        font-size: 10px; /* 12px - 20% = 9.6px arredondado */
+        font-weight: 600;
+        opacity: 0.6;
+        margin-bottom: 0;
+        line-height: 1.2;
       }
       
       /* Controls */
@@ -189,9 +243,9 @@
       }
       
       .btn {
-        background: #271F30;
-        color: #EFEAE3;
-        border: none;
+        background: transparent;
+        color: #271F30;
+        border: 2px solid rgba(39, 31, 48, 0.0);
         border-radius: 50%;
         width: 60px;
         height: 60px;
@@ -201,11 +255,13 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        backdrop-filter: blur(5px);
       }
       
       .btn:hover:not(:disabled) {
-        background: #3a2b42;
-        transform: scale(1.05);
+        background: rgba(39, 31, 48, 0.0);
+        border-color: rgba(39, 31, 48, 0.0);
+        transform: scale(1.15);
       }
       
       .btn:active:not(:disabled) {
@@ -219,15 +275,41 @@
       }
       
       .btn-play {
-        width: 80px;
-        height: 80px;
-        font-size: 32px;
+        width: 60px;
+        height: 60px;
+        font-size: 24px;
       }
       
       .btn-next, .btn-info {
-        width: 50px;
-        height: 50px;
-        font-size: 20px;
+        width: 60px;
+        height: 60px;
+        font-size: 24px;
+      }
+      
+      /* Ícones SVG nos botões */
+      .btn img {
+        width: 24px;
+        height: 24px;
+        filter: brightness(0) saturate(100%) invert(16%) sepia(12%) saturate(1084%) hue-rotate(212deg) brightness(97%) contrast(93%);
+        transition: all 0.2s ease;
+      }
+      
+      .btn-play img {
+        width: 28px;
+        height: 28px;
+      }
+      
+      .btn:hover:not(:disabled) img {
+        filter: brightness(0) saturate(100%) invert(0%) sepia(100%) saturate(7500%) hue-rotate(0deg) brightness(0%) contrast(100%);
+        transform: scale(1.1);
+      }
+      
+      /* Responsividade dos ícones */
+      @media (max-width: 480px) {
+        .btn-play img, .btn img {
+          width: 22px;
+          height: 22px;
+        }
       }
       
       /* Progress Bar */
@@ -361,30 +443,71 @@
         100% { transform: rotate(360deg); }
       }
       
+      /* Container da imagem customizada */
+      .custom-image-container {
+        width: 380px;
+        height: 418px;
+        margin: 20px auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 0;
+        box-shadow: 0 4px 16px rgba(39, 31, 48, 0.1);
+        overflow: hidden;
+        backdrop-filter: blur(10px);
+        position: relative;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      
+      .custom-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.3s ease;
+      }
+      
+      .custom-image:hover {
+        transform: scale(1.02);
+      }
+
       /* Responsive */
       @media (max-width: 480px) {
         .player-container {
           padding: 20px;
         }
         
-        .btn-play {
-          width: 70px;
-          height: 70px;
-          font-size: 28px;
+        .btn-play, .btn-next, .btn-info {
+          width: 55px;
+          height: 55px;
+          font-size: 22px;
         }
         
         .app-title {
           font-size: 20px;
         }
         
-        .track-title {
-          font-size: 16px;
+        .track-metadata, .track-artist, .track-title {
+          font-size: 9px; /* 11px - 20% = 8.8px arredondado */
+        }
+      }
+      
+      /* Responsividade do container da imagem */
+      @media (max-width: 400px) {
+        .custom-image-container {
+          width: 320px;
+          height: 352px;
         }
       }
     </style>
   </head>
   <body>
     <div id="app">
+      <!-- Logo da Radio Importante -->
+      <img src="/icons/logo-black.svg" alt="Radio Importante" class="radio-logo" />
+      
       <div class="loading">
         <h1>Radio Importante</h1>
         <div class="spinner"></div>
