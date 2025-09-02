@@ -83,7 +83,15 @@
   </div>
 
   <div class="debug-section">
-    <h2>📱 Voltar ao App</h2>
+    <h2>� Teste de APIs e Upload</h2>
+    <button class="debug-button" onclick="testAPIs()">Testar APIs</button>
+    <button class="debug-button" onclick="testUpload()">Testar Upload</button>
+    <button class="debug-button" onclick="checkEnvironment()">Verificar Ambiente</button>
+    <div id="api-output" class="debug-output"></div>
+  </div>
+
+  <div class="debug-section">
+    <h2>�📱 Voltar ao App</h2>
     <a href="/" class="debug-button" style="text-decoration: none; display: inline-block;">← Voltar ao Radio Importante</a>
   </div>
 
@@ -373,6 +381,110 @@
         } catch (error) {
           log(output, `❌ ERRO: ${url} - ${error}`, 'error');
         }
+      });
+    }
+
+    function checkEnvironment() {
+      const output = 'api-output';
+      document.getElementById(output).innerHTML = '';
+      
+      log(output, '=== VERIFICAÇÃO DE AMBIENTE ===');
+      log(output, `Host: ${window.location.hostname}`);
+      log(output, `Port: ${window.location.port}`);
+      log(output, `Protocol: ${window.location.protocol}`);
+      log(output, `URL completa: ${window.location.href}`);
+      
+      const isProduction = !window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1');
+      log(output, `Ambiente: ${isProduction ? 'PRODUÇÃO (S3)' : 'DESENVOLVIMENTO (Vite)'}`, isProduction ? 'warn' : 'info');
+      
+      if (isProduction) {
+        log(output, '⚠️ Em produção: APIs não disponíveis', 'warn');
+        log(output, '💡 Upload requer configuração de backend separado', 'info');
+      } else {
+        log(output, '✅ Em desenvolvimento: APIs disponíveis via Vite', 'info');
+      }
+    }
+
+    function testAPIs() {
+      const output = 'api-output';
+      document.getElementById(output).innerHTML = '';
+      
+      log(output, '=== TESTE DE APIs ===');
+      
+      const isProduction = !window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1');
+      
+      if (isProduction) {
+        log(output, '⚠️ Modo produção: APIs não disponíveis no S3', 'warn');
+        log(output, '📋 Endpoints que precisariam de backend:', 'info');
+        log(output, '  - POST /api/upload', 'info');
+        log(output, '  - POST /api/save-catalog', 'info');
+        log(output, '  - POST /api/regenerate-catalog', 'info');
+        return;
+      }
+      
+      // Teste das APIs em desenvolvimento
+      const apis = [
+        { url: '/api/save-catalog', method: 'POST', data: { test: true } },
+      ];
+      
+      apis.forEach(async (api) => {
+        try {
+          log(output, `🔄 Testando: ${api.method} ${api.url}`);
+          const response = await fetch(api.url, {
+            method: api.method,
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(api.data)
+          });
+          
+          const result = await response.text();
+          log(output, `📡 ${api.url} - Status: ${response.status}`, response.ok ? 'info' : 'error');
+          log(output, `📄 Response: ${result.substring(0, 200)}...`);
+          
+        } catch (error) {
+          log(output, `❌ ERRO: ${api.url} - ${error}`, 'error');
+        }
+      });
+    }
+
+    function testUpload() {
+      const output = 'api-output';
+      log(output, '');
+      log(output, '=== TESTE DE UPLOAD ===');
+      
+      const isProduction = !window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1');
+      
+      if (isProduction) {
+        log(output, '⚠️ Upload não disponível em produção (S3 estático)', 'warn');
+        log(output, '💡 Soluções possíveis:', 'info');
+        log(output, '  1. AWS Lambda + API Gateway', 'info');
+        log(output, '  2. Backend separado (Node.js/Express)', 'info');
+        log(output, '  3. Cliente desktop para upload', 'info');
+        return;
+      }
+      
+      // Criar um arquivo de teste pequeno
+      const testData = {
+        filename: 'test-upload.mp3',
+        fileData: btoa('fake-audio-data-for-testing') // base64 fake
+      };
+      
+      log(output, '🔄 Enviando arquivo de teste...');
+      
+      fetch('/api/upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(testData)
+      })
+      .then(response => response.json())
+      .then(result => {
+        log(output, `✅ Upload teste: ${JSON.stringify(result)}`, 'info');
+      })
+      .catch(error => {
+        log(output, `❌ Erro no upload teste: ${error}`, 'error');
       });
     }
 
