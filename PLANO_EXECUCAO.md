@@ -2,8 +2,8 @@
 
 > **Projeto**: PWA Music Player "Radio Importante"  
 > **Data de criação**: 29/08/2025  
-> **Última atualização**: 01/09/2025  
-> **Status**: 🎉 **PROJETO COMPLETAMENTE FINALIZADO E FUNCIONAL**
+> **Última atualização**: 02/09/2025  
+> **Status**: 🚀 **EXPANDINDO COM BACKEND AWS ELASTIC BEANSTALK**
 
 ---
 
@@ -45,8 +45,426 @@ Desenvolvimento de um PWA completo para reprodução de playlist fixa, com **sol
 | **3** | **iPhone PWA Background Audio** | **XL** | ✅ **RESOLVIDO** | **SOLUÇÃO DEFINITIVA IMPLEMENTADA** |
 | 4 | Sistema Escalável | L | ✅ **Concluído** | Pronto para catálogos grandes |
 | 5 | Documentação e Polimento | M | ✅ **Concluído** | Código production-ready |
+| **6** | **Backend AWS Elastic Beanstalk** | **M** | 🛠️ **PLANEJADO** | **Upload produção via backend** |
 
 **Legenda de Esforço:** S=Pequeno (1-2h) | M=Médio (3-5h) | L=Grande (6-8h) | XL=Complexo (10+h)
+
+---
+
+## 🚀 **ETAPA 6: BACKEND AWS ELASTIC BEANSTALK**
+**Esforço:** M | **Status:** 🛠️ **PLANEJADO** | **Prioridade:** Alta
+
+### 🎯 **Objetivo**
+Implementar backend completo usando AWS Elastic Beanstalk para resolver definitivamente o problema de upload de músicas em produção, eliminando a necessidade do processo manual via GitHub.
+
+### 📋 **Plano Detalhado de Implementação**
+
+#### **FASE 1: Preparação e Setup (1-2 horas)**
+
+##### **1.1 Instalação de Ferramentas**
+```bash
+# Instalar EB CLI
+npm install -g eb
+pip install awsebcli --upgrade --user
+
+# Verificar instalação
+eb --version
+aws --version
+```
+
+##### **1.2 Estrutura do Backend**
+```
+backend/
+├── app.js                 # Express server principal
+├── package.json           # Dependencies
+├── .ebextensions/         # Configurações EB
+│   └── 01_app.config     # Configurações específicas
+├── routes/
+│   ├── upload.js         # Endpoint de upload
+│   ├── catalog.js        # Gestão do catálogo
+│   └── health.js         # Health checks
+├── middleware/
+│   ├── auth.js           # Autenticação simples
+│   ├── cors.js           # CORS configuration
+│   └── upload.js         # Multer configuration
+├── services/
+│   ├── s3Service.js      # Integração S3
+│   └── catalogService.js # Gestão de catálogo
+└── config/
+    └── aws.js            # Configurações AWS
+```
+
+##### **1.3 Dependências Principais**
+```json
+{
+  "dependencies": {
+    "express": "^4.18.2",
+    "multer": "^1.4.5-lts.1",
+    "multer-s3": "^3.0.1",
+    "aws-sdk": "^2.1467.0",
+    "cors": "^2.8.5",
+    "helmet": "^7.0.0",
+    "express-rate-limit": "^6.10.0",
+    "joi": "^17.9.2",
+    "morgan": "^1.10.0"
+  }
+}
+```
+
+#### **FASE 2: Desenvolvimento do Backend (2-3 horas)**
+
+##### **2.1 Express Server Base**
+```javascript
+// app.js - Estrutura principal
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+
+const app = express();
+
+// Middlewares de segurança
+app.use(helmet());
+app.use(cors({
+  origin: ['https://radio.importantestudio.com', 'http://localhost:5173'],
+  credentials: true
+}));
+
+// Rate limiting
+const uploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 10, // máximo 10 uploads por IP
+  message: 'Muitos uploads. Tente novamente em 15 minutos.'
+});
+
+// Routes
+app.use('/api/upload', uploadLimiter, require('./routes/upload'));
+app.use('/api/catalog', require('./routes/catalog'));
+app.use('/health', require('./routes/health'));
+
+const port = process.env.PORT || 8080;
+app.listen(port, () => {
+  console.log(`🚀 Backend rodando na porta ${port}`);
+});
+```
+
+##### **2.2 Service de Upload S3**
+```javascript
+// services/s3Service.js
+const AWS = require('aws-sdk');
+const multer = require('multer');
+const multerS3 = require('multer-s3');
+
+const s3 = new AWS.S3({
+  region: process.env.AWS_REGION || 'us-west-2'
+});
+
+const upload = multer({
+  storage: multerS3({
+    s3: s3,
+    bucket: process.env.S3_BUCKET || 'radio-importantestudio-com',
+    key: function (req, file, cb) {
+      // Sanitizar nome do arquivo
+      const sanitized = file.originalname
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+        .replace(/[^a-z0-9.-]/g, '_'); // Substitui caracteres especiais
+      
+      cb(null, `audio/${sanitized}`);
+    },
+    contentType: multerS3.AUTO_CONTENT_TYPE,
+    metadata: function (req, file, cb) {
+      cb(null, {
+        originalName: file.originalname,
+        uploadedAt: new Date().toISOString()
+      });
+    }
+  }),
+  fileFilter: (req, file, cb) => {
+    // Apenas arquivos de áudio
+    if (file.mimetype.startsWith('audio/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Apenas arquivos de áudio são permitidos'), false);
+    }
+  },
+  limits: {
+    fileSize: 50 * 1024 * 1024 // 50MB max
+  }
+});
+
+module.exports = { upload, s3 };
+```
+
+##### **2.3 Endpoint de Upload**
+```javascript
+// routes/upload.js
+const express = require('express');
+const { upload } = require('../services/s3Service');
+const catalogService = require('../services/catalogService');
+
+const router = express.Router();
+
+router.post('/', upload.array('audioFiles', 10), async (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Nenhum arquivo enviado'
+      });
+    }
+
+    // Processar cada arquivo
+    const processedFiles = req.files.map(file => ({
+      filename: file.key.replace('audio/', ''),
+      originalName: file.originalname,
+      size: file.size,
+      url: file.location,
+      s3Key: file.key
+    }));
+
+    // Atualizar catálogo
+    await catalogService.addTracks(processedFiles);
+
+    res.json({
+      success: true,
+      message: `${processedFiles.length} arquivo(s) enviado(s) com sucesso`,
+      files: processedFiles
+    });
+
+  } catch (error) {
+    console.error('Erro no upload:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Erro interno do servidor'
+    });
+  }
+});
+
+module.exports = router;
+```
+
+##### **2.4 Service de Catálogo**
+```javascript
+// services/catalogService.js
+const { s3 } = require('./s3Service');
+
+class CatalogService {
+  constructor() {
+    this.bucketName = process.env.S3_BUCKET || 'radio-importantestudio-com';
+    this.catalogKey = 'data/catalog.json';
+  }
+
+  async getCatalog() {
+    try {
+      const result = await s3.getObject({
+        Bucket: this.bucketName,
+        Key: this.catalogKey
+      }).promise();
+      
+      return JSON.parse(result.Body.toString());
+    } catch (error) {
+      if (error.code === 'NoSuchKey') {
+        return this.createEmptyCatalog();
+      }
+      throw error;
+    }
+  }
+
+  async addTracks(files) {
+    const catalog = await this.getCatalog();
+    
+    const newTracks = files.map((file, index) => {
+      const title = this.extractTitle(file.originalName);
+      const artist = this.extractArtist(file.originalName);
+      
+      return {
+        id: catalog.tracks.length + index + 1,
+        title,
+        artist,
+        filename: file.filename,
+        url: `/audio/${file.filename}`,
+        fileSize: file.size,
+        duration: 180, // Placeholder
+        lastModified: new Date().toISOString(),
+        displayName: `${artist} - ${title}`
+      };
+    });
+
+    catalog.tracks.push(...newTracks);
+    catalog.metadata.totalTracks = catalog.tracks.length;
+    catalog.metadata.lastUpdated = new Date().toISOString();
+
+    await this.saveCatalog(catalog);
+    return catalog;
+  }
+
+  async saveCatalog(catalog) {
+    await s3.putObject({
+      Bucket: this.bucketName,
+      Key: this.catalogKey,
+      Body: JSON.stringify(catalog, null, 2),
+      ContentType: 'application/json'
+    }).promise();
+  }
+
+  extractTitle(filename) {
+    const name = filename.replace(/\.(mp3|wav|aac)$/i, '');
+    if (name.includes(' - ')) {
+      return name.split(' - ').slice(1).join(' - ').trim();
+    }
+    return name;
+  }
+
+  extractArtist(filename) {
+    const name = filename.replace(/\.(mp3|wav|aac)$/i, '');
+    if (name.includes(' - ')) {
+      return name.split(' - ')[0].trim();
+    }
+    return 'Artista Desconhecido';
+  }
+
+  createEmptyCatalog() {
+    return {
+      version: "1.1.2",
+      tracks: [],
+      metadata: {
+        totalTracks: 0,
+        totalDuration: 0,
+        artwork: "/img/radio-importante-logo.png",
+        radioName: "Rádio Importante",
+        description: "Uma seleção de música eletrônica, soul e experimental",
+        genre: "Electronic, Soul, Experimental",
+        language: "pt-BR",
+        lastUpdated: new Date().toISOString()
+      }
+    };
+  }
+}
+
+module.exports = new CatalogService();
+```
+
+#### **FASE 3: Configuração Elastic Beanstalk (1 hora)**
+
+##### **3.1 Configuração EB**
+```yaml
+# .ebextensions/01_app.config
+option_settings:
+  aws:elasticbeanstalk:application:environment:
+    NODE_ENV: production
+    AWS_REGION: us-west-2
+    S3_BUCKET: radio-importantestudio-com
+  aws:elasticbeanstalk:container:nodejs:
+    NodeCommand: "npm start"
+    NodeVersion: 18.17.0
+  aws:autoscaling:launchconfig:
+    InstanceType: t3.micro
+    IamInstanceProfile: aws-elasticbeanstalk-ec2-role
+  aws:elasticbeanstalk:environment:
+    ServiceRole: aws-elasticbeanstalk-service-role
+```
+
+##### **3.2 Setup e Deploy**
+```bash
+# 1. Inicializar EB na pasta backend/
+cd backend/
+eb init radio-backend --region us-west-2
+
+# 2. Criar ambiente
+eb create radio-backend-prod --instance-type t3.micro
+
+# 3. Deploy inicial
+eb deploy
+
+# 4. Configurar variáveis de ambiente
+eb setenv S3_BUCKET=radio-importantestudio-com AWS_REGION=us-west-2
+
+# 5. Obter URL do backend
+eb status
+```
+
+#### **FASE 4: Integração Frontend (30 minutos)**
+
+##### **4.1 Atualizar Admin para usar Backend**
+```typescript
+// src/admin-simple.ts - Modificar detecção de ambiente
+private async uploadToBackend(files: File[]): Promise<void> {
+  const backendUrl = 'https://radio-backend-prod.us-west-2.elasticbeanstalk.com';
+  
+  const formData = new FormData();
+  files.forEach(file => {
+    formData.append('audioFiles', file);
+  });
+
+  const response = await fetch(`${backendUrl}/api/upload`, {
+    method: 'POST',
+    body: formData
+  });
+
+  if (!response.ok) {
+    throw new Error('Erro no upload');
+  }
+
+  const result = await response.json();
+  console.log('Upload concluído:', result);
+}
+```
+
+##### **4.2 Configurar CORS no Frontend**
+```typescript
+// Adicionar configuração para aceitar o backend
+const isProduction = !window.location.hostname.includes('localhost');
+const apiUrl = isProduction 
+  ? 'https://radio-backend-prod.us-west-2.elasticbeanstalk.com/api'
+  : '/api';
+```
+
+#### **FASE 5: Testes e Validação (30 minutos)**
+
+##### **5.1 Testes de Upload**
+- [ ] Upload de arquivo MP3 único
+- [ ] Upload múltiplo (2-5 arquivos)
+- [ ] Validação de tipos de arquivo
+- [ ] Teste de limite de tamanho
+- [ ] Verificação de catálogo atualizado
+
+##### **5.2 Testes de Integração**
+- [ ] Admin detecta backend automaticamente
+- [ ] Upload via drag & drop funcional
+- [ ] Catálogo atualiza em tempo real
+- [ ] Player carrega novas músicas
+
+### 💰 **Custos Estimados**
+- **Elastic Beanstalk**: Gratuito (apenas EC2)
+- **t3.micro EC2**: ~$8.50/mês
+- **S3 requests**: ~$0.50/mês
+- **Data transfer**: ~$1.00/mês
+- **Total**: ~$10/mês
+
+### 🔒 **Segurança Implementada**
+- ✅ Rate limiting (10 uploads/15min)
+- ✅ File type validation
+- ✅ File size limits (50MB)
+- ✅ CORS configurado
+- ✅ Helmet security headers
+- ✅ Input sanitization
+
+### 📊 **Monitoramento**
+- ✅ Health check endpoint
+- ✅ Logs centralizados (CloudWatch)
+- ✅ Métricas de performance
+- ✅ Error tracking
+
+### 🚀 **Próximos Passos**
+1. **Executar Fase 1**: Setup de ferramentas e estrutura
+2. **Executar Fase 2**: Desenvolvimento do backend
+3. **Executar Fase 3**: Deploy no Elastic Beanstalk
+4. **Executar Fase 4**: Integração com frontend
+5. **Executar Fase 5**: Testes e validação
+
+> **🎯 Resultado Final**: Upload de músicas 100% funcional em produção com interface drag & drop, sem necessidade de processo manual via GitHub.
 
 ---
 
