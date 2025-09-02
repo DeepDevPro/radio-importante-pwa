@@ -1,0 +1,210 @@
+# GitHub Actions - Deploy Completo (Frontend + Backend)
+name: 🚀 Deploy Complete Stack
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # Permite trigger manual
+    inputs:
+      deploy_backend:
+        description: 'Deploy backend também?'
+        required: false
+        default: 'true'
+        type: boolean
+      deploy_frontend:
+        description: 'Deploy frontend também?'
+        required: false
+        default: 'true'
+        type: boolean
+
+jobs:
+  changes:
+    name: 🔍 Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.changes.outputs.backend }}
+      frontend: ${{ steps.changes.outputs.frontend }}
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dorny/paths-filter@v2
+      id: changes
+      with:
+        filters: |
+          backend:
+            - 'backend/**'
+          frontend:
+            - 'src/**'
+            - 'public/**'
+            - 'index.html'
+            - 'package.json'
+            - 'vite.config.ts'
+
+  deploy-backend:
+    name: 🏗️ Deploy Backend
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.backend == 'true' || github.event.inputs.deploy_backend == 'true'
+    defaults:
+      run:
+        working-directory: ./backend
+    outputs:
+      backend_url: ${{ steps.get-url.outputs.url }}
+        
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+    
+    - name: 🟢 Setup Node.js 18
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: './backend/package-lock.json'
+        
+    - name: 📦 Install dependencies
+      run: npm ci
+      
+    - name: 🔧 Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+        
+    - name: 🛠️ Install EB CLI
+      run: pip install awsebcli
+        
+    - name: 🚀 Deploy to Elastic Beanstalk
+      run: |
+        if [ ! -d ".elasticbeanstalk" ]; then
+          eb init radio-importante-backend --region us-east-1 --platform "Node.js 18 running on 64bit Amazon Linux 2023"
+        fi
+        
+        if eb status radio-backend-prod 2>/dev/null; then
+          eb deploy radio-backend-prod
+        else
+          eb create radio-backend-prod --instance-type t3.micro --envvars NODE_ENV=production,AWS_REGION=us-east-1,S3_BUCKET_NAME=radio-importante-storage
+        fi
+        
+    - name: 🔍 Get backend URL
+      id: get-url
+      run: |
+        URL=$(eb status radio-backend-prod | grep "CNAME" | awk '{print $2}')
+        echo "url=https://$URL" >> $GITHUB_OUTPUT
+        echo "🌐 Backend URL: https://$URL"
+
+  deploy-frontend:
+    name: 🎨 Deploy Frontend
+    runs-on: ubuntu-latest
+    needs: [changes, deploy-backend]
+    if: always() && (needs.changes.outputs.frontend == 'true' || github.event.inputs.deploy_frontend == 'true')
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🟢 Setup Node.js 18
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: 📦 Install dependencies
+      run: npm ci
+      
+    - name: 🔧 Configure backend URL (if deployed)
+      run: |
+        if [ -n "${{ needs.deploy-backend.outputs.backend_url }}" ]; then
+          echo "Configuring frontend to use backend: ${{ needs.deploy-backend.outputs.backend_url }}"
+          # Aqui podemos adicionar lógica para atualizar config do frontend
+        fi
+      
+    - name: 🏗️ Build frontend
+      run: npm run build
+      
+    - name: 🔧 Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+        
+    - name: 🌐 Deploy to S3
+      run: |
+        aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_NAME }} --delete
+        
+    - name: 🔄 Invalidate CloudFront (if exists)
+      run: |
+        if [ -n "${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}" ]; then
+          aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
+        fi
+      continue-on-error: true
+
+  test-integration:
+    name: 🧪 Integration Tests
+    runs-on: ubuntu-latest
+    needs: [deploy-backend, deploy-frontend]
+    if: always() && needs.deploy-backend.result == 'success'
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🧪 Test backend health
+      run: |
+        BACKEND_URL="${{ needs.deploy-backend.outputs.backend_url }}"
+        echo "Testing backend at: $BACKEND_URL"
+        
+        # Health check
+        curl -f "$BACKEND_URL/health"
+        
+        # API endpoints
+        curl -f "$BACKEND_URL/api/upload/status"
+        curl -f "$BACKEND_URL/api/catalog"
+        
+        echo "✅ All backend tests passed!"
+        
+    - name: 🌐 Test frontend
+      run: |
+        FRONTEND_URL="https://${{ secrets.S3_BUCKET_NAME }}.s3-website-us-east-1.amazonaws.com"
+        echo "Testing frontend at: $FRONTEND_URL"
+        
+        if curl -f "$FRONTEND_URL" > /dev/null; then
+          echo "✅ Frontend is accessible!"
+        else
+          echo "⚠️ Frontend might still be deploying..."
+        fi
+
+  notify:
+    name: 📢 Notify Success
+    runs-on: ubuntu-latest
+    needs: [deploy-backend, deploy-frontend, test-integration]
+    if: always()
+    
+    steps:
+    - name: 📊 Deployment Summary
+      run: |
+        echo "## 🚀 Deployment Complete!" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Backend" >> $GITHUB_STEP_SUMMARY
+        if [ "${{ needs.deploy-backend.result }}" == "success" ]; then
+          echo "- ✅ **Backend**: Deployed successfully" >> $GITHUB_STEP_SUMMARY
+          echo "- 🌐 **URL**: ${{ needs.deploy-backend.outputs.backend_url }}" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ⏭️ **Backend**: Skipped or failed" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Frontend" >> $GITHUB_STEP_SUMMARY
+        if [ "${{ needs.deploy-frontend.result }}" == "success" ]; then
+          echo "- ✅ **Frontend**: Deployed successfully" >> $GITHUB_STEP_SUMMARY
+          echo "- 🌐 **URL**: https://${{ secrets.S3_BUCKET_NAME }}.s3-website-us-east-1.amazonaws.com" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ⏭️ **Frontend**: Skipped or failed" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Tests" >> $GITHUB_STEP_SUMMARY
+        if [ "${{ needs.test-integration.result }}" == "success" ]; then
+          echo "- ✅ **Integration tests**: All passed" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ⚠️ **Integration tests**: Some issues detected" >> $GITHUB_STEP_SUMMARY
+        fi

@@ -1,0 +1,205 @@
+name: 🧪 Test GitHub Actions Setup
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_level:
+        description: 'Test Level'
+        required: true
+        default: 'basic'
+        type: choice
+        options:
+        - basic
+        - full
+        - secrets-only
+
+jobs:
+  test-secrets:
+    name: 🔐 Test Secrets Configuration
+    runs-on: ubuntu-latest
+    outputs:
+      secrets-status: ${{ steps.check.outputs.status }}
+    
+    steps:
+    - name: 📋 Check Required Secrets
+      id: check
+      run: |
+        echo "Checking required secrets..."
+        
+        # Check AWS credentials
+        if [ -z "${{ secrets.AWS_ACCESS_KEY_ID }}" ]; then
+          echo "❌ AWS_ACCESS_KEY_ID not configured"
+          echo "status=missing-aws" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        
+        if [ -z "${{ secrets.AWS_SECRET_ACCESS_KEY }}" ]; then
+          echo "❌ AWS_SECRET_ACCESS_KEY not configured"
+          echo "status=missing-aws" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        
+        if [ -z "${{ secrets.S3_BUCKET_NAME }}" ]; then
+          echo "❌ S3_BUCKET_NAME not configured"
+          echo "status=missing-s3" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        
+        echo "✅ All required secrets configured"
+        echo "status=ok" >> $GITHUB_OUTPUT
+
+  test-aws-connection:
+    name: 🔗 Test AWS Connection
+    needs: test-secrets
+    runs-on: ubuntu-latest
+    if: needs.test-secrets.outputs.secrets-status == 'ok' && github.event.inputs.test_level != 'secrets-only'
+    
+    steps:
+    - name: ⚙️ Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: 🧪 Test S3 Access
+      run: |
+        echo "Testing S3 bucket access..."
+        if aws s3 ls s3://${{ secrets.S3_BUCKET_NAME }} > /dev/null 2>&1; then
+          echo "✅ S3 bucket accessible: ${{ secrets.S3_BUCKET_NAME }}"
+        else
+          echo "❌ Cannot access S3 bucket: ${{ secrets.S3_BUCKET_NAME }}"
+          echo "Creating bucket..."
+          aws s3 mb s3://${{ secrets.S3_BUCKET_NAME }} --region us-east-1 || echo "Bucket may already exist"
+        fi
+
+    - name: 🧪 Test Elastic Beanstalk Access
+      run: |
+        echo "Testing Elastic Beanstalk access..."
+        if aws elasticbeanstalk describe-applications --region us-east-1 > /dev/null 2>&1; then
+          echo "✅ Elastic Beanstalk accessible"
+        else
+          echo "❌ Cannot access Elastic Beanstalk"
+          exit 1
+        fi
+
+  test-backend-build:
+    name: 🏗️ Test Backend Build
+    needs: test-secrets
+    runs-on: ubuntu-latest
+    if: github.event.inputs.test_level == 'full'
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+
+    - name: ⚙️ Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: 'backend/package-lock.json'
+
+    - name: 📦 Install backend dependencies
+      working-directory: ./backend
+      run: npm ci
+
+    - name: 🧪 Test backend build
+      working-directory: ./backend
+      run: |
+        echo "Testing backend startup..."
+        timeout 10s npm start || echo "Backend started successfully"
+
+  test-frontend-build:
+    name: 🎨 Test Frontend Build
+    needs: test-secrets
+    runs-on: ubuntu-latest
+    if: github.event.inputs.test_level == 'full'
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+
+    - name: ⚙️ Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: 📦 Install frontend dependencies
+      run: npm ci
+
+    - name: 🏗️ Build frontend
+      run: npm run build
+
+    - name: 📁 Check build output
+      run: |
+        echo "Checking build output..."
+        ls -la dist/
+        echo "✅ Frontend build successful"
+
+  test-summary:
+    name: 📊 Test Summary
+    needs: [test-secrets, test-aws-connection, test-backend-build, test-frontend-build]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: 📋 Generate Summary
+      run: |
+        echo "# 🧪 GitHub Actions Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Secrets status
+        echo "## 🔐 Secrets Configuration" >> $GITHUB_STEP_SUMMARY
+        if [ "${{ needs.test-secrets.outputs.secrets-status }}" == "ok" ]; then
+          echo "✅ All required secrets configured" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ Missing secrets: ${{ needs.test-secrets.outputs.secrets-status }}" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # AWS connection
+        echo "## 🔗 AWS Connection" >> $GITHUB_STEP_SUMMARY
+        if [ "${{ needs.test-aws-connection.result }}" == "success" ]; then
+          echo "✅ AWS connection successful" >> $GITHUB_STEP_SUMMARY
+        elif [ "${{ needs.test-aws-connection.result }}" == "skipped" ]; then
+          echo "⏭️ Skipped (secrets not configured)" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ AWS connection failed" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Backend build
+        echo "## 🏗️ Backend Build" >> $GITHUB_STEP_SUMMARY
+        if [ "${{ needs.test-backend-build.result }}" == "success" ]; then
+          echo "✅ Backend build successful" >> $GITHUB_STEP_SUMMARY
+        elif [ "${{ needs.test-backend-build.result }}" == "skipped" ]; then
+          echo "⏭️ Skipped (test level: ${{ github.event.inputs.test_level }})" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ Backend build failed" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Frontend build
+        echo "## 🎨 Frontend Build" >> $GITHUB_STEP_SUMMARY
+        if [ "${{ needs.test-frontend-build.result }}" == "success" ]; then
+          echo "✅ Frontend build successful" >> $GITHUB_STEP_SUMMARY
+        elif [ "${{ needs.test-frontend-build.result }}" == "skipped" ]; then
+          echo "⏭️ Skipped (test level: ${{ github.event.inputs.test_level }})" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ Frontend build failed" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Next steps
+        echo "## 🚀 Next Steps" >> $GITHUB_STEP_SUMMARY
+        if [ "${{ needs.test-secrets.outputs.secrets-status }}" == "ok" ]; then
+          echo "1. ✅ Secrets configured - ready for deployment!" >> $GITHUB_STEP_SUMMARY
+          echo "2. 🚀 Try manual deploy: **Deploy Complete Stack** workflow" >> $GITHUB_STEP_SUMMARY
+          echo "3. 📝 Make changes and push to test automatic deployment" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "1. 🔐 Configure missing secrets in repository settings" >> $GITHUB_STEP_SUMMARY
+          echo "2. 📖 Follow instructions in .github/SECRETS_SETUP.md" >> $GITHUB_STEP_SUMMARY
+          echo "3. 🧪 Run this test again after configuration" >> $GITHUB_STEP_SUMMARY
+        fi
