@@ -1,0 +1,40 @@
+# Build outputs
+dist/
+build/
+.vite/
+
+# Dependencies
+node_modules/
+
+# Debug files
+debug-device.js
+*.debug.js
+
+# Public assets (Service Worker, etc)
+public/sw.js
+public/.eslintrc.js
+
+# Scripts (Node.js files)
+scripts/
+*.config.js
+*.config.ts
+
+# Backup and temp files
+temp_backup/
+*.backup
+*.bak
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env*
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
