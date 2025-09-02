@@ -415,7 +415,7 @@
                 
                 // Tentar importar persistence
                 try {
-                    const module = await import('/src/storage/persistence.js');
+                    const module = await import('/src/storage/persistence.ts');
                     const report = module.persistence.getAnalyticsReport(currentPeriod);
                     
                     updateDashboard(report);
