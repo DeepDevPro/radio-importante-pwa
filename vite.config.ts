@@ -368,7 +368,15 @@ export default defineConfig({
     target: 'ES2020',
     outDir: 'dist',
     assetsDir: 'assets',
-    sourcemap: true
+    sourcemap: true,
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+        admin: path.resolve(__dirname, 'admin.html'),
+        analytics: path.resolve(__dirname, 'analytics.html'),
+        test: path.resolve(__dirname, 'test.html')
+      }
+    }
   },
   publicDir: 'public',
   // Configuração para melhor suporte a UTF-8

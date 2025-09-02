@@ -77,6 +77,9 @@ jobs:
         aws s3 cp s3://${{ secrets.S3_BUCKET }}/manifest.webmanifest s3://${{ secrets.S3_BUCKET }}/manifest.webmanifest --content-type "application/manifest+json" --metadata-directive REPLACE
         aws s3 cp s3://${{ secrets.S3_BUCKET }}/sw.js s3://${{ secrets.S3_BUCKET }}/sw.js --content-type "application/javascript" --metadata-directive REPLACE
         
+        # Set correct MIME types for SVG files
+        aws s3 cp s3://${{ secrets.S3_BUCKET }}/icons/ s3://${{ secrets.S3_BUCKET }}/icons/ --recursive --content-type "image/svg+xml" --exclude "*" --include "*.svg" --metadata-directive REPLACE
+        
         # Set cache headers for assets
         aws s3 cp s3://${{ secrets.S3_BUCKET }}/audio/ s3://${{ secrets.S3_BUCKET }}/audio/ --recursive --cache-control "max-age=31536000" --metadata-directive REPLACE
         aws s3 cp s3://${{ secrets.S3_BUCKET }}/icons/ s3://${{ secrets.S3_BUCKET }}/icons/ --recursive --cache-control "max-age=31536000" --metadata-directive REPLACE
