@@ -77,7 +77,7 @@ jobs:
     - name: 🚀 Deploy to Elastic Beanstalk
       run: |
         if [ ! -d ".elasticbeanstalk" ]; then
-          eb init radio-importante-backend --region us-east-1 --platform "Node.js 18 running on 64bit Amazon Linux 2023"
+          eb init radio-importante-backend --region us-east-1 --platform "Node.js 18 running on 64bit Amazon Linux 2"
         fi
         
         if eb status radio-backend-prod 2>/dev/null; then
