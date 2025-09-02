@@ -406,7 +406,23 @@ class AdminManager {
       
       console.log(`📤 Salvando faixa "${file.title}" por "${file.artist}"`);
       
-      // Enviar para endpoint
+      // Detectar se estamos em produção (S3) ou desenvolvimento (Vite)
+      const isProduction = !window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1');
+      
+      if (isProduction) {
+        // Em produção: salvar apenas no localStorage e mostrar aviso
+        localStorage.setItem('radio-importante-catalog', jsonString);
+        console.log('⚠️ Modo Produção: Catalog salvo no localStorage. Upload de arquivos não disponível.');
+        
+        // Mostrar mensagem ao usuário
+        window.alert('⚠️ MODO PRODUÇÃO\n\nO admin está funcionando em modo somente leitura.\nOs arquivos foram processados mas não podem ser enviados para o servidor.\n\nCatalog salvo localmente.');
+        
+        this.showSuccessMessage(`✅ Faixa "${file.title}" processada (modo produção)`);
+        this.refreshFileList();
+        return;
+      }
+      
+      // Em desenvolvimento: usar API normal
       const response = await fetch('/api/save-catalog', {
         method: 'POST',
         headers: {
