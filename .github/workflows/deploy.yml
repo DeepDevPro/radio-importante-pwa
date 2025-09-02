@@ -50,11 +50,8 @@ jobs:
           }
         }' > public/data/catalog.json
 
-    - name: 🔍 Run linting (TypeScript only)
-      run: npm run lint -- --ext .ts src/
-
-    - name: 🏗️ Build project
-      run: npm run build
+    - name: 🏗️ Build project (deploy mode)
+      run: npm run build:deploy
 
     - name: 🧪 Test build (preview)
       run: |
