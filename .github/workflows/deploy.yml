@@ -77,16 +77,18 @@ jobs:
         aws s3 cp s3://${{ secrets.S3_BUCKET }}/manifest.webmanifest s3://${{ secrets.S3_BUCKET }}/manifest.webmanifest --content-type "application/manifest+json" --metadata-directive REPLACE
         aws s3 cp s3://${{ secrets.S3_BUCKET }}/sw.js s3://${{ secrets.S3_BUCKET }}/sw.js --content-type "application/javascript" --metadata-directive REPLACE
         
-        # Fix SVG content types individually
+        # Set cache headers for non-SVG assets first
+        aws s3 cp s3://${{ secrets.S3_BUCKET }}/audio/ s3://${{ secrets.S3_BUCKET }}/audio/ --recursive --cache-control "max-age=31536000" --metadata-directive REPLACE || true
+        
+        # Fix SVG content types individually (AFTER other cache operations)
         echo "🔧 Fixing SVG content types..."
         for svg in $(aws s3 ls s3://${{ secrets.S3_BUCKET }}/icons/ --recursive | grep '\.svg' | awk '{print $4}'); do
           echo "📝 Fixing: $svg"
-          aws s3 cp s3://${{ secrets.S3_BUCKET }}/$svg s3://${{ secrets.S3_BUCKET }}/$svg --content-type "image/svg+xml" --metadata-directive REPLACE
+          aws s3 cp s3://${{ secrets.S3_BUCKET }}/$svg s3://${{ secrets.S3_BUCKET }}/$svg \
+            --content-type "image/svg+xml" \
+            --cache-control "max-age=31536000" \
+            --metadata-directive REPLACE
         done
-        
-        # Set cache headers for assets
-        aws s3 cp s3://${{ secrets.S3_BUCKET }}/audio/ s3://${{ secrets.S3_BUCKET }}/audio/ --recursive --cache-control "max-age=31536000" --metadata-directive REPLACE || true
-        aws s3 cp s3://${{ secrets.S3_BUCKET }}/icons/ s3://${{ secrets.S3_BUCKET }}/icons/ --recursive --cache-control "max-age=31536000" --metadata-directive REPLACE
 
     - name: ✅ Verify deployment
       run: |
