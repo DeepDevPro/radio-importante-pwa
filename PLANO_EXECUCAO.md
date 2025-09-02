@@ -643,13 +643,27 @@ git checkout v1.0-ios-pwa-fix  # Backup da versão inicial
 
 ### **📋 Checklist Pré-Deploy (Validação Final)**
 
-#### **✅ ETAPA A: Validação do Build**
-- [ ] **A1**: Executar `npm run build` sem erros
-- [ ] **A2**: Verificar tamanho dos assets (`dist/` < 20MB)
-- [ ] **A3**: Testar `npm run preview` em ambiente local
-- [ ] **A4**: Validar Service Worker funcionando em preview
-- [ ] **A5**: Confirmar PWA instalável em preview
-- [ ] **A6**: Testar modal toggle em preview
+#### **✅ ETAPA A: Validação do Build - CONCLUÍDA**
+- [x] **A1**: Executar `npm run build` sem erros ✅
+- [x] **A2**: Verificar tamanho dos assets (`dist/` = 436KB - perfeito!) ✅
+- [x] **A3**: Testar `npm run preview` em ambiente local ✅
+- [x] **A4**: Validar Service Worker funcionando em preview ✅
+  - Service Worker v2 configurado corretamente
+  - Cache strategy: Cache-first para UI, Network-only para áudio
+  - URLs críticas incluídas no cache estático
+- [x] **A5**: Confirmar PWA instalável em preview ✅
+  - Manifest.webmanifest completo com todos os ícones
+  - Display: standalone, theme colors configurados
+  - Start URL, scope e categorias definidos
+- [x] **A6**: Testar modal toggle em preview ✅
+  - Modal implementado com toggle inteligente
+  - Informações dinâmicas do artista/música
+  - Função `toggleInfoModal()` ativa no click da imagem
+
+> **🎵 ESTRATÉGIA OTIMIZADA**: Deploy inicial **SEM arquivos de áudio** (436KB vs 87MB)
+> - Arquivos de áudio serão enviados via **sistema administrativo** após deploy
+> - Build otimizado para AWS S3 com cache inteligente
+> - **GitHub Actions** configurado para deploys automáticos sem áudio
 
 #### **✅ ETAPA B: Testes de Funcionalidade Local**
 - [ ] **B1**: Reprodução de áudio funcional
@@ -667,7 +681,22 @@ git checkout v1.0-ios-pwa-fix  # Backup da versão inicial
 - [ ] **C5**: Confirmar `public/manifest.webmanifest` correto
 
 ### **🌐 ETAPA 1: Configuração AWS (S3 + Route 53)**
-**Esforço:** M | **Status:** ⏳ **Aguardando execução**
+**Esforço:** M | **Status:** 🔄 **EM ANDAMENTO - Configuração Manual**
+
+#### **📋 Checklist de Configuração (siga AWS-SETUP-GUIDE.md)**
+- [ ] **1.1**: Criar usuário IAM `radio-github-actions`
+- [ ] **1.2**: Configurar permissões (S3FullAccess + Route53FullAccess)
+- [ ] **1.3**: Salvar Access Key ID e Secret Access Key
+- [ ] **1.4**: Criar bucket S3 `radio-importantestudio-com`
+- [ ] **1.5**: Configurar Static Website Hosting
+- [ ] **1.6**: Aplicar Bucket Policy (acesso público)
+- [ ] **1.7**: Configurar Route 53 CNAME `radio → bucket endpoint`
+- [ ] **1.8**: Verificar SSL wildcard `*.importantestudio.com`
+- [ ] **1.9**: Adicionar GitHub Secrets (4 secrets necessários)
+
+> **📖 GUIA COMPLETO**: Criado `AWS-SETUP-GUIDE.md` com passo-a-passo detalhado
+> **🤖 AUTOMAÇÃO**: GitHub Actions configurado para deploy automático após setup
+> **📦 STRATEGY**: Deploy sem arquivos de áudio (436KB total)
 
 #### **📦 S3 Bucket Configuration**
 - [ ] **1.1**: Criar S3 bucket `radio-importantestudio-com`

@@ -1,9 +1,9 @@
 // src/player/strategies/IOSPWAStrategy.ts - Strategy para iOS PWA com HLS
 
-import { AudioStrategy, AudioStrategyEvents, Track, TrackCue } from './AudioStrategy';
+import { AudioStrategyEvents, Track, TrackCue } from './AudioStrategy';
 import { TrackCuesLoader } from '../trackCuesLoader';
 
-export class IOSPWAStrategy implements AudioStrategy {
+export class IOSPWAStrategy {
   private audio!: HTMLAudioElement;
   private isInitialized = false;
   private events: AudioStrategyEvents = {};

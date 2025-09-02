@@ -37,10 +37,61 @@ check_credentials() {
     echo -e "${GREEN}✅ AWS credentials configured${NC}"
 }
 
-build_project() {
-    echo -e "${YELLOW}🏗️ Building project...${NC}"
+# Build function
+build_for_production() {
+    echo -e "${BLUE}🏗️ Building for production (without audio files)...${NC}"
+    
+    # Backup audio files and catalog
+    if [ -d "public/audio" ]; then
+        echo -e "${YELLOW}📦 Backing up audio files...${NC}"
+        mkdir -p temp_backup
+        cp -r public/audio temp_backup/
+        cp public/data/catalog.json temp_backup/catalog_backup.json
+    fi
+    
+    # Remove audio files for production build
+    rm -rf public/audio
+    
+    # Create minimal audio structure
+    mkdir -p public/audio/hls
+    echo '{"tracks":[],"totalDuration":0,"generatedAt":"'$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)'","version":"1.0"}' > public/audio/hls/track-cues.json
+    
+    # Create empty catalog for initial deploy
+    cat > public/data/catalog.json << EOF
+{
+  "version": "1.1.2",
+  "tracks": [],
+  "metadata": {
+    "totalTracks": 0,
+    "totalDuration": 0,
+    "artwork": "/img/radio-importante-logo.png",
+    "radioName": "Rádio Importante",
+    "description": "Uma seleção de música eletrônica, soul e experimental - Use o admin para adicionar músicas",
+    "genre": "Electronic, Soul, Experimental",
+    "language": "pt-BR",
+    "lastUpdated": "$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)"
+  }
+}
+EOF
+    
+    # Run build
     npm run build
-    echo -e "${GREEN}✅ Build completed${NC}"
+    
+    # Show build size
+    BUILD_SIZE=$(du -sh dist/ | cut -f1)
+    echo -e "${GREEN}📦 Build size: $BUILD_SIZE${NC}"
+    
+    # Restore audio files for development
+    if [ -d "temp_backup/audio" ]; then
+        echo -e "${YELLOW}🔄 Restoring audio files for development...${NC}"
+        rm -rf public/audio
+        mv temp_backup/audio public/
+        cp temp_backup/catalog_backup.json public/data/catalog.json
+        rm -rf temp_backup
+    fi
+    
+    echo -e "${GREEN}✅ Build completed - ready for deploy${NC}"
+    echo -e "${YELLOW}💡 Audio files excluded from production - use admin panel to upload${NC}"
 }
 
 create_bucket() {

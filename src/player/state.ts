@@ -98,11 +98,13 @@ export class StateManager {
         this.catalog = newCatalog;
         
         // Regenerar safeFilenames
-        this.catalog.tracks.forEach(track => {
-          track.safeFilename = track.filename; // Usar filename direto (já sanitizado no admin)
-        });
+        if (this.catalog?.tracks) {
+          this.catalog.tracks.forEach(track => {
+            track.safeFilename = track.filename; // Usar filename direto (já sanitizado no admin)
+          });
+        }
         
-        console.log(`✅ Catálogo recarregado: ${this.catalog.tracks.length} faixas`);
+        console.log(`✅ Catálogo recarregado: ${this.catalog?.tracks?.length || 0} faixas`);
         
         // Notificar listeners sobre a atualização
         this.notifyListeners();
