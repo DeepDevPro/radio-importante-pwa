@@ -56,13 +56,13 @@
 5. Configure environment variables:
    ```
    NODE_ENV=production
-   AWS_REGION=us-east-1
+   AWS_REGION=us-west-2
    S3_BUCKET_NAME=radio-importante-storage
    ```
 6. Deploy!
 
 ### **Resultado Esperado**
-- URL: `https://radio-backend-prod.us-east-1.elasticbeanstalk.com`
+- URL: `https://radio-backend-prod.us-west-2.elasticbeanstalk.com`
 - Health check: `/health`
 - Upload endpoint: `/api/upload`
 
@@ -95,7 +95,7 @@
 
 ### **Detecção Automática**
 O frontend detectará automaticamente o backend:
-- **Produção**: `https://radio-backend-prod.us-east-1.elasticbeanstalk.com`
+- **Produção**: `https://radio-backend-prod.us-west-2.elasticbeanstalk.com`
 - **Desenvolvimento**: `http://localhost:8080`
 
 ### **Upload Integrado**

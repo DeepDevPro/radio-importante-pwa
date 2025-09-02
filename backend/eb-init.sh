@@ -26,7 +26,7 @@ echo "✅ Pré-requisitos verificados"
 
 # Inicializar aplicação EB
 echo "🔧 Inicializando aplicação Elastic Beanstalk..."
-eb init radio-importante-backend --region us-east-1 --platform "Node.js 18"
+eb init radio-importante-backend --region us-west-2 --platform "Node.js 18"
 
 # Verificar se inicialização foi bem-sucedida
 if [ $? -eq 0 ]; then
@@ -46,7 +46,7 @@ echo "2. Crie o ambiente de produção:"
 echo "   eb create radio-backend-prod --instance-type t3.micro"
 echo ""
 echo "3. Configure variáveis de ambiente:"
-echo "   eb setenv AWS_REGION=us-east-1 S3_BUCKET_NAME=radio-importante-storage"
+echo "   eb setenv AWS_REGION=us-west-2 S3_BUCKET_NAME=radio-importante-storage"
 echo ""
 echo "4. Deploy da aplicação:"
 echo "   eb deploy"

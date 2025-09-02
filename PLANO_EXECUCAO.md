@@ -219,7 +219,7 @@ option_settings:
   aws:elasticbeanstalk:application:environment:
     NODE_ENV: production
     PORT: 8080
-    AWS_REGION: us-east-1
+    AWS_REGION: us-west-2
 ```
 
 ##### **3.3 Opções de Deploy Disponíveis ✅**
@@ -243,7 +243,7 @@ aws elasticbeanstalk create-application --application-name radio-importante-back
 ##### **3.5 Variáveis de Ambiente para Produção ✅**
 ```
 NODE_ENV=production
-AWS_REGION=us-east-1
+AWS_REGION=us-west-2
 S3_BUCKET_NAME=radio-importante-storage
 PORT=8080
 ```
@@ -1434,7 +1434,7 @@ aws ce get-cost-and-usage --time-period Start=2025-09-01,End=2025-09-02 --granul
 aws logs describe-log-groups --log-group-name-prefix /aws/s3/
 
 # Check SSL certificate
-aws acm list-certificates --region us-east-1
+aws acm list-certificates --region us-west-2
 
 # Route 53 health checks
 aws route53 list-health-checks

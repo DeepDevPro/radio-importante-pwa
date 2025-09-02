@@ -114,8 +114,8 @@ S3: https://console.aws.amazon.com/s3/
 
 ### **Endpoints**
 ```
-Backend: https://radio-backend-prod.us-east-1.elasticbeanstalk.com
-Frontend: https://radio-importante-storage.s3-website-us-east-1.amazonaws.com
+Backend: https://radio-backend-prod.us-west-2.elasticbeanstalk.com
+Frontend: https://radio-importante-storage.s3-website-us-west-2.amazonaws.com
 ```
 
 ---

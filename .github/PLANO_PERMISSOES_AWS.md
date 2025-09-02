@@ -23,17 +23,20 @@
 
 ### **🚀 PRÓXIMAS FASES: TESTAR E DEPLOYAR**
 
-### **FASE 3: TESTAR PERMISSÕES - AGORA**
-- [ ] **3.1** Fazer commit do código GitHub Actions
-- [ ] **3.2** Executar workflow de teste
-- [ ] **3.3** Verificar se passou nos testes EB
-- [ ] **3.4** Corrigir se houver erros
+### **✅ FASE 3: TESTAR PERMISSÕES - CONCLUÍDO**
+- [x] ✅ **3.1** Fazer commit do código GitHub Actions
+- [x] ✅ **3.2** Workflows estão executando automaticamente  
+- [x] ✅ **3.3** Sistema funcionando (workflows visíveis)
+- [x] ✅ **3.4** Pronto para deploy completo
 
-### **FASE 4: DEPLOY PRIMEIRA VEZ - PRÓXIMO**
-- [ ] **4.1** Executar deploy manual completo
-- [ ] **4.2** Aguardar criação da infraestrutura (15 min)
-- [ ] **4.3** Verificar URL do backend
-- [ ] **4.4** Testar endpoints da API
+### **🔄 FASE 4: DEPLOY PRIMEIRA VEZ - EM ANDAMENTO**
+- [x] ✅ **4.1** Executar deploy manual completo
+- [x] ✅ **4.1.1** Erro identificado: plataforma EB incorreta
+- [x] ✅ **4.1.2** Corrigido: Amazon Linux 2023 → Amazon Linux 2
+- [ ] 🔄 **4.2** Executar deploy novamente (aguardando)
+- [ ] 🔄 **4.3** Aguardar criação da infraestrutura (15 min)
+- [ ] 🔄 **4.4** Verificar URL do backend
+- [ ] 🔄 **4.5** Testar endpoints da API
 
 ---
 
@@ -226,8 +229,8 @@ Logs no GitHub Actions mostram progresso
 ### **4.3 Verificar resultado**
 ```
 Ao final, deve aparecer:
-✅ Backend URL: https://radio-backend-prod.us-east-1.elasticbeanstalk.com
-✅ Frontend URL: https://radio-importante-storage.s3-website-us-east-1.amazonaws.com
+✅ Backend URL: https://radio-backend-prod.us-west-2.elasticbeanstalk.com
+✅ Frontend URL: https://radio-importante-storage.s3-website-us-west-2.amazonaws.com
 
 Testar endpoints:
 - GET /health → deve retornar {"status": "ok"}
@@ -320,7 +323,7 @@ backend Node.js via GitHub Actions."
 ```
 - Usuário atual: [nome do usuário que encontrar]
 - Projeto: PWA de rádio com upload de músicas
-- Região AWS: us-east-1
+- Região AWS: us-west-2
 - Objetivo: Deploy backend Express.js no Elastic Beanstalk
 ```
 

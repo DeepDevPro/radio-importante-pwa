@@ -23,13 +23,13 @@ zip -r radio-backend.zip . -x "node_modules/*" ".git/*" "*.log" ".env"
 
 #### 4. Configurar Ambiente
 - **Environment name**: `radio-backend-prod`
-- **Domain**: `radio-backend-prod` (será: radio-backend-prod.us-east-1.elasticbeanstalk.com)
+- **Domain**: `radio-backend-prod` (será: radio-backend-prod.us-west-2.elasticbeanstalk.com)
 
 #### 5. Configurar Variáveis de Ambiente
 No console AWS EB > Configuration > Environment properties:
 ```
 NODE_ENV=production
-AWS_REGION=us-east-1
+AWS_REGION=us-west-2
 S3_BUCKET_NAME=radio-importante-storage
 PORT=8080
 ```
@@ -55,7 +55,7 @@ aws elasticbeanstalk create-application \
 zip -r radio-backend.zip . -x "node_modules/*" ".git/*"
 
 # Upload para S3
-aws s3 cp radio-backend.zip s3://elasticbeanstalk-us-east-1-ACCOUNT/
+aws s3 cp radio-backend.zip s3://elasticbeanstalk-us-west-2-ACCOUNT/
 ```
 
 #### 3. Criar versão
@@ -63,7 +63,7 @@ aws s3 cp radio-backend.zip s3://elasticbeanstalk-us-east-1-ACCOUNT/
 aws elasticbeanstalk create-application-version \
   --application-name radio-importante-backend \
   --version-label v1.0.0 \
-  --source-bundle S3Bucket=elasticbeanstalk-us-east-1-ACCOUNT,S3Key=radio-backend.zip
+  --source-bundle S3Bucket=elasticbeanstalk-us-west-2-ACCOUNT,S3Key=radio-backend.zip
 ```
 
 ---
@@ -80,7 +80,7 @@ export PATH=$PATH:/Users/$(whoami)/Library/Python/3.11/bin
 
 #### 2. Inicializar
 ```bash
-eb init radio-importante-backend --region us-east-1
+eb init radio-importante-backend --region us-west-2
 ```
 
 #### 3. Criar ambiente
@@ -125,7 +125,7 @@ Após deploy bem-sucedido:
 
 1. **Testar backend em produção**:
 ```bash
-curl https://radio-backend-prod.us-east-1.elasticbeanstalk.com/health
+curl https://radio-backend-prod.us-west-2.elasticbeanstalk.com/health
 ```
 
 2. **Configurar CORS para frontend**:

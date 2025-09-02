@@ -60,7 +60,7 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
+        aws-region: us-west-2
 
     - name: 🧪 Test S3 Access
       run: |
@@ -70,13 +70,13 @@ jobs:
         else
           echo "❌ Cannot access S3 bucket: ${{ secrets.S3_BUCKET_NAME }}"
           echo "Creating bucket..."
-          aws s3 mb s3://${{ secrets.S3_BUCKET_NAME }} --region us-east-1 || echo "Bucket may already exist"
+          aws s3 mb s3://${{ secrets.S3_BUCKET_NAME }} --region us-west-2 || echo "Bucket may already exist"
         fi
 
     - name: 🧪 Test Elastic Beanstalk Access
       run: |
         echo "Testing Elastic Beanstalk access..."
-        if aws elasticbeanstalk describe-applications --region us-east-1 > /dev/null 2>&1; then
+        if aws elasticbeanstalk describe-applications --region us-west-2 > /dev/null 2>&1; then
           echo "✅ Elastic Beanstalk accessible"
         else
           echo "❌ Cannot access Elastic Beanstalk"

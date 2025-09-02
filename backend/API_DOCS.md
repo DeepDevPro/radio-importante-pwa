@@ -2,7 +2,7 @@
 
 ## 🌐 Base URL
 - **Desenvolvimento**: `http://localhost:8080`
-- **Produção**: `https://radio-backend-prod.us-east-1.elasticbeanstalk.com`
+- **Produção**: `https://radio-backend-prod.us-west-2.elasticbeanstalk.com`
 
 ## 🔐 Autenticação
 Atualmente não há autenticação. Rate limiting configurado:

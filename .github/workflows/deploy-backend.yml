@@ -45,7 +45,7 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
+        aws-region: us-west-2
         
     - name: 🛠️ Install EB CLI
       run: |
@@ -62,7 +62,7 @@ jobs:
       run: |
         echo "Initializing EB application..."
         if [ ! -d ".elasticbeanstalk" ]; then
-          eb init radio-importante-backend --region us-east-1 --platform "Node.js 18 running on 64bit Amazon Linux 2" 
+          eb init radio-importante-backend --region us-west-2 --platform "Node.js 18 running on 64bit Amazon Linux 2" 
         fi
         
         echo "Deploying to environment..."
@@ -71,7 +71,7 @@ jobs:
           eb deploy radio-backend-prod
         else
           echo "Creating new environment..."
-          eb create radio-backend-prod --instance-type t3.micro --envvars NODE_ENV=production,AWS_REGION=us-east-1,S3_BUCKET_NAME=radio-importante-storage
+          eb create radio-backend-prod --instance-type t3.micro --envvars NODE_ENV=production,AWS_REGION=us-west-2,S3_BUCKET_NAME=radio-importante-storage
         fi
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -101,6 +101,6 @@ jobs:
         echo "## 🚀 Backend Deployment Summary" >> $GITHUB_STEP_SUMMARY
         echo "- **Application**: radio-importante-backend" >> $GITHUB_STEP_SUMMARY
         echo "- **Environment**: radio-backend-prod" >> $GITHUB_STEP_SUMMARY
-        echo "- **Region**: us-east-1" >> $GITHUB_STEP_SUMMARY
+        echo "- **Region**: us-west-2" >> $GITHUB_STEP_SUMMARY
         echo "- **URL**: https://$(eb status radio-backend-prod | grep "CNAME" | awk '{print $2}')" >> $GITHUB_STEP_SUMMARY
         echo "- **Health**: ✅ Healthy" >> $GITHUB_STEP_SUMMARY

@@ -41,7 +41,7 @@ aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
 pip install awsebcli
 
 # 3. Faz deploy (EB cuida de tudo)
-eb init --platform node.js --region us-east-1
+eb init --platform node.js --region us-west-2
 eb create radio-backend-prod
 eb deploy
 ```
@@ -66,7 +66,7 @@ eb deploy
 
 ### **🎯 Resultado Final**
 ```
-URL Backend: https://radio-backend-prod.us-east-1.elasticbeanstalk.com
+URL Backend: https://radio-backend-prod.us-west-2.elasticbeanstalk.com
 Custo: ~$10/mês (t3.micro)
 Gerenciamento: 100% automático
 ```
@@ -150,7 +150,7 @@ Depois restringir para produção
 ### **1. Verificar Permissions (5 min)**
 ```bash
 # No terminal local:
-aws elasticbeanstalk describe-applications --region us-east-1
+aws elasticbeanstalk describe-applications --region us-west-2
 
 # Se der erro = precisa adicionar EB permissions
 # Se funcionar = você pode prosseguir!

@@ -115,7 +115,7 @@ Na aba Properties > Static website hosting, anote o **Bucket website endpoint**:
 
 ### 4.1 Acessar Certificate Manager
 1. No Console AWS, vá para **Certificate Manager**
-2. ⚠️ **IMPORTANTE**: Mude a região para **US East (N. Virginia) us-east-1**
+2. ⚠️ **IMPORTANTE**: Mude a região para **US East (N. Virginia) us-west-2**
 3. Verifique se existe certificado para `*.importantestudio.com`
 4. Status deve ser **"Issued"**
 

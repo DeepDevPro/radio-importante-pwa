@@ -122,8 +122,8 @@ Quando você fizer push para `main`, o GitHub Actions detectará automaticamente
 3. GitHub Actions detecta e executa automaticamente
 
 ### **3. Verificar Results**
-- Backend: https://radio-backend-prod.us-east-1.elasticbeanstalk.com/health
-- Frontend: https://radio-importante-storage.s3-website-us-east-1.amazonaws.com
+- Backend: https://radio-backend-prod.us-west-2.elasticbeanstalk.com/health
+- Frontend: https://radio-importante-storage.s3-website-us-west-2.amazonaws.com
 
 ---
 

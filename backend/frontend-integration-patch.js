@@ -10,7 +10,7 @@ private checkEnvironmentAndSetup(): void {
   
   // Detectar backend URL
   this.backendUrl = isProduction 
-    ? 'https://radio-backend-prod.us-east-1.elasticbeanstalk.com'
+    ? 'https://radio-backend-prod.us-west-2.elasticbeanstalk.com'
     : 'http://localhost:8080';
   
   if (isProduction) {

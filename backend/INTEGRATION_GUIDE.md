@@ -17,7 +17,7 @@ private backendUrl: string = '';
 private detectBackend(): void {
   const isProduction = !window.location.hostname.includes('localhost');
   this.backendUrl = isProduction 
-    ? 'https://radio-backend-prod.us-east-1.elasticbeanstalk.com'
+    ? 'https://radio-backend-prod.us-west-2.elasticbeanstalk.com'
     : 'http://localhost:8080';
 }
 ```
@@ -80,7 +80,7 @@ app.use(cors({
 3. CORS configurado para localhost
 
 ### Teste Produção
-1. Backend: `https://radio-backend-prod.us-east-1.elasticbeanstalk.com`
+1. Backend: `https://radio-backend-prod.us-west-2.elasticbeanstalk.com`
 2. Frontend: `https://radio.importantestudio.com`
 3. CORS configurado para domínio produção
 
@@ -117,7 +117,7 @@ curl -X POST http://localhost:8080/api/upload \
 
 ### Testar Produção (após deploy)
 ```bash
-curl https://radio-backend-prod.us-east-1.elasticbeanstalk.com/health
+curl https://radio-backend-prod.us-west-2.elasticbeanstalk.com/health
 ```
 
 ---

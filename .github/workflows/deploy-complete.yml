@@ -69,7 +69,7 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
+        aws-region: us-west-2
         
     - name: 🛠️ Install EB CLI
       run: pip install awsebcli
@@ -77,13 +77,13 @@ jobs:
     - name: 🚀 Deploy to Elastic Beanstalk
       run: |
         if [ ! -d ".elasticbeanstalk" ]; then
-          eb init radio-importante-backend --region us-east-1 --platform "Node.js 18 running on 64bit Amazon Linux 2"
+          eb init radio-importante-backend --region us-west-2 --platform "Node.js 18 running on 64bit Amazon Linux 2"
         fi
         
         if eb status radio-backend-prod 2>/dev/null; then
           eb deploy radio-backend-prod
         else
-          eb create radio-backend-prod --instance-type t3.micro --envvars NODE_ENV=production,AWS_REGION=us-east-1,S3_BUCKET_NAME=radio-importante-storage
+          eb create radio-backend-prod --instance-type t3.micro --envvars NODE_ENV=production,AWS_REGION=us-west-2,S3_BUCKET_NAME=radio-importante-storage
         fi
         
     - name: 🔍 Get backend URL
@@ -127,7 +127,7 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
+        aws-region: us-west-2
         
     - name: 🌐 Deploy to S3
       run: |
@@ -166,7 +166,7 @@ jobs:
         
     - name: 🌐 Test frontend
       run: |
-        FRONTEND_URL="https://${{ secrets.S3_BUCKET_NAME }}.s3-website-us-east-1.amazonaws.com"
+        FRONTEND_URL="https://${{ secrets.S3_BUCKET_NAME }}.s3-website-us-west-2.amazonaws.com"
         echo "Testing frontend at: $FRONTEND_URL"
         
         if curl -f "$FRONTEND_URL" > /dev/null; then
@@ -197,7 +197,7 @@ jobs:
         echo "### Frontend" >> $GITHUB_STEP_SUMMARY
         if [ "${{ needs.deploy-frontend.result }}" == "success" ]; then
           echo "- ✅ **Frontend**: Deployed successfully" >> $GITHUB_STEP_SUMMARY
-          echo "- 🌐 **URL**: https://${{ secrets.S3_BUCKET_NAME }}.s3-website-us-east-1.amazonaws.com" >> $GITHUB_STEP_SUMMARY
+          echo "- 🌐 **URL**: https://${{ secrets.S3_BUCKET_NAME }}.s3-website-us-west-2.amazonaws.com" >> $GITHUB_STEP_SUMMARY
         else
           echo "- ⏭️ **Frontend**: Skipped or failed" >> $GITHUB_STEP_SUMMARY
         fi

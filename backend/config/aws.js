@@ -3,7 +3,7 @@ const AWS = require('aws-sdk');
 
 // Configuração baseada em variáveis de ambiente
 const awsConfig = {
-  region: process.env.AWS_REGION || 'us-east-1',
+  region: process.env.AWS_REGION || 'us-west-2',
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
 };
