@@ -33,6 +33,7 @@
 - [x] ✅ **4.1** Executar deploy manual completo
 - [x] ✅ **4.1.1** Erro identificado: plataforma EB incorreta
 - [x] ✅ **4.1.2** Corrigido: Amazon Linux 2023 → Amazon Linux 2
+- [x] ✅ **4.1.3** REGIÃO CORRIGIDA: us-east-1 → us-west-2 (Oregon)
 - [ ] 🔄 **4.2** Executar deploy novamente (aguardando)
 - [ ] 🔄 **4.3** Aguardar criação da infraestrutura (15 min)
 - [ ] 🔄 **4.4** Verificar URL do backend
