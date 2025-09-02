@@ -1,0 +1,125 @@
+name: Auto Update Catalog
+
+on:
+  push:
+    paths:
+      - 'public/audio/**/*.mp3'
+      - 'public/audio/**/*.wav'
+      - 'public/audio/**/*.aac'
+  workflow_dispatch:
+
+jobs:
+  update-catalog:
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.message, 'Add') || contains(github.event.head_commit.message, 'music') || contains(github.event.head_commit.message, 'track')
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: 📦 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: 🔍 Install dependencies
+      run: |
+        npm install --production
+
+    - name: 🎵 Generate catalog from audio files
+      run: |
+        node -e "
+        const fs = require('fs');
+        const path = require('path');
+        
+        const audioDir = path.join(process.cwd(), 'public', 'audio');
+        const catalogPath = path.join(process.cwd(), 'public', 'data', 'catalog.json');
+        
+        console.log('🎵 Scanning audio directory:', audioDir);
+        
+        if (!fs.existsSync(audioDir)) {
+          console.log('❌ Audio directory not found');
+          process.exit(1);
+        }
+        
+        const audioFiles = fs.readdirSync(audioDir)
+          .filter(file => /\.(mp3|wav|aac)$/i.test(file))
+          .filter(file => !file.startsWith('.'));
+        
+        console.log(\`📁 Found \${audioFiles.length} audio files\`);
+        
+        const tracks = audioFiles.map((filename, index) => {
+          const filePath = path.join(audioDir, filename);
+          const stats = fs.statSync(filePath);
+          
+          // Extract title and artist from filename
+          let title = filename.replace(/\.(mp3|wav|aac)$/i, '');
+          let artist = 'Artista Desconhecido';
+          
+          // Try to extract artist - title format
+          if (title.includes(' - ')) {
+            const parts = title.split(' - ');
+            artist = parts[0].trim();
+            title = parts.slice(1).join(' - ').trim();
+          }
+          
+          // Clean up title
+          title = title.replace(/[-_]/g, ' ').replace(/\s+/g, ' ').trim();
+          artist = artist.replace(/[-_]/g, ' ').replace(/\s+/g, ' ').trim();
+          
+          return {
+            id: index + 1,
+            title: title || 'Título Desconhecido',
+            artist: artist,
+            filename: filename,
+            url: \`/audio/\${filename}\`,
+            duration: 180, // Placeholder duration
+            fileSize: stats.size,
+            lastModified: stats.mtime.toISOString(),
+            displayName: \`\${artist} - \${title}\`
+          };
+        });
+        
+        const catalog = {
+          version: '1.1.2',
+          tracks: tracks,
+          metadata: {
+            totalTracks: tracks.length,
+            totalDuration: tracks.length * 180, // Estimate
+            artwork: '/img/radio-importante-logo.png',
+            radioName: 'Rádio Importante',
+            description: 'Uma seleção de música eletrônica, soul e experimental',
+            genre: 'Electronic, Soul, Experimental',
+            language: 'pt-BR',
+            lastUpdated: new Date().toISOString()
+          }
+        };
+        
+        // Ensure data directory exists
+        const dataDir = path.dirname(catalogPath);
+        if (!fs.existsSync(dataDir)) {
+          fs.mkdirSync(dataDir, { recursive: true });
+        }
+        
+        // Write catalog
+        fs.writeFileSync(catalogPath, JSON.stringify(catalog, null, 2), 'utf8');
+        
+        console.log(\`✅ Catalog updated with \${tracks.length} tracks\`);
+        console.log('📊 Sample tracks:', tracks.slice(0, 3).map(t => \`\${t.artist} - \${t.title}\`));
+        "
+
+    - name: 📤 Commit updated catalog
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        if git diff --quiet public/data/catalog.json; then
+          echo "📋 No changes to catalog"
+        else
+          git add public/data/catalog.json
+          git commit -m "🎵 Auto-update catalog with new tracks"
+          git push
+          echo "✅ Catalog updated and pushed"
+        fi

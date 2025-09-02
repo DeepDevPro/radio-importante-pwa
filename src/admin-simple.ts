@@ -15,9 +15,66 @@ class AdminManager {
   constructor() {
     // Aguardar um pouco para garantir que os elementos estejam carregados
     setTimeout(() => {
+      this.checkEnvironmentAndSetup();
       this.refreshFileList();
       this.setupEventListeners();
     }, 100);
+  }
+
+  private checkEnvironmentAndSetup(): void {
+    const isProduction = !window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1');
+    
+    if (isProduction) {
+      this.setupProductionMode();
+    }
+  }
+
+  private setupProductionMode(): void {
+    const uploadSection = document.querySelector('.section h2');
+    if (uploadSection?.textContent?.includes('Upload')) {
+      const section = uploadSection.parentElement;
+      if (section) {
+        // Adicionar aviso de produção
+        const productionAlert = document.createElement('div');
+        productionAlert.style.cssText = `
+          background: #fff3cd;
+          border: 1px solid #ffeaa7;
+          border-radius: 8px;
+          padding: 15px;
+          margin: 15px 0;
+          color: #856404;
+        `;
+        productionAlert.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 24px;">⚠️</span>
+            <div>
+              <strong>Modo Produção Detectado</strong><br>
+              Upload direto não disponível. Use o 
+              <a href="/admin-upload.html" style="color: #007AFF; text-decoration: none; font-weight: bold;">
+                📤 Sistema de Upload Avançado
+              </a>
+              para instruções detalhadas.
+            </div>
+          </div>
+        `;
+        
+        // Inserir depois do h2
+        uploadSection.insertAdjacentElement('afterend', productionAlert);
+        
+        // Desabilitar área de upload
+        const uploadArea = document.getElementById('upload-area');
+        if (uploadArea) {
+          uploadArea.style.opacity = '0.5';
+          uploadArea.style.pointerEvents = 'none';
+          uploadArea.innerHTML = `
+            <div style="color: #666;">
+              📁 Upload direto não disponível em produção<br>
+              <a href="/admin-upload.html" style="color: #007AFF;">Use o Sistema de Upload Avançado</a>
+            </div>
+          `;
+        }
+      }
+    }
   }
 
   private setupEventListeners(): void {
