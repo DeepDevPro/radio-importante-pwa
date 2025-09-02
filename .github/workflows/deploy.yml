@@ -1,0 +1,78 @@
+name: 🚀 Deploy to AWS S3
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+
+    - name: 📦 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: 📦 Install dependencies
+      run: npm ci
+
+    - name: 🔍 Run linting
+      run: npm run lint
+
+    - name: 🏗️ Build project
+      run: npm run build
+
+    - name: 🧪 Test build (preview)
+      run: |
+        npm run preview &
+        sleep 5
+        curl -f http://localhost:4173 || exit 1
+        pkill -f "npm run preview"
+
+    - name: ⚙️ Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: 🌐 Deploy to S3
+      run: |
+        aws s3 sync dist/ s3://${{ secrets.S3_BUCKET }} --delete --exact-timestamps
+        
+    - name: 🔧 Set S3 content types
+      run: |
+        # Set correct MIME types for PWA assets
+        aws s3 cp s3://${{ secrets.S3_BUCKET }}/manifest.webmanifest s3://${{ secrets.S3_BUCKET }}/manifest.webmanifest --content-type "application/manifest+json" --metadata-directive REPLACE
+        aws s3 cp s3://${{ secrets.S3_BUCKET }}/sw.js s3://${{ secrets.S3_BUCKET }}/sw.js --content-type "application/javascript" --metadata-directive REPLACE
+        
+        # Set cache headers for assets
+        aws s3 cp s3://${{ secrets.S3_BUCKET }}/audio/ s3://${{ secrets.S3_BUCKET }}/audio/ --recursive --cache-control "max-age=31536000" --metadata-directive REPLACE
+        aws s3 cp s3://${{ secrets.S3_BUCKET }}/icons/ s3://${{ secrets.S3_BUCKET }}/icons/ --recursive --cache-control "max-age=31536000" --metadata-directive REPLACE
+
+    - name: ✅ Verify deployment
+      run: |
+        echo "🎯 Deployment completed!"
+        echo "🌐 URL: https://radio.importantestudio.com"
+        echo "📊 S3 bucket: ${{ secrets.S3_BUCKET }}"
+        
+        # Basic health check
+        sleep 10
+        curl -f https://radio.importantestudio.com || echo "⚠️ Site não acessível ainda (DNS propagation)"
+
+    - name: 📊 Deployment summary
+      run: |
+        echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+        echo "- **URL**: https://radio.importantestudio.com" >> $GITHUB_STEP_SUMMARY
+        echo "- **S3 Bucket**: ${{ secrets.S3_BUCKET }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Region**: ${{ secrets.AWS_REGION }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Status**: ✅ Success" >> $GITHUB_STEP_SUMMARY

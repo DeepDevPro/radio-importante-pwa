@@ -631,3 +631,351 @@ git checkout v1.0-ios-pwa-fix  # Backup da versão inicial
 - **Documentação:** Completa e atualizada
 
 **🎊 APLICAÇÃO PRONTA PARA PRODUÇÃO COM INTERFACE MODAL PROFISSIONAL** 🎊
+
+---
+
+## 🚀 **PLANO DE DEPLOY AWS - v1.1.2**
+
+> **🎯 Estratégia**: S3 Static Hosting + Route 53 + GitHub Actions  
+> **🌐 Domínio**: `radio.importantestudio.com`  
+> **💰 Custo**: Otimizado (S3 região us-west-2)  
+> **🔒 SSL**: Wildcard `*.importantestudio.com` (já configurado)
+
+### **📋 Checklist Pré-Deploy (Validação Final)**
+
+#### **✅ ETAPA A: Validação do Build**
+- [ ] **A1**: Executar `npm run build` sem erros
+- [ ] **A2**: Verificar tamanho dos assets (`dist/` < 20MB)
+- [ ] **A3**: Testar `npm run preview` em ambiente local
+- [ ] **A4**: Validar Service Worker funcionando em preview
+- [ ] **A5**: Confirmar PWA instalável em preview
+- [ ] **A6**: Testar modal toggle em preview
+
+#### **✅ ETAPA B: Testes de Funcionalidade Local**
+- [ ] **B1**: Reprodução de áudio funcional
+- [ ] **B2**: Controles de play/pause/anterior/próximo
+- [ ] **B3**: Modal info com toggle (abrir/fechar)
+- [ ] **B4**: Informações dinâmicas de track
+- [ ] **B5**: Design responsivo (desktop + mobile)
+- [ ] **B6**: PWA install prompt
+
+#### **✅ ETAPA C: Preparação de Assets**
+- [ ] **C1**: Verificar `public/audio/radio-importante-continuous.aac` (14MB)
+- [ ] **C2**: Confirmar `public/audio/hls/track-cues.json` atualizado
+- [ ] **C3**: Validar `public/data/catalog.json` com 15 faixas
+- [ ] **C4**: Verificar ícones PWA em `public/icons/`
+- [ ] **C5**: Confirmar `public/manifest.webmanifest` correto
+
+### **🌐 ETAPA 1: Configuração AWS (S3 + Route 53)**
+**Esforço:** M | **Status:** ⏳ **Aguardando execução**
+
+#### **📦 S3 Bucket Configuration**
+- [ ] **1.1**: Criar S3 bucket `radio-importantestudio-com`
+  ```bash
+  # Via AWS CLI (se preferir)
+  aws s3 mb s3://radio-importantestudio-com --region us-west-2
+  ```
+- [ ] **1.2**: Configurar Static Website Hosting no S3
+  - Index document: `index.html`
+  - Error document: `index.html` (para SPA)
+- [ ] **1.3**: Configurar permissões públicas do bucket
+- [ ] **1.4**: Configurar Bucket Policy para acesso público
+- [ ] **1.5**: Testar acesso S3: `http://radio-importantestudio-com.s3-website-us-west-2.amazonaws.com`
+
+#### **� Route 53 DNS Configuration**
+- [ ] **1.6**: Criar hosted zone para `radio.importantestudio.com` (se necessário)
+- [ ] **1.7**: Criar registro CNAME:
+  ```
+  radio.importantestudio.com → radio-importantestudio-com.s3-website-us-west-2.amazonaws.com
+  ```
+- [ ] **1.8**: Validar SSL wildcard `*.importantestudio.com` (já configurado)
+- [ ] **1.9**: Configurar redirect HTTPS (via CloudFront se necessário)
+
+#### **🔒 SSL/HTTPS Setup**
+- [ ] **1.10**: Verificar Certificate Manager
+- [ ] **1.11**: Confirmar wildcard certificate ativo
+- [ ] **1.12**: Testar HTTPS: `https://radio.importantestudio.com`
+
+### **⚙️ ETAPA 2: GitHub Actions CI/CD**
+**Esforço:** M | **Status:** ⏳ **Aguardando ETAPA 1**
+
+#### **🔧 AWS Credentials Setup**
+- [ ] **2.1**: Criar IAM User para GitHub Actions
+- [ ] **2.2**: Configurar políticas mínimas necessárias:
+  ```json
+  {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": [
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:ListBucket"
+        ],
+        "Resource": [
+          "arn:aws:s3:::radio-importantestudio-com",
+          "arn:aws:s3:::radio-importantestudio-com/*"
+        ]
+      }
+    ]
+  }
+  ```
+- [ ] **2.3**: Adicionar secrets no GitHub:
+  - `AWS_ACCESS_KEY_ID`
+  - `AWS_SECRET_ACCESS_KEY`
+  - `AWS_REGION` (us-west-2)
+  - `S3_BUCKET` (radio-importantestudio-com)
+
+#### **📝 GitHub Actions Workflow**
+- [ ] **2.4**: Criar `.github/workflows/deploy.yml`
+- [ ] **2.5**: Configurar trigger em push para `main`
+- [ ] **2.6**: Setup Node.js 18+
+- [ ] **2.7**: Build do projeto (`npm run build`)
+- [ ] **2.8**: Deploy para S3 com sync
+- [ ] **2.9**: Invalidate cache (se usar CloudFront)
+
+### **🚀 ETAPA 3: Deploy Manual Inicial**
+**Esforço:** S | **Status:** ⏳ **Aguardando ETAPA 2**
+
+#### **📦 First Deploy**
+- [ ] **3.1**: Build local final
+  ```bash
+  npm run build
+  ```
+- [ ] **3.2**: Upload manual para S3 (primeira vez)
+  ```bash
+  aws s3 sync dist/ s3://radio-importantestudio-com --delete
+  ```
+- [ ] **3.3**: Configurar Content-Type para arquivos
+- [ ] **3.4**: Testar acesso: `https://radio.importantestudio.com`
+
+#### **🔍 Validação AWS**
+- [ ] **3.5**: Verificar todos os assets carregando
+- [ ] **3.6**: Confirmar HTTPS funcionando
+- [ ] **3.7**: Validar PWA install prompt
+- [ ] **3.8**: Testar áudio streaming funcionando
+
+### **🧪 ETAPA 4: Testes em Produção AWS**
+**Esforço:** M | **Status:** ⏳ **Aguardando ETAPA 3**
+
+#### **📱 Testes Desktop**
+- [ ] **4.1**: Acessar `https://radio.importantestudio.com`
+- [ ] **4.2**: Verificar carregamento completo
+- [ ] **4.3**: Testar reprodução de áudio via S3
+- [ ] **4.4**: Validar controles de navegação
+- [ ] **4.5**: Testar modal info toggle
+- [ ] **4.6**: Verificar informações dinâmicas
+- [ ] **4.7**: Testar PWA install prompt
+
+#### **📱 Testes Mobile (Android)**
+- [ ] **4.8**: Acessar via Chrome Android
+- [ ] **4.9**: Testar "Add to Home Screen"
+- [ ] **4.10**: Abrir como PWA standalone
+- [ ] **4.11**: Reprodução funcionando via S3
+- [ ] **4.12**: Modal responsivo funcionando
+
+#### **🍎 Testes Critical: iPhone PWA**
+- [ ] **4.13**: ⚠️ **TESTE PRINCIPAL**: Acessar via Safari iOS
+- [ ] **4.14**: ⚠️ **CRÍTICO**: "Adicionar à Tela de Início"
+- [ ] **4.15**: ⚠️ **VALIDAÇÃO**: Abrir PWA standalone
+- [ ] **4.16**: ⚠️ **TESTE FINAL**: Reprodução durante screen lock
+- [ ] **4.17**: ⚠️ **CONFIRMAÇÃO**: Música continua entre faixas
+- [ ] **4.18**: ⚠️ **SUCESSO**: Zero interrupções durante background
+
+#### **🌐 Testes de Infraestrutura AWS**
+- [ ] **4.19**: Validar DNS propagation `radio.importantestudio.com`
+- [ ] **4.20**: Confirmar SSL certificate funcionando
+- [ ] **4.21**: Testar velocidade de carregamento S3
+- [ ] **4.22**: Verificar logs de acesso S3
+- [ ] **4.23**: Monitorar custos AWS (billing)
+
+### **🔍 ETAPA 5: Monitoramento e Otimização AWS**
+**Esforço:** S | **Status:** ⏳ **Aguardando ETAPA 4**
+
+#### **📊 Analytics Básico**
+- [ ] **5.1**: Implementar Google Analytics (opcional)
+- [ ] **5.2**: Configurar eventos de PWA install
+- [ ] **5.3**: Tracking de reprodução de áudio
+- [ ] **5.4**: Monitoramento de erros
+
+#### **⚡ Performance AWS**
+- [ ] **5.5**: Validar PageSpeed Insights (>90)
+- [ ] **5.6**: Verificar Lighthouse PWA score (>90)
+- [ ] **5.7**: Testar velocidade de carregamento S3
+- [ ] **5.8**: Analisar S3 access logs
+- [ ] **5.9**: Considerar CloudFront se necessário
+
+#### **💰 Cost Optimization**
+- [ ] **5.10**: Configurar S3 lifecycle policies
+- [ ] **5.11**: Monitorar bandwidth usage
+- [ ] **5.12**: Setup billing alerts
+- [ ] **5.13**: Otimizar tamanho dos assets
+
+### **� ETAPA 6: Automação Completa**
+**Esforço:** S | **Status:** ⏳ **Aguardando ETAPA 5**
+
+#### **� CI/CD Workflow**
+- [ ] **6.1**: Testar GitHub Actions deploy completo
+- [ ] **6.2**: Validar deploy automático em push
+- [ ] **6.3**: Setup notificações de deploy
+- [ ] **6.4**: Configurar staging environment (opcional)
+
+#### **�️ Backup e Manutenção**
+- [ ] **6.5**: Backup automático do repositório GitHub
+- [ ] **6.6**: Backup dos assets S3 (versionamento)
+- [ ] **6.7**: Documentação de configuração AWS
+- [ ] **6.8**: Plano de recuperação de desastres
+
+---
+
+## 🎯 **COMANDOS AWS ESPECÍFICOS**
+
+### **📦 Build e Deploy Local**
+```bash
+# Build para produção
+npm run build
+
+# Deploy manual para S3
+aws s3 sync dist/ s3://radio-importantestudio-com --delete
+
+# Verificar sync
+aws s3 ls s3://radio-importantestudio-com --recursive
+```
+
+### **🌐 Configuração DNS Route 53**
+```bash
+# Verificar DNS propagation
+nslookup radio.importantestudio.com
+
+# Testar HTTPS
+curl -I https://radio.importantestudio.com
+```
+
+### **🔍 Debug AWS S3**
+```bash
+# Check bucket policy
+aws s3api get-bucket-policy --bucket radio-importantestudio-com
+
+# Check website configuration
+aws s3api get-bucket-website --bucket radio-importantestudio-com
+
+# Monitor costs
+aws ce get-cost-and-usage --time-period Start=2025-09-01,End=2025-09-02 --granularity DAILY --metrics BlendedCost
+```
+
+### **� Monitoring Commands**
+```bash
+# S3 access logs analysis
+aws logs describe-log-groups --log-group-name-prefix /aws/s3/
+
+# Check SSL certificate
+aws acm list-certificates --region us-east-1
+
+# Route 53 health checks
+aws route53 list-health-checks
+```
+
+---
+
+## ⚠️ **CHECKLIST DE SEGURANÇA AWS**
+
+### **🔒 S3 Security**
+- [ ] **HTTPS**: Certificado SSL wildcard configurado
+- [ ] **Bucket Policy**: Acesso público somente para static assets
+- [ ] **CORS**: Configurado para domínio específico
+- [ ] **Versioning**: Habilitado para rollback
+- [ ] **Logging**: Access logs habilitados
+
+### **🛡️ AWS Best Practices**
+- [ ] **IAM**: Usuários com permissões mínimas
+- [ ] **MFA**: Multi-factor authentication habilitado
+- [ ] **Billing**: Alerts configurados
+- [ ] **CloudTrail**: Logs de API habilitados (opcional)
+- [ ] **Backup**: Estratégia de backup definida
+
+---
+
+## 📊 **CRITÉRIOS DE SUCESSO AWS**
+
+### **✅ Deploy AWS Bem-Sucedido Quando:**
+1. **PWA acessível** via `https://radio.importantestudio.com`
+2. **iPhone background audio** funcionando 100%
+3. **Modal toggle** responsivo funcionando
+4. **S3 static hosting** servindo todos os assets
+5. **SSL wildcard** funcionando corretamente
+6. **GitHub Actions** fazendo deploy automático
+7. **DNS Route 53** resolvendo corretamente
+8. **Custos AWS** dentro do esperado
+
+### **🎉 Marcos de Sucesso AWS:**
+- [ ] **Marco 1**: S3 + Route 53 configurados
+- [ ] **Marco 2**: Deploy manual funcionando
+- [ ] **Marco 3**: GitHub Actions CI/CD ativo
+- [ ] **Marco 4**: Testes em produção 100% passando
+- [ ] **Marco 5**: iPhone PWA validado em AWS
+- [ ] **Marco 6**: Monitoramento e custos otimizados
+
+---
+
+## 🚨 **PLANO DE CONTINGÊNCIA AWS**
+
+### **❌ Se algo der errado:**
+
+#### **Problema: S3 não acessível**
+- **Verificar**: Bucket policy e static website configuration
+- **Debug**: AWS Console > S3 > Permissions
+- **Solução**: Reconfigurar public access
+
+#### **Problema: DNS não resolve**
+- **Verificar**: Route 53 records e propagation
+- **Debug**: `nslookup radio.importantestudio.com`
+- **Solução**: Aguardar propagation ou verificar CNAME
+
+#### **Problema: SSL não funciona**
+- **Verificar**: Certificate Manager wildcard
+- **Debug**: `curl -I https://radio.importantestudio.com`
+- **Solução**: Verificar certificate binding
+
+#### **Problema: GitHub Actions falha**
+- **Verificar**: AWS credentials nos secrets
+- **Debug**: GitHub Actions logs
+- **Solução**: Regenerar access keys
+
+#### **Problema: iPhone PWA falha em AWS**
+- **Solução crítica**: Verificar CORS headers S3
+- **Debug**: Safari Web Inspector
+- **Fallback**: Configurar CloudFront se necessário
+
+### **🔄 Rollback Strategy AWS**
+```bash
+# Emergência: voltar para versão anterior
+git checkout v1.1.1
+npm run build
+aws s3 sync dist/ s3://radio-importantestudio-com --delete
+
+# Rollback via GitHub Actions
+git revert HEAD
+git push origin main
+```
+
+---
+
+## 💰 **ESTIMATIVA DE CUSTOS AWS**
+
+### **📊 Custos Estimados (Mensais)**
+- **S3 Storage** (20MB): ~$0.01
+- **S3 Requests** (10k/mês): ~$0.01
+- **S3 Data Transfer** (1GB/mês): ~$0.09
+- **Route 53** (hosted zone): $0.50
+- **Certificate Manager**: Gratuito
+- **Total estimado**: ~$0.61/mês
+
+### **📈 Scaling Considerations**
+- **Se tráfego >100k requests/mês**: Considerar CloudFront
+- **Se storage >1GB**: Lifecycle policies
+- **Se global traffic**: CloudFront Edge Locations
+
+---
+
+**Status Atual**: 🎯 **PLANO AWS CRIADO - OTIMIZADO PARA SUA INFRAESTRUTURA**
