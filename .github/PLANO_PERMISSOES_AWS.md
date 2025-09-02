@@ -34,6 +34,7 @@
 - [x] ✅ **4.1.1** Erro identificado: plataforma EB incorreta
 - [x] ✅ **4.1.2** Corrigido: Amazon Linux 2023 → Amazon Linux 2
 - [x] ✅ **4.1.3** REGIÃO CORRIGIDA: us-east-1 → us-west-2 (Oregon)
+- [x] ✅ **4.1.4** NOME CORRIGIDO: radio-backend → mplayer001-backend
 - [ ] 🔄 **4.2** Executar deploy novamente (aguardando)
 - [ ] 🔄 **4.3** Aguardar criação da infraestrutura (15 min)
 - [ ] 🔄 **4.4** Verificar URL do backend
@@ -230,7 +231,7 @@ Logs no GitHub Actions mostram progresso
 ### **4.3 Verificar resultado**
 ```
 Ao final, deve aparecer:
-✅ Backend URL: https://radio-backend-prod.us-west-2.elasticbeanstalk.com
+✅ Backend URL: https://mplayer001-backend-prod.us-west-2.elasticbeanstalk.com
 ✅ Frontend URL: https://radio-importante-storage.s3-website-us-west-2.amazonaws.com
 
 Testar endpoints:

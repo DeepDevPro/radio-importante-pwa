@@ -77,19 +77,19 @@ jobs:
     - name: 🚀 Deploy to Elastic Beanstalk
       run: |
         if [ ! -d ".elasticbeanstalk" ]; then
-          eb init radio-importante-backend --region us-west-2 --platform "Node.js 18 running on 64bit Amazon Linux 2"
+          eb init mplayer001-backend --region us-west-2 --platform "Node.js 18 running on 64bit Amazon Linux 2"
         fi
         
-        if eb status radio-backend-prod 2>/dev/null; then
-          eb deploy radio-backend-prod
+        if eb status mplayer001-backend-prod 2>/dev/null; then
+          eb deploy mplayer001-backend-prod
         else
-          eb create radio-backend-prod --instance-type t3.micro --envvars NODE_ENV=production,AWS_REGION=us-west-2,S3_BUCKET_NAME=radio-importante-storage
+          eb create mplayer001-backend-prod --instance-type t3.micro --envvars NODE_ENV=production,AWS_REGION=us-west-2,S3_BUCKET_NAME=radio-importante-storage
         fi
         
     - name: 🔍 Get backend URL
       id: get-url
       run: |
-        URL=$(eb status radio-backend-prod | grep "CNAME" | awk '{print $2}')
+        URL=$(eb status mplayer001-backend-prod | grep "CNAME" | awk '{print $2}')
         echo "url=https://$URL" >> $GITHUB_OUTPUT
         echo "🌐 Backend URL: https://$URL"
 
