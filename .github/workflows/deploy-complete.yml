@@ -110,7 +110,19 @@ jobs:
               --region us-west-2 || echo "Version creation failed, trying direct deploy..."
             
             echo "Waiting for application version to be processed..."
-            sleep 10
+            # Wait until version is PROCESSED
+            for i in {1..30}; do
+              STATUS=$(aws elasticbeanstalk describe-application-versions --application-name radio-pwa-backend --version-labels $VERSION_LABEL --region us-west-2 --query 'ApplicationVersions[0].Status' --output text 2>/dev/null || echo "NOTFOUND")
+              echo "Attempt $i: Version status is $STATUS"
+              if [ "$STATUS" = "PROCESSED" ]; then
+                echo "✅ Application version is ready for deployment"
+                break
+              elif [ "$STATUS" = "FAILED" ]; then
+                echo "❌ Application version processing failed"
+                break
+              fi
+              sleep 5
+            done
             
             echo "Deploying version to environment using AWS CLI..."
             aws elasticbeanstalk update-environment \
