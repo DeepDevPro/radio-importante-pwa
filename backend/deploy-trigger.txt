@@ -1,1 +1,1 @@
-Deploy Wed Sep 3 09:40:00 -03 2025 - Add proper wait loop for application version PROCESSED statuseploy Wed Sep  3 08:48:00 -03 2025 - Remove --force flag, use rm -rf .elasticbeanstalk
+Deploy Wed Sep 3 09:45:00 -03 2025 - Add timeout fallback to EB deploy when version processing stallseploy Wed Sep  3 08:48:00 -03 2025 - Remove --force flag, use rm -rf .elasticbeanstalk

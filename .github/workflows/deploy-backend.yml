@@ -107,8 +107,9 @@ jobs:
               --region us-west-2 || echo "Version creation failed, trying direct deploy..."
             
             echo "Waiting for application version to be processed..."
-            # Wait until version is PROCESSED
-            for i in {1..30}; do
+            # Wait until version is PROCESSED - with fallback
+            TIMEOUT_REACHED=false
+            for i in {1..15}; do
               STATUS=$(aws elasticbeanstalk describe-application-versions --application-name radio-pwa-backend --version-labels $VERSION_LABEL --region us-west-2 --query 'ApplicationVersions[0].Status' --output text 2>/dev/null || echo "NOTFOUND")
               echo "Attempt $i: Version status is $STATUS"
               if [ "$STATUS" = "PROCESSED" ]; then
@@ -117,15 +118,24 @@ jobs:
               elif [ "$STATUS" = "FAILED" ]; then
                 echo "❌ Application version processing failed"
                 break
+              elif [ "$i" -eq 15 ]; then
+                echo "⚠️ Timeout reached, proceeding with deployment anyway..."
+                TIMEOUT_REACHED=true
+                break
               fi
-              sleep 5
+              sleep 3
             done
             
             echo "Deploying version to environment using AWS CLI..."
-            aws elasticbeanstalk update-environment \
-              --environment-name radio-pwa-backend-prod \
-              --version-label $VERSION_LABEL \
-              --region us-west-2 || echo "AWS CLI deploy failed, trying EB CLI without version..."
+            if [ "$TIMEOUT_REACHED" = true ]; then
+              echo "⚠️ Using direct EB deploy due to timeout..."
+              eb deploy radio-pwa-backend-prod --timeout 20 || echo "EB deploy failed"
+            else
+              aws elasticbeanstalk update-environment \
+                --environment-name radio-pwa-backend-prod \
+                --version-label $VERSION_LABEL \
+                --region us-west-2 || echo "AWS CLI deploy failed, trying EB CLI..."
+            fi
             
             echo "Waiting for deployment to complete..."
             aws elasticbeanstalk wait environment-updated --environment-names radio-pwa-backend-prod --region us-west-2
