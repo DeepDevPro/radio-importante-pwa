@@ -72,8 +72,12 @@ jobs:
         # Create bucket if it doesn't exist (with proper domain name)
         aws s3 mb s3://radio.importantestudio.com --region us-west-2 || echo "Bucket already exists"
         
-        # Configure bucket for static website hosting
-        aws s3 website s3://radio.importantestudio.com --index-document index.html --error-document index.html
+        # FIRST: Disable block public access (required before setting public policy)
+        echo "🔓 Disabling block public access settings..."
+        aws s3api put-public-access-block --bucket radio.importantestudio.com --public-access-block-configuration BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false
+        
+        # Wait a moment for the setting to propagate
+        sleep 5
         
         # Configure bucket policy for public read access
         echo '{
@@ -90,12 +94,15 @@ jobs:
         }' > bucket-policy.json
         
         # Apply bucket policy
+        echo "📋 Applying public read policy..."
         aws s3api put-bucket-policy --bucket radio.importantestudio.com --policy file://bucket-policy.json
         
-        # Disable block public access (required for website hosting)
-        aws s3api put-public-access-block --bucket radio.importantestudio.com --public-access-block-configuration BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false
+        # Configure bucket for static website hosting
+        echo "🌐 Configuring static website hosting..."
+        aws s3 website s3://radio.importantestudio.com --index-document index.html --error-document index.html
         
         # Sync files to the correctly named bucket
+        echo "📁 Syncing files to S3..."
         aws s3 sync dist/ s3://radio.importantestudio.com --delete --exact-timestamps
         
     - name: 🔧 Set S3 content types
