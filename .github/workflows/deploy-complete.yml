@@ -96,8 +96,20 @@ jobs:
           echo "Environment not found or not accessible. Checking if it exists in AWS..."
           # Tenta usar AWS CLI para verificar se o environment existe
           if aws elasticbeanstalk describe-environments --environment-names radio-pwa-backend-prod --region us-west-2 --query 'Environments[0].Status' --output text 2>/dev/null | grep -q "Ready"; then
-            echo "Environment exists in AWS but not accessible via EB CLI. Attempting deploy anyway..."
-            eb deploy radio-pwa-backend-prod --timeout 20 || echo "Deploy failed, environment may need manual intervention"
+            echo "Environment exists in AWS but not accessible via EB CLI."
+            echo "Creating application version first..."
+            
+            # Criar versão da aplicação manualmente
+            VERSION_LABEL="app-$(date +%y%m%d_%H%M%S)"
+            aws elasticbeanstalk create-application-version \
+              --application-name radio-pwa-backend \
+              --version-label $VERSION_LABEL \
+              --description "Automated deployment $(date)" \
+              --source-bundle S3Bucket="elasticbeanstalk-us-west-2-$(aws sts get-caller-identity --query Account --output text)",S3Key="radio-pwa-backend/deploy-package.zip" \
+              --region us-west-2 || echo "Version creation failed, trying direct deploy..."
+            
+            echo "Attempting deploy with version label..."
+            eb deploy radio-pwa-backend-prod --version-label $VERSION_LABEL --timeout 20 || echo "Deploy failed, environment may need manual intervention"
           else
             echo "Creating new environment..."
             eb create radio-pwa-backend-prod --instance-type t3.micro --timeout 20 --envvars NODE_ENV=production,AWS_REGION=us-west-2,S3_BUCKET_NAME=radio-importante-storage
