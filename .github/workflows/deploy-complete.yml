@@ -87,10 +87,21 @@ jobs:
           eb init radio-pwa-backend --region us-west-2 --platform node.js
         fi
         
+        echo "Deploying to environment..."
+        # Verifica novamente se o environment está acessível após reinicialização
         if eb status radio-pwa-backend-prod >/dev/null 2>&1; then
+          echo "Environment exists and accessible, deploying..."
           eb deploy radio-pwa-backend-prod --timeout 20
         else
-          eb create radio-pwa-backend-prod --instance-type t3.micro --timeout 20 --envvars NODE_ENV=production,AWS_REGION=us-west-2,S3_BUCKET_NAME=radio-importante-storage
+          echo "Environment not found or not accessible. Checking if it exists in AWS..."
+          # Tenta usar AWS CLI para verificar se o environment existe
+          if aws elasticbeanstalk describe-environments --environment-names radio-pwa-backend-prod --region us-west-2 --query 'Environments[0].Status' --output text 2>/dev/null | grep -q "Ready"; then
+            echo "Environment exists in AWS but not accessible via EB CLI. Attempting deploy anyway..."
+            eb deploy radio-pwa-backend-prod --timeout 20 || echo "Deploy failed, environment may need manual intervention"
+          else
+            echo "Creating new environment..."
+            eb create radio-pwa-backend-prod --instance-type t3.micro --timeout 20 --envvars NODE_ENV=production,AWS_REGION=us-west-2,S3_BUCKET_NAME=radio-importante-storage
+          fi
         fi
         
     - name: 🔍 Get backend URL
