@@ -82,8 +82,9 @@ jobs:
         
         # Força reinicialização se o environment existe mas não está acessível
         if ! eb status radio-pwa-backend-prod >/dev/null 2>&1; then
-          echo "Environment not accessible, reinitializing..."
-          eb init radio-pwa-backend --region us-west-2 --platform node.js --force
+          echo "Environment not accessible, removing config and reinitializing..."
+          rm -rf .elasticbeanstalk
+          eb init radio-pwa-backend --region us-west-2 --platform node.js
         fi
         
         if eb status radio-pwa-backend-prod >/dev/null 2>&1; then
