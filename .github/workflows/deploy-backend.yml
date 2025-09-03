@@ -62,7 +62,7 @@ jobs:
       run: |
         echo "Initializing EB application..."
         if [ ! -d ".elasticbeanstalk" ]; then
-          eb init radio-pwa-backend --region us-west-2 --platform "Node.js 22 running on 64bit Amazon Linux 2" 
+          eb init radio-pwa-backend --region us-west-2 --platform node.js
         fi
         
         echo "Deploying to environment..."
