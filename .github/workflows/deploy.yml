@@ -75,6 +75,26 @@ jobs:
         # Configure bucket for static website hosting
         aws s3 website s3://radio.importantestudio.com --index-document index.html --error-document index.html
         
+        # Configure bucket policy for public read access
+        echo '{
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "PublicReadGetObject",
+              "Effect": "Allow",
+              "Principal": "*",
+              "Action": "s3:GetObject",
+              "Resource": "arn:aws:s3:::radio.importantestudio.com/*"
+            }
+          ]
+        }' > bucket-policy.json
+        
+        # Apply bucket policy
+        aws s3api put-bucket-policy --bucket radio.importantestudio.com --policy file://bucket-policy.json
+        
+        # Disable block public access (required for website hosting)
+        aws s3api put-public-access-block --bucket radio.importantestudio.com --public-access-block-configuration BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false
+        
         # Sync files to the correctly named bucket
         aws s3 sync dist/ s3://radio.importantestudio.com --delete --exact-timestamps
         
