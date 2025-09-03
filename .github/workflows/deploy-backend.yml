@@ -62,7 +62,7 @@ jobs:
       run: |
         echo "Initializing EB application..."
         if [ ! -d ".elasticbeanstalk" ]; then
-          eb init radio-pwa-backend --region us-west-2 --platform "Node.js 18 running on 64bit Amazon Linux 2" 
+          eb init radio-pwa-backend --region us-west-2 --platform "Node.js 22 running on 64bit Amazon Linux 2" 
         fi
         
         echo "Deploying to environment..."
@@ -71,7 +71,7 @@ jobs:
           eb deploy radio-pwa-backend-prod
         else
           echo "Creating new environment..."
-          eb create radio-pwa-backend-prod --instance-type t3.micro --envvars NODE_ENV=production,AWS_REGION=us-west-2,S3_BUCKET_NAME=radio-importante-storage
+          eb create radio-pwa-backend-prod --instance-type t3.micro --timeout 20 --envvars NODE_ENV=production,AWS_REGION=us-west-2,S3_BUCKET_NAME=radio-importante-storage
         fi
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -80,8 +80,8 @@ jobs:
     - name: 🔍 Get deployment URL
       run: |
         URL=$(eb status radio-pwa-backend-prod | grep "CNAME" | awk '{print $2}')
-        echo "🌐 Backend deployed to: https://$URL"
-        echo "BACKEND_URL=https://$URL" >> $GITHUB_ENV
+        echo "🌐 Backend deployed to: http://$URL"
+        echo "BACKEND_URL=http://$URL" >> $GITHUB_ENV
         
     - name: ✅ Health check
       run: |
@@ -89,7 +89,7 @@ jobs:
         sleep 30
         
         URL=$(eb status radio-pwa-backend-prod | grep "CNAME" | awk '{print $2}')
-        if curl -f "https://$URL/health"; then
+        if curl -f "http://$URL/health"; then
           echo "✅ Backend is healthy!"
         else
           echo "❌ Backend health check failed"
@@ -102,5 +102,5 @@ jobs:
         echo "- **Application**: radio-pwa-backend" >> $GITHUB_STEP_SUMMARY
         echo "- **Environment**: radio-pwa-backend-prod" >> $GITHUB_STEP_SUMMARY
         echo "- **Region**: us-west-2" >> $GITHUB_STEP_SUMMARY
-        echo "- **URL**: https://$(eb status radio-pwa-backend-prod | grep "CNAME" | awk '{print $2}')" >> $GITHUB_STEP_SUMMARY
+        echo "- **URL**: http://$(eb status radio-pwa-backend-prod | grep "CNAME" | awk '{print $2}')" >> $GITHUB_STEP_SUMMARY
         echo "- **Health**: ✅ Healthy" >> $GITHUB_STEP_SUMMARY
