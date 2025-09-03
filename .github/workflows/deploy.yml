@@ -69,22 +69,22 @@ jobs:
 
     - name: 🌐 Deploy to S3
       run: |
-        aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_NAME }} --delete --exact-timestamps
+        aws s3 sync dist/ s3://radio-importantestudio-com --delete --exact-timestamps
         
     - name: 🔧 Set S3 content types
       run: |
         # Set correct MIME types for PWA assets
-        aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/manifest.webmanifest s3://${{ secrets.S3_BUCKET_NAME }}/manifest.webmanifest --content-type "application/manifest+json" --metadata-directive REPLACE
-        aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/sw.js s3://${{ secrets.S3_BUCKET_NAME }}/sw.js --content-type "application/javascript" --metadata-directive REPLACE
+        aws s3 cp s3://radio-importantestudio-com/manifest.webmanifest s3://radio-importantestudio-com/manifest.webmanifest --content-type "application/manifest+json" --metadata-directive REPLACE
+        aws s3 cp s3://radio-importantestudio-com/sw.js s3://radio-importantestudio-com/sw.js --content-type "application/javascript" --metadata-directive REPLACE
         
         # Set cache headers for non-SVG assets first
-        aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/audio/ s3://${{ secrets.S3_BUCKET_NAME }}/audio/ --recursive --cache-control "max-age=31536000" --metadata-directive REPLACE || true
+        aws s3 cp s3://radio-importantestudio-com/audio/ s3://radio-importantestudio-com/audio/ --recursive --cache-control "max-age=31536000" --metadata-directive REPLACE || true
         
         # Fix SVG content types individually (AFTER other cache operations)
         echo "🔧 Fixing SVG content types..."
-        for svg in $(aws s3 ls s3://${{ secrets.S3_BUCKET_NAME }}/icons/ --recursive | grep '\.svg' | awk '{print $4}'); do
+        for svg in $(aws s3 ls s3://radio-importantestudio-com/icons/ --recursive | grep '\.svg' | awk '{print $4}'); do
           echo "📝 Fixing: $svg"
-          aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/$svg s3://${{ secrets.S3_BUCKET_NAME }}/$svg \
+          aws s3 cp s3://radio-importantestudio-com/$svg s3://radio-importantestudio-com/$svg \
             --content-type "image/svg+xml" \
             --cache-control "max-age=31536000" \
             --metadata-directive REPLACE
@@ -94,7 +94,7 @@ jobs:
       run: |
         echo "🎯 Deployment completed!"
         echo "🌐 URL: https://radio.importantestudio.com"
-        echo "📊 S3 bucket: ${{ secrets.S3_BUCKET_NAME }}"
+        echo "📊 S3 bucket: radio-importantestudio-com"
         
         # Basic health check
         sleep 10
