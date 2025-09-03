@@ -65,10 +65,17 @@ jobs:
           eb init radio-pwa-backend --region us-west-2 --platform node.js
         fi
         
+        echo "Checking environment status..."
+        # Força reinicialização se o environment existe mas não está acessível
+        if ! eb status radio-pwa-backend-prod >/dev/null 2>&1; then
+          echo "Environment not accessible, reinitializing..."
+          eb init radio-pwa-backend --region us-west-2 --platform node.js --force
+        fi
+        
         echo "Deploying to environment..."
-        if eb status radio-pwa-backend-prod 2>/dev/null; then
+        if eb status radio-pwa-backend-prod >/dev/null 2>&1; then
           echo "Environment exists, deploying..."
-          eb deploy radio-pwa-backend-prod
+          eb deploy radio-pwa-backend-prod --timeout 20
         else
           echo "Creating new environment..."
           eb create radio-pwa-backend-prod --instance-type t3.micro --timeout 20 --envvars NODE_ENV=production,AWS_REGION=us-west-2,S3_BUCKET_NAME=radio-importante-storage

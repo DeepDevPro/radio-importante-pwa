@@ -77,21 +77,27 @@ jobs:
     - name: 🚀 Deploy to Elastic Beanstalk
       run: |
         if [ ! -d ".elasticbeanstalk" ]; then
-          eb init radio-pwa-backend --region us-west-2 --platform "Node.js 18 running on 64bit Amazon Linux 2"
+          eb init radio-pwa-backend --region us-west-2 --platform node.js
         fi
         
-        if eb status radio-pwa-backend-prod 2>/dev/null; then
-          eb deploy radio-pwa-backend-prod
+        # Força reinicialização se o environment existe mas não está acessível
+        if ! eb status radio-pwa-backend-prod >/dev/null 2>&1; then
+          echo "Environment not accessible, reinitializing..."
+          eb init radio-pwa-backend --region us-west-2 --platform node.js --force
+        fi
+        
+        if eb status radio-pwa-backend-prod >/dev/null 2>&1; then
+          eb deploy radio-pwa-backend-prod --timeout 20
         else
-          eb create radio-pwa-backend-prod --instance-type t3.micro --envvars NODE_ENV=production,AWS_REGION=us-west-2,S3_BUCKET_NAME=radio-importante-storage
+          eb create radio-pwa-backend-prod --instance-type t3.micro --timeout 20 --envvars NODE_ENV=production,AWS_REGION=us-west-2,S3_BUCKET_NAME=radio-importante-storage
         fi
         
     - name: 🔍 Get backend URL
       id: get-url
       run: |
         URL=$(eb status radio-pwa-backend-prod | grep "CNAME" | awk '{print $2}')
-        echo "url=https://$URL" >> $GITHUB_OUTPUT
-        echo "🌐 Backend URL: https://$URL"
+        echo "url=http://$URL" >> $GITHUB_OUTPUT
+        echo "🌐 Backend URL: http://$URL"
 
   deploy-frontend:
     name: 🎨 Deploy Frontend
