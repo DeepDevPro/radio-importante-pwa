@@ -105,8 +105,16 @@ jobs:
               --source-bundle S3Bucket="elasticbeanstalk-us-west-2-$(aws sts get-caller-identity --query Account --output text)",S3Key="radio-pwa-backend/deploy-package.zip" \
               --region us-west-2 || echo "Version creation failed, trying direct deploy..."
             
-            echo "Attempting deploy with version label..."
-            eb deploy radio-pwa-backend-prod --version-label $VERSION_LABEL --timeout 20 || echo "Deploy failed, environment may need manual intervention"
+            echo "Deploying version to environment using AWS CLI..."
+            aws elasticbeanstalk update-environment \
+              --environment-name radio-pwa-backend-prod \
+              --version-label $VERSION_LABEL \
+              --region us-west-2 || echo "AWS CLI deploy failed, trying EB CLI without version..."
+            
+            echo "Waiting for deployment to complete..."
+            aws elasticbeanstalk wait environment-updated --environment-names radio-pwa-backend-prod --region us-west-2
+            
+            echo "✅ Deployment completed successfully!"
           else
             echo "Creating new environment..."
             eb create radio-pwa-backend-prod --instance-type t3.micro --timeout 20 --envvars NODE_ENV=production,AWS_REGION=us-west-2,S3_BUCKET_NAME=radio-importante-storage
