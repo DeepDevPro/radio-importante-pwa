@@ -1,0 +1,171 @@
+# GitHub Actions - Setup CloudFront and HTTPS
+name: "🌐 Setup CloudFront & HTTPS"
+
+on:
+  workflow_dispatch: # Manual trigger only
+
+jobs:
+  setup-cloudfront:
+    name: 🔒 Configure HTTPS with CloudFront
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+    
+    - name: 🔧 Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1  # ACM certificates for CloudFront must be in us-east-1
+        
+    - name: 🔐 Create SSL Certificate
+      run: |
+        echo "🔐 Requesting SSL certificate for radio.importantestudio.com..."
+        
+        # Request certificate
+        CERT_ARN=$(aws acm request-certificate \
+          --domain-name radio.importantestudio.com \
+          --subject-alternative-names www.radio.importantestudio.com \
+          --validation-method DNS \
+          --region us-east-1 \
+          --query 'CertificateArn' \
+          --output text)
+        
+        echo "📋 Certificate ARN: $CERT_ARN"
+        echo "CERT_ARN=$CERT_ARN" >> $GITHUB_ENV
+        
+        # Get DNS validation records
+        echo "📝 Getting DNS validation records..."
+        aws acm describe-certificate \
+          --certificate-arn $CERT_ARN \
+          --region us-east-1 \
+          --query 'Certificate.DomainValidationOptions' \
+          --output table
+        
+        echo "⚠️  IMPORTANT: You need to add these DNS CNAME records to validate the certificate!"
+        echo "💡 Check your DNS provider and add the validation records shown above."
+        
+    - name: ⏳ Wait for certificate validation
+      run: |
+        echo "⏳ Waiting for certificate validation..."
+        echo "💡 This step will wait up to 10 minutes for DNS validation to complete."
+        echo "📋 Certificate ARN: $CERT_ARN"
+        
+        # Wait for certificate to be validated (max 10 minutes)
+        timeout 600s bash -c 'until aws acm describe-certificate --certificate-arn $CERT_ARN --region us-east-1 --query "Certificate.Status" --output text | grep -q "ISSUED"; do echo "Waiting for certificate validation..."; sleep 30; done' || echo "⚠️ Timeout reached - certificate may still be validating"
+        
+        # Check final status
+        STATUS=$(aws acm describe-certificate --certificate-arn $CERT_ARN --region us-east-1 --query "Certificate.Status" --output text)
+        echo "🔐 Certificate status: $STATUS"
+        
+        if [ "$STATUS" = "ISSUED" ]; then
+          echo "✅ Certificate is ready!"
+        else
+          echo "⚠️ Certificate is still validating. You can continue manually later."
+        fi
+        
+    - name: 🌐 Create CloudFront Distribution
+      run: |
+        echo "🌐 Creating CloudFront distribution..."
+        
+        # Create CloudFront distribution configuration
+        cat > cloudfront-config.json << EOF
+        {
+          "CallerReference": "radio-importante-$(date +%s)",
+          "Comment": "Radio Importante PWA - HTTPS Distribution",
+          "DefaultRootObject": "index.html",
+          "Origins": {
+            "Quantity": 1,
+            "Items": [
+              {
+                "Id": "S3-radio.importantestudio.com",
+                "DomainName": "radio.importantestudio.com.s3-website-us-west-2.amazonaws.com",
+                "CustomOriginConfig": {
+                  "HTTPPort": 80,
+                  "HTTPSPort": 443,
+                  "OriginProtocolPolicy": "http-only"
+                }
+              }
+            ]
+          },
+          "DefaultCacheBehavior": {
+            "TargetOriginId": "S3-radio.importantestudio.com",
+            "ViewerProtocolPolicy": "redirect-to-https",
+            "MinTTL": 0,
+            "ForwardedValues": {
+              "QueryString": false,
+              "Cookies": {
+                "Forward": "none"
+              }
+            },
+            "Compress": true
+          },
+          "CustomErrorResponses": {
+            "Quantity": 1,
+            "Items": [
+              {
+                "ErrorCode": 404,
+                "ResponsePagePath": "/index.html",
+                "ResponseCode": "200",
+                "ErrorCachingMinTTL": 300
+              }
+            ]
+          },
+          "Aliases": {
+            "Quantity": 1,
+            "Items": ["radio.importantestudio.com"]
+          },
+          "ViewerCertificate": {
+            "ACMCertificateArn": "$CERT_ARN",
+            "SSLSupportMethod": "sni-only",
+            "MinimumProtocolVersion": "TLSv1.2_2021"
+          },
+          "Enabled": true,
+          "PriceClass": "PriceClass_100"
+        }
+        EOF
+        
+        # Create distribution
+        DISTRIBUTION_ID=$(aws cloudfront create-distribution \
+          --distribution-config file://cloudfront-config.json \
+          --region us-east-1 \
+          --query 'Distribution.Id' \
+          --output text)
+        
+        echo "🌐 CloudFront Distribution ID: $DISTRIBUTION_ID"
+        echo "DISTRIBUTION_ID=$DISTRIBUTION_ID" >> $GITHUB_ENV
+        
+        # Get CloudFront domain name
+        CLOUDFRONT_DOMAIN=$(aws cloudfront get-distribution \
+          --id $DISTRIBUTION_ID \
+          --region us-east-1 \
+          --query 'Distribution.DomainName' \
+          --output text)
+        
+        echo "🌐 CloudFront Domain: $CLOUDFRONT_DOMAIN"
+        echo "CLOUDFRONT_DOMAIN=$CLOUDFRONT_DOMAIN" >> $GITHUB_ENV
+        
+    - name: 📋 Deployment Summary
+      run: |
+        echo "## 🌐 CloudFront & HTTPS Setup Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🔐 SSL Certificate" >> $GITHUB_STEP_SUMMARY
+        echo "- **ARN**: \`$CERT_ARN\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **Domain**: radio.importantestudio.com" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🌐 CloudFront Distribution" >> $GITHUB_STEP_SUMMARY
+        echo "- **ID**: \`$DISTRIBUTION_ID\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **Domain**: \`$CLOUDFRONT_DOMAIN\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📝 Next Steps" >> $GITHUB_STEP_SUMMARY
+        echo "1. **Validate Certificate**: Add DNS CNAME records shown in the logs" >> $GITHUB_STEP_SUMMARY
+        echo "2. **Update DNS**: Point radio.importantestudio.com to \`$CLOUDFRONT_DOMAIN\`" >> $GITHUB_STEP_SUMMARY
+        echo "3. **Wait for Deploy**: CloudFront takes 15-20 minutes to deploy globally" >> $GITHUB_STEP_SUMMARY
+        echo "4. **Test HTTPS**: https://radio.importantestudio.com" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 💰 Cost" >> $GITHUB_STEP_SUMMARY
+        echo "- **First 1TB/month**: FREE" >> $GITHUB_STEP_SUMMARY
+        echo "- **SSL Certificate**: FREE" >> $GITHUB_STEP_SUMMARY
+        echo "- **First 10M requests**: FREE" >> $GITHUB_STEP_SUMMARY
