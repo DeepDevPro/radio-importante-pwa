@@ -1,0 +1,1 @@
+Deploy Wed Sep  3 10:34:11 -03 2025 - Fix frontend deployment with correct S3_BUCKET_NAME
