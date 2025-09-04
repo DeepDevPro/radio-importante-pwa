@@ -4,8 +4,8 @@
   "description": "Backend para upload de músicas - Radio Importante PWA",
   "main": "app.js",
   "engines": {
-    "node": "18.20.8",
-    "npm": ">=10.0.0"
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
   },
   "scripts": {
     "start": "node app.js",
