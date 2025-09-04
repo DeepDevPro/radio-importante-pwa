@@ -78,7 +78,7 @@ jobs:
         
         echo "Checking environment status..."
         # Força reinicialização se o environment existe mas não está acessível
-        if ! eb status radio-pwa-backend-prod >/dev/null 2>&1; then
+        if ! eb status radio-importante-backend-prod >/dev/null 2>&1; then
           echo "Environment not accessible, removing config and reinitializing..."
           rm -rf .elasticbeanstalk
           eb init radio-importante-backend --region us-west-2 --platform node.js
@@ -86,13 +86,13 @@ jobs:
         
         echo "Deploying to environment..."
         # Verifica novamente se o environment está acessível após reinicialização
-        if eb status radio-pwa-backend-prod >/dev/null 2>&1; then
+        if eb status radio-importante-backend-prod >/dev/null 2>&1; then
           echo "Environment exists and accessible, deploying..."
-          eb deploy radio-pwa-backend-prod --timeout 20
+          eb deploy radio-importante-backend-prod --timeout 20
         else
           echo "Environment not found or not accessible. Checking if it exists in AWS..."
           # Tenta usar AWS CLI para verificar se o environment existe
-          if aws elasticbeanstalk describe-environments --environment-names radio-pwa-backend-prod --region us-west-2 --query 'Environments[0].Status' --output text 2>/dev/null | grep -q "Ready"; then
+          if aws elasticbeanstalk describe-environments --environment-names radio-importante-backend-prod --region us-west-2 --query 'Environments[0].Status' --output text 2>/dev/null | grep -q "Ready"; then
             echo "Environment exists in AWS but not accessible via EB CLI."
             echo "Creating application version first..."
             
@@ -129,21 +129,21 @@ jobs:
             echo "Deploying version to environment using AWS CLI..."
             if [ "$TIMEOUT_REACHED" = true ]; then
               echo "⚠️ Using direct EB deploy due to timeout..."
-              eb deploy radio-pwa-backend-prod --timeout 20 || echo "EB deploy failed"
+              eb deploy radio-importante-backend-prod --timeout 20 || echo "EB deploy failed"
             else
               aws elasticbeanstalk update-environment \
-                --environment-name radio-pwa-backend-prod \
+                --environment-name radio-importante-backend-prod \
                 --version-label $VERSION_LABEL \
                 --region us-west-2 || echo "AWS CLI deploy failed, trying EB CLI..."
             fi
             
             echo "Waiting for deployment to complete..."
-            aws elasticbeanstalk wait environment-updated --environment-names radio-pwa-backend-prod --region us-west-2
+            aws elasticbeanstalk wait environment-updated --environment-names radio-importante-backend-prod --region us-west-2
             
             echo "✅ Deployment completed successfully!"
           else
             echo "Creating new environment..."
-            eb create radio-pwa-backend-prod --instance-type t3.micro --timeout 20 --envvars NODE_ENV=production,AWS_REGION=us-west-2,S3_BUCKET_NAME=radio-importante-storage
+            eb create radio-importante-backend-prod --instance-type t3.micro --timeout 20 --envvars NODE_ENV=production,AWS_REGION=us-west-2,S3_BUCKET_NAME=radio-importante-storage
           fi
         fi
       env:
@@ -154,16 +154,16 @@ jobs:
       run: |
         echo "Getting environment URL..."
         # Try multiple methods to get the URL
-        URL=$(eb status radio-pwa-backend-prod | grep "CNAME" | awk '{print $2}' || echo "")
+        URL=$(eb status radio-importante-backend-prod | grep "CNAME" | awk '{print $2}' || echo "")
         
         if [ -z "$URL" ]; then
           echo "EB CLI didn't return URL, trying AWS CLI..."
-          URL=$(aws elasticbeanstalk describe-environments --environment-names radio-pwa-backend-prod --region us-west-2 --query 'Environments[0].CNAME' --output text 2>/dev/null || echo "")
+          URL=$(aws elasticbeanstalk describe-environments --environment-names radio-importante-backend-prod --region us-west-2 --query 'Environments[0].CNAME' --output text 2>/dev/null || echo "")
         fi
         
         if [ -z "$URL" ] || [ "$URL" = "None" ]; then
           echo "⚠️ Could not get environment URL, using environment name..."
-          URL="radio-pwa-backend-prod.us-west-2.elasticbeanstalk.com"
+          URL="radio-importante-backend-prod.us-west-2.elasticbeanstalk.com"
         fi
         
         echo "🌐 Backend deployed to: http://$URL"
@@ -175,16 +175,16 @@ jobs:
         sleep 30
         
         # Get URL with fallback methods
-        URL=$(eb status radio-pwa-backend-prod | grep "CNAME" | awk '{print $2}' || echo "")
+        URL=$(eb status radio-importante-backend-prod | grep "CNAME" | awk '{print $2}' || echo "")
         
         if [ -z "$URL" ]; then
           echo "EB CLI didn't return URL, trying AWS CLI..."
-          URL=$(aws elasticbeanstalk describe-environments --environment-names radio-pwa-backend-prod --region us-west-2 --query 'Environments[0].CNAME' --output text 2>/dev/null || echo "")
+          URL=$(aws elasticbeanstalk describe-environments --environment-names radio-importante-backend-prod --region us-west-2 --query 'Environments[0].CNAME' --output text 2>/dev/null || echo "")
         fi
         
         if [ -z "$URL" ] || [ "$URL" = "None" ]; then
           echo "⚠️ Using default environment URL..."
-          URL="radio-pwa-backend-prod.us-west-2.elasticbeanstalk.com"
+          URL="radio-importante-backend-prod.us-west-2.elasticbeanstalk.com"
         fi
         
         echo "Testing health check at: http://$URL/health"
@@ -202,25 +202,25 @@ jobs:
         
         echo "❌ Backend health check failed after 3 attempts"
         echo "🔍 Environment status:"
-        eb status radio-pwa-backend-prod || aws elasticbeanstalk describe-environments --environment-names radio-pwa-backend-prod --region us-west-2
+        eb status radio-importante-backend-prod || aws elasticbeanstalk describe-environments --environment-names radio-importante-backend-prod --region us-west-2
         exit 1
         
     - name: 📊 Deployment summary
       run: |
         # Get URL with fallback methods
-        URL=$(eb status radio-pwa-backend-prod | grep "CNAME" | awk '{print $2}' || echo "")
+        URL=$(eb status radio-importante-backend-prod | grep "CNAME" | awk '{print $2}' || echo "")
         
         if [ -z "$URL" ]; then
-          URL=$(aws elasticbeanstalk describe-environments --environment-names radio-pwa-backend-prod --region us-west-2 --query 'Environments[0].CNAME' --output text 2>/dev/null || echo "")
+          URL=$(aws elasticbeanstalk describe-environments --environment-names radio-importante-backend-prod --region us-west-2 --query 'Environments[0].CNAME' --output text 2>/dev/null || echo "")
         fi
         
         if [ -z "$URL" ] || [ "$URL" = "None" ]; then
-          URL="radio-pwa-backend-prod.us-west-2.elasticbeanstalk.com"
+          URL="radio-importante-backend-prod.us-west-2.elasticbeanstalk.com"
         fi
         
         echo "## 🚀 Backend Deployment Summary" >> $GITHUB_STEP_SUMMARY
         echo "- **Application**: radio-importante-backend" >> $GITHUB_STEP_SUMMARY
-        echo "- **Environment**: radio-pwa-backend-prod" >> $GITHUB_STEP_SUMMARY
+        echo "- **Environment**: radio-importante-backend-prod" >> $GITHUB_STEP_SUMMARY
         echo "- **Region**: us-west-2" >> $GITHUB_STEP_SUMMARY
         echo "- **URL**: http://$URL" >> $GITHUB_STEP_SUMMARY
         echo "- **Health**: ✅ Healthy" >> $GITHUB_STEP_SUMMARY
