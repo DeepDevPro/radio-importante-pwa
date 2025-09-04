@@ -1,1 +1,1 @@
-Deploy trigger: 2024-12-21 14:45:00 - FIXED: Removed invalid NodeVersion config, using EB default Node.js 22
+Deploy trigger: 2024-12-21 15:00:00 - ULTRA SIMPLE: Minimal Express app to isolate EB deployment issue
