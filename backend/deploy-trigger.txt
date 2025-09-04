@@ -1,1 +1,1 @@
-Deploy trigger: 2024-12-21 15:15:00 - REMOVED PROCFILE: Let EB Node.js 22 use npm start automatically + debug bootstrap
+Deploy #6: Standard app.js + no engines field

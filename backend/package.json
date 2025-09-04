@@ -1,31 +1,15 @@
 {
   "name": "radio-importante-backend",
   "version": "1.0.0",
-  "description": "Backend para upload de músicas - Radio Importante PWA",
-  "main": "app-simple.js",
-  "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
-  },
+  "description": "Backend API - Radio Importante PWA",
+  "main": "app.js",
   "scripts": {
-    "start": "node app-simple.js",
-    "dev": "nodemon app-simple.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node app.js"
   },
   "dependencies": {
     "express": "^4.18.2"
   },
-  "devDependencies": {
-    "nodemon": "^3.0.1"
-  },
-  "keywords": [
-    "music",
-    "upload",
-    "aws",
-    "s3",
-    "express",
-    "backend"
-  ],
+  "keywords": ["api", "backend"],
   "author": "Radio Importante",
   "license": "MIT"
 }
