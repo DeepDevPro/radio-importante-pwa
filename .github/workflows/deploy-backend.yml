@@ -64,7 +64,7 @@ jobs:
         zip -r deploy-package.zip . -x "node_modules/*" ".git/*" "*.log" ".env" "test-api.sh" "eb-init.sh" "deploy-package.zip"
         
         # Upload para S3
-        aws s3 cp deploy-package.zip s3://$S3_BUCKET/radio-pwa-backend/deploy-package.zip
+        aws s3 cp deploy-package.zip s3://$S3_BUCKET/radio-importante-backend/deploy-package.zip
         
         echo "Source uploaded successfully to S3"
         ls -lh deploy-package.zip
@@ -73,7 +73,7 @@ jobs:
       run: |
         echo "Initializing EB application..."
         if [ ! -d ".elasticbeanstalk" ]; then
-          eb init radio-pwa-backend --region us-west-2 --platform node.js
+          eb init radio-importante-backend --region us-west-2 --platform node.js
         fi
         
         echo "Checking environment status..."
@@ -81,7 +81,7 @@ jobs:
         if ! eb status radio-pwa-backend-prod >/dev/null 2>&1; then
           echo "Environment not accessible, removing config and reinitializing..."
           rm -rf .elasticbeanstalk
-          eb init radio-pwa-backend --region us-west-2 --platform node.js
+          eb init radio-importante-backend --region us-west-2 --platform node.js
         fi
         
         echo "Deploying to environment..."
@@ -100,17 +100,17 @@ jobs:
             VERSION_LABEL="app-$(date +%y%m%d_%H%M%S)"
             echo "Creating application version: $VERSION_LABEL"
             aws elasticbeanstalk create-application-version \
-              --application-name radio-pwa-backend \
+              --application-name radio-importante-backend \
               --version-label $VERSION_LABEL \
               --description "Automated deployment $(date)" \
-              --source-bundle S3Bucket="elasticbeanstalk-us-west-2-$(aws sts get-caller-identity --query Account --output text)",S3Key="radio-pwa-backend/deploy-package.zip" \
+              --source-bundle S3Bucket="elasticbeanstalk-us-west-2-$(aws sts get-caller-identity --query Account --output text)",S3Key="radio-importante-backend/deploy-package.zip" \
               --region us-west-2 || echo "Version creation failed, trying direct deploy..."
             
             echo "Waiting for application version to be processed..."
             # Wait until version is PROCESSED - with fallback
             TIMEOUT_REACHED=false
             for i in {1..15}; do
-              STATUS=$(aws elasticbeanstalk describe-application-versions --application-name radio-pwa-backend --version-labels $VERSION_LABEL --region us-west-2 --query 'ApplicationVersions[0].Status' --output text 2>/dev/null || echo "NOTFOUND")
+              STATUS=$(aws elasticbeanstalk describe-application-versions --application-name radio-importante-backend --version-labels $VERSION_LABEL --region us-west-2 --query 'ApplicationVersions[0].Status' --output text 2>/dev/null || echo "NOTFOUND")
               echo "Attempt $i: Version status is $STATUS"
               if [ "$STATUS" = "PROCESSED" ]; then
                 echo "✅ Application version is ready for deployment"
@@ -219,7 +219,7 @@ jobs:
         fi
         
         echo "## 🚀 Backend Deployment Summary" >> $GITHUB_STEP_SUMMARY
-        echo "- **Application**: radio-pwa-backend" >> $GITHUB_STEP_SUMMARY
+        echo "- **Application**: radio-importante-backend" >> $GITHUB_STEP_SUMMARY
         echo "- **Environment**: radio-pwa-backend-prod" >> $GITHUB_STEP_SUMMARY
         echo "- **Region**: us-west-2" >> $GITHUB_STEP_SUMMARY
         echo "- **URL**: http://$URL" >> $GITHUB_STEP_SUMMARY
