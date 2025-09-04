@@ -1,7 +1,8 @@
-Deploy #10: RADICAL CLEANUP - Removed all conflicting .ebextensions configs
+Deploy #11: CORS ENABLED - Fixed frontend integration
 
-- Cleaned up multiple conflicting configuration files
-- Fixed empty Procfile that was 0 bytes  
-- Created single clean .ebextensions/01-app-config.config
-- Removed debug scripts that could interfere with deployment
-- This should eliminate "Engine execution has encountered an error"
+- Added CORS headers to allow frontend requests
+- Updated /health endpoint with more info (timestamp, cors status)
+- Updated / endpoint with version and cors status  
+- Fixed encoding issue in test page (UTF-8 meta tag)
+- Backend now accepts requests from any origin (*)
+- This should resolve CORS errors from frontend
