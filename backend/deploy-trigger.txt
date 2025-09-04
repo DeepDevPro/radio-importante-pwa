@@ -1,1 +1,1 @@
-Deploy trigger - Fix nginx and add debug - 2025-09-04 19:07
+Deploy trigger - Fix EB config parameters - 2025-09-04 19:10
