@@ -118,3 +118,8 @@ DEBUG=* npm run dev
 - Logs: CloudWatch (produção) ou console (desenvolvimento)
 - Métricas: AWS CloudWatch
 # Backend ready for production deployment
+
+## Latest Update
+- Fixed port configuration for Elastic Beanstalk
+- Added comprehensive health check endpoint
+- Configured CORS for production frontend
