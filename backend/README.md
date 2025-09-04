@@ -117,3 +117,4 @@ DEBUG=* npm run dev
 - Health check: `/health`
 - Logs: CloudWatch (produção) ou console (desenvolvimento)
 - Métricas: AWS CloudWatch
+# Backend ready for production deployment
