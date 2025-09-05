@@ -1,15 +1,10 @@
 {
-  "version": "v2.2.0",
+  "version": "v2.2.4",
   "tracks": [],
   "metadata": {
     "totalTracks": 0,
     "totalDuration": 0,
-    "artwork": "/img/radio-importante-logo.png",
-    "radioName": "Rádio Importante",
-    "description": "Uma seleção de música eletrônica, soul e experimental",
-    "genre": "Electronic, Soul, Experimental",
-    "language": "pt-BR",
-    "lastUpdated": "2025-09-05T20:03:37.538Z",
-    "deployVersion": "v2.2.0"
+    "artwork": "/icons/icon-192x192.png",
+    "radioName": "Radio Importante"
   }
 }

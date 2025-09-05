@@ -200,7 +200,7 @@ export class StateManager {
         response = await fetch('http://localhost:8080/api/catalog');
         if (response.ok) {
           const apiResult = await response.json();
-          this.catalog = apiResult.catalog;
+          this.catalog = apiResult; // Backend retorna o catálogo diretamente
           console.log('✅ Catálogo carregado via API backend');
         } else {
           throw new Error('API não disponível');
@@ -214,7 +214,7 @@ export class StateManager {
         this.catalog = await response.json();
       }
       
-      if (!this.catalog) {
+      if (!this.catalog || !this.catalog.tracks || !Array.isArray(this.catalog.tracks)) {
         throw new Error('Catálogo inválido');
       }
       
