@@ -1,6 +1,6 @@
 {
   "name": "radio-importante",
-  "version": "2.2.5",
+  "version": "2.2.6",
   "description": "PWA Music Player - Radio Importante",
   "main": "index.js",
   "type": "module",
