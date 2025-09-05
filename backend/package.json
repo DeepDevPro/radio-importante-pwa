@@ -1,15 +1,14 @@
 {
   "name": "radio-backend",
-  "version": "2.1.7",
-  "main": "app-debug.js",
+  "version": "2.1.8",
+  "main": "index.js",
   "scripts": {
-    "start": "node app-debug.js",
-    "dev": "node app.js"
+    "start": "node index.js"
   },
   "dependencies": {
     "express": "4.18.2"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": "18.x"
   }
 }
