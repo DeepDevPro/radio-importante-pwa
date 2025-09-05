@@ -40,17 +40,32 @@ jobs:
       run: |
         TAG_NAME="${{ github.ref_name }}"
         
+        # Use bucket padrão se S3_BUCKET_NAME não estiver definido
+        S3_BUCKET="${{ secrets.S3_BUCKET_NAME }}"
+        if [ -z "$S3_BUCKET" ]; then
+          S3_BUCKET="radio-importante-frontend"
+          echo "⚠️ S3_BUCKET_NAME não definido, usando bucket padrão: $S3_BUCKET"
+        fi
+        
+        echo "Deploying to S3 bucket: $S3_BUCKET"
+        
         # Upload principal
-        aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_NAME }} --delete
+        aws s3 sync dist/ s3://$S3_BUCKET --delete
         
         # Backup da versão em releases/
-        aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_NAME }}/releases/${TAG_NAME}/ 
+        aws s3 sync dist/ s3://$S3_BUCKET/releases/${TAG_NAME}/ 
         
         echo "✅ Frontend deployed to S3"
         echo "📦 Backup created at releases/${TAG_NAME}/"
 
     - name: 🔄 Invalidate CloudFront
       run: |
+        # Use bucket padrão se S3_BUCKET_NAME não estiver definido
+        S3_BUCKET="${{ secrets.S3_BUCKET_NAME }}"
+        if [ -z "$S3_BUCKET" ]; then
+          S3_BUCKET="radio-importante-frontend"
+        fi
+        
         if [ -n "${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}" ]; then
           aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
           echo "✅ CloudFront cache invalidated"
@@ -60,7 +75,13 @@ jobs:
 
     - name: 📋 Deployment Summary
       run: |
+        # Use bucket padrão se S3_BUCKET_NAME não estiver definido
+        S3_BUCKET="${{ secrets.S3_BUCKET_NAME }}"
+        if [ -z "$S3_BUCKET" ]; then
+          S3_BUCKET="radio-importante-frontend"
+        fi
+        
         echo "📋 Frontend Deployment Summary:" >> $GITHUB_STEP_SUMMARY
-        echo "- 🌐 **URL**: https://${{ secrets.S3_BUCKET_NAME }}" >> $GITHUB_STEP_SUMMARY
+        echo "- 🌐 **URL**: https://$S3_BUCKET.s3-website-us-west-2.amazonaws.com" >> $GITHUB_STEP_SUMMARY
         echo "- 🏷️ **Version**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-        echo "- 📦 **Backup**: s3://${{ secrets.S3_BUCKET_NAME }}/releases/${{ github.ref_name }}/" >> $GITHUB_STEP_SUMMARY
+        echo "- 📦 **Backup**: s3://$S3_BUCKET/releases/${{ github.ref_name }}/" >> $GITHUB_STEP_SUMMARY
