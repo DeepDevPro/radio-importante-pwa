@@ -808,17 +808,23 @@
 
             preview.style.display = 'block';
             fileList.innerHTML = selectedFiles.map((file, index) => `
-                <div class="file-item">
+                <div class="file-item" id="file-item-${index}">
                     <span class="file-icon">🎵</span>
                     <div class="file-info">
                         <div class="file-name">${file.name}</div>
                         <div class="file-size">${formatFileSize(file.size)}</div>
+                        <div class="file-duration" id="duration-${index}">🔄 Calculando duração...</div>
                     </div>
                     <button class="btn btn-danger" onclick="removeFile(${index})" style="padding: 6px 12px; font-size: 14px;">
                         ✕
                     </button>
                 </div>
             `).join('');
+
+            // Calcular duração de cada arquivo
+            selectedFiles.forEach((file, index) => {
+                calculateAudioDuration(file, index);
+            });
         }
 
         function removeFile(index) {
@@ -855,8 +861,12 @@
 
                 // Preparar FormData com todos os arquivos de uma vez
                 const formData = new FormData();
-                selectedFiles.forEach(file => {
+                selectedFiles.forEach((file, index) => {
                     formData.append('audioFiles', file);
+                    // Enviar duração calculada junto com o arquivo
+                    if (file.calculatedDuration) {
+                        formData.append(`duration_${index}`, file.calculatedDuration.toString());
+                    }
                 });
 
                 progressFill.style.width = '50%';
@@ -1107,9 +1117,6 @@
                         </div>
                         <div class="music-actions">
                             <input type="checkbox" class="music-checkbox" data-track-id="${track.id}" style="margin-right: 10px; transform: scale(1.2);">
-                            <button class="btn" onclick="editMetadata('${track.id}')" style="padding: 8px 12px; background: #28a745;" title="Editar metadados">
-                                ✏️
-                            </button>
                             <button class="btn btn-danger" onclick="deleteTrack('${track.id}')" style="padding: 8px 12px;" title="Deletar música">
                                 🗑️
                             </button>
@@ -1274,6 +1281,44 @@
                 console.error('Erro ao deletar músicas:', error);
                 showAlert('manage-status', `❌ Erro ao deletar músicas: ${error.message}`, 'error');
             }
+        }
+
+        // ===== CÁLCULO DE DURAÇÃO =====
+        function calculateAudioDuration(file, index) {
+            const audio = new Audio();
+            const url = URL.createObjectURL(file);
+            
+            audio.addEventListener('loadedmetadata', function() {
+                const duration = audio.duration;
+                const durationElement = document.getElementById(`duration-${index}`);
+                
+                if (durationElement) {
+                    if (isFinite(duration)) {
+                        durationElement.textContent = `⏱️ ${formatDuration(duration)}`;
+                        durationElement.style.color = '#28a745';
+                        
+                        // Armazenar duração no arquivo para uso no upload
+                        file.calculatedDuration = duration;
+                    } else {
+                        durationElement.textContent = '⚠️ Duração desconhecida';
+                        durationElement.style.color = '#dc3545';
+                    }
+                }
+                
+                // Limpar URL object para liberar memória
+                URL.revokeObjectURL(url);
+            });
+            
+            audio.addEventListener('error', function() {
+                const durationElement = document.getElementById(`duration-${index}`);
+                if (durationElement) {
+                    durationElement.textContent = '❌ Erro ao ler arquivo';
+                    durationElement.style.color = '#dc3545';
+                }
+                URL.revokeObjectURL(url);
+            });
+            
+            audio.src = url;
         }
 
         // ===== UTILITÁRIOS =====
