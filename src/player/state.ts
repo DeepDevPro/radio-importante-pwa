@@ -84,13 +84,23 @@ export class StateManager {
     try {
       console.log('🔄 Recarregando catálogo...');
       
-      // Tentar API do backend primeiro, fallback para arquivo local
+      // Detectar ambiente
+      const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+      
+      // Tentar API do backend apropriado para o ambiente
       let response;
       try {
-        response = await fetch('http://localhost:8080/api/catalog');
+        if (isProduction) {
+          // Em produção, usar apenas backend de produção
+          response = await fetch('http://radio-importante-backend-prod.eba-heipfui9.us-west-2.elasticbeanstalk.com/api/catalog');
+        } else {
+          // Em desenvolvimento, usar apenas backend local
+          response = await fetch('http://localhost:8080/api/catalog');
+        }
+        
         if (response.ok) {
           const apiResult = await response.json();
-          this.catalog = apiResult.catalog;
+          this.catalog = apiResult;
           console.log('✅ Catálogo recarregado via API backend');
         } else {
           throw new Error('API não disponível');
@@ -117,18 +127,12 @@ export class StateManager {
           this.catalog.tracks.forEach(track => {
             track.safeFilename = track.filename; // Usar filename direto (já sanitizado no admin)
           });
-        // Regenerar safeFilenames
-        if (this.catalog?.tracks) {
-          this.catalog.tracks.forEach(track => {
-            track.safeFilename = track.filename; // Usar filename direto (já sanitizado no admin)
-          });
         }
         
         console.log(`✅ Catálogo recarregado: ${this.catalog?.tracks?.length || 0} faixas`);
         
         // Notificar listeners sobre a atualização
         this.notifyListeners();
-      }
     } catch (error) {
       console.error('❌ Erro ao recarregar catálogo:', error);
     }
@@ -194,10 +198,20 @@ export class StateManager {
     try {
       console.log('📂 Carregando catálogo via API...');
       
-      // Tentar API do backend primeiro, fallback para arquivo local
+      // Detectar ambiente
+      const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+      
+      // Tentar API do backend apropriado para o ambiente
       let response;
       try {
-        response = await fetch('http://localhost:8080/api/catalog');
+        if (isProduction) {
+          // Em produção, usar apenas backend de produção
+          response = await fetch('http://radio-importante-backend-prod.eba-heipfui9.us-west-2.elasticbeanstalk.com/api/catalog');
+        } else {
+          // Em desenvolvimento, usar apenas backend local
+          response = await fetch('http://localhost:8080/api/catalog');
+        }
+        
         if (response.ok) {
           const apiResult = await response.json();
           this.catalog = apiResult; // Backend retorna o catálogo diretamente
@@ -205,7 +219,7 @@ export class StateManager {
         } else {
           throw new Error('API não disponível');
         }
-      } catch (apiError) {
+      } catch {
         console.log('⚠️ API backend não disponível, usando arquivo local');
         response = await fetch('/data/catalog.json');
         if (!response.ok) {

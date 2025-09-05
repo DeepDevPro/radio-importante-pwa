@@ -728,21 +728,25 @@
                 const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
                 
                 if (isProduction && prodAvailable) {
-                    // Em produção, sempre usar backend de produção se disponível
+                    // Em produção, APENAS usar backend de produção
                     API_CONFIG.currentBackend = API_CONFIG.productionUrl;
                     activeBackend = '☁️ Produção (AWS)';
                 } else if (!isProduction && localAvailable) {
-                    // Em desenvolvimento, usar backend local se disponível
+                    // Em desenvolvimento, APENAS usar backend local
                     API_CONFIG.currentBackend = API_CONFIG.backendUrl;
                     activeBackend = '🏠 Local (localhost:8080)';
-                } else if (prodAvailable) {
-                    // Fallback para produção se local não estiver disponível
-                    API_CONFIG.currentBackend = API_CONFIG.productionUrl;
-                    activeBackend = '☁️ Produção (AWS) - Fallback';
-                } else if (localAvailable) {
-                    // Fallback para local se produção não estiver disponível
-                    API_CONFIG.currentBackend = API_CONFIG.backendUrl;
-                    activeBackend = '🏠 Local (localhost:8080) - Fallback';
+                } else if (isProduction && !prodAvailable) {
+                    // Em produção SEM backend disponível = ERRO
+                    API_CONFIG.currentBackend = null;
+                    activeBackend = '❌ ERRO: Backend de produção indisponível';
+                } else if (!isProduction && !localAvailable) {
+                    // Em desenvolvimento SEM backend local = ERRO
+                    API_CONFIG.currentBackend = null;
+                    activeBackend = '❌ ERRO: Backend local indisponível';
+                } else {
+                    // Caso genérico de erro
+                    API_CONFIG.currentBackend = null;
+                    activeBackend = '❌ ERRO: Nenhum backend apropriado disponível';
                 }
 
                 statusDiv.innerHTML = `
@@ -857,7 +861,10 @@
             }
 
             if (!API_CONFIG.currentBackend) {
-                showAlert('upload-status', 'Nenhum backend disponível', 'error');
+                const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+                const environment = isProduction ? 'produção' : 'desenvolvimento';
+                const expectedBackend = isProduction ? 'AWS' : 'local';
+                showAlert('upload-status', `❌ ERRO: Backend de ${environment} (${expectedBackend}) não está disponível. Verifique a conexão e tente novamente.`, 'error');
                 return;
             }
 
@@ -1051,7 +1058,7 @@
                 musicList.innerHTML = '<div style="text-align: center; padding: 20px;">🔄 Carregando músicas...</div>';
                 totalsDiv.innerHTML = '🔄 Calculando totais...';
                 
-                // Tentar carregar do backend
+                // Tentar carregar do backend apropriado
                 let tracks = [];
                 if (API_CONFIG.currentBackend) {
                     try {
@@ -1061,21 +1068,19 @@
                             tracks = data.tracks || [];
                         }
                     } catch (e) {
-                        console.log('Erro ao carregar do backend, tentando catálogo local');
+                        console.error('Erro ao carregar do backend:', e);
+                        showAlert('manage-status', '❌ Erro ao carregar músicas do backend', 'error');
                     }
+                } else {
+                    // Sem backend apropriado disponível
+                    const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+                    const environment = isProduction ? 'produção' : 'desenvolvimento';
+                    showAlert('manage-status', `❌ Backend de ${environment} não disponível. Não é possível carregar lista de músicas.`, 'error');
                 }
                 
-                // Fallback para catálogo local
-                if (tracks.length === 0) {
-                    try {
-                        const response = await fetch('/data/catalog.json');
-                        if (response.ok) {
-                            const data = await response.json();
-                            tracks = data.tracks || [];
-                        }
-                    } catch (e) {
-                        console.log('Erro ao carregar catálogo local');
-                    }
+                // Mostrar apenas músicas do backend (sem fallback para arquivo local)
+                if (tracks.length === 0 && API_CONFIG.currentBackend) {
+                    showAlert('manage-status', 'ℹ️ Nenhuma música encontrada no catálogo', 'info');
                 }
 
                 if (tracks.length === 0) {

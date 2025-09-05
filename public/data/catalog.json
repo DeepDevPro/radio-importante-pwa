@@ -1,8 +1,33 @@
 {
   "version": "v2.2.4",
-  "tracks": [],
+  "tracks": [
+    {
+      "id": "track_1757104970091_0",
+      "title": "01 I Dont Wanna Stop (Marc Mac Grown Soul Mix)",
+      "artist": "Artista não definido",
+      "filename": "01 I Dont Wanna Stop (Marc Mac Grown Soul Mix).mp3",
+      "duration": 0,
+      "format": ".mp3"
+    },
+    {
+      "id": "track_1757104970091_1",
+      "title": "01 In The Town",
+      "artist": "Artista não definido",
+      "filename": "01 In The Town.mp3",
+      "duration": 0,
+      "format": ".mp3"
+    },
+    {
+      "id": "track_1757104970091_2",
+      "title": "01 Intro (A Jazz Experiment)",
+      "artist": "Artista não definido",
+      "filename": "01 Intro (A Jazz Experiment).mp3",
+      "duration": 0,
+      "format": ".mp3"
+    }
+  ],
   "metadata": {
-    "totalTracks": 0,
+    "totalTracks": 3,
     "totalDuration": 0,
     "artwork": "/icons/icon-192x192.png",
     "radioName": "Radio Importante"
