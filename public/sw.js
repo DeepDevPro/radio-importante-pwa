@@ -2,11 +2,11 @@
 // Estratégia: Cache-first para UI, Network-only para áudio
 // Otimizado para iOS PWA Background Audio
 
-const CACHE_NAME = 'radio-importante-v2';
+const CACHE_NAME = 'radio-importante-v3'; // Incrementar versão para forçar atualização
 const STATIC_CACHE_URLS = [
   '/',
   '/index.html',
-  '/admin.html',
+  // Removido '/admin.html' para sempre buscar versão mais recente
   '/manifest.webmanifest',
   // Incluir apenas recursos essenciais
 ];
@@ -16,6 +16,7 @@ const NEVER_CACHE = [
   '/audio/',
   '/api/',
   '/data/catalog.json', // Sempre buscar versão mais recente
+  '/admin.html', // CRÍTICO: admin.html sempre deve buscar a versão mais recente
   'localhost:', // Evitar cache durante desenvolvimento
 ];
 
@@ -131,4 +132,4 @@ self.addEventListener('message', (event) => {
 });
 
 // Log de debug
-console.log('🎵 Service Worker do Radio Importante carregado (v2 - iOS otimizado)');
+console.log('🎵 Service Worker do Radio Importante carregado (v3 - Admin sempre atualizado)');
