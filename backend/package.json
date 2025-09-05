@@ -1,9 +1,9 @@
 {
   "name": "radio-backend",
-  "version": "2.1.6",
-  "main": "app-ultra-minimal.js",
+  "version": "2.1.7",
+  "main": "app-debug.js",
   "scripts": {
-    "start": "node app-ultra-minimal.js",
+    "start": "node app-debug.js",
     "dev": "node app.js"
   },
   "dependencies": {
