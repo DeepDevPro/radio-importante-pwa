@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>🎵 Radio Importante - Teste de Integração</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 15px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🎵 Radio Importante - Teste de Integração Frontend ↔ Backend</h1>
+    
+    <div class="status info">
+        <strong>Status:</strong> Testando integração entre PWA e API Backend...
+    </div>
+
+    <h2>🔧 Testes de API</h2>
+    <div style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+        <strong>Backend Atual:</strong> <span id="current-backend">Local</span>
+        <button onclick="switchToLocal()" style="margin-left: 10px;">🏠 Local</button>
+        <button onclick="switchToProduction()" style="margin-left: 5px;">☁️ Produção</button>
+    </div>
+    
+    <button onclick="testHealth()">Testar /health</button>
+    <button onclick="testRoot()">Testar /</button>
+    <button onclick="testUpload()">Testar /api/upload</button>
+    <button onclick="testCatalog()">Testar catalog.json local</button>
+    <button onclick="testFullIntegration()">Teste Completo</button>
+
+    <h3>📊 Resultados:</h3>
+    <div id="results"></div>
+
+    <script type="module">
+        // Importar nossa configuração da API
+        import { getApiUrl, isApiAvailable, getDataUrl } from './src/config/api.js';
+        
+        window.API_CONFIG = {
+            backendUrl: 'http://localhost:8080', // Backend local para teste
+            productionUrl: 'http://radio-importante-backend-prod.eba-heipfui9.us-west-2.elasticbeanstalk.com',
+            currentMode: 'local'
+        };
+
+        window.switchToLocal = function() {
+            window.API_CONFIG.backendUrl = 'http://localhost:8080';
+            window.API_CONFIG.currentMode = 'local';
+            document.getElementById('current-backend').textContent = 'Local (localhost:8080)';
+            appendResult('🏠 Mudou para backend LOCAL', 'info');
+        };
+
+        window.switchToProduction = function() {
+            window.API_CONFIG.backendUrl = window.API_CONFIG.productionUrl;
+            window.API_CONFIG.currentMode = 'production';
+            document.getElementById('current-backend').textContent = 'Produção (AWS)';
+            appendResult('☁️ Mudou para backend PRODUÇÃO', 'info');
+        };
+
+        window.testHealth = async function() {
+            appendResult('🔍 Testando endpoint /health...');
+            try {
+                const response = await fetch(window.API_CONFIG.backendUrl + '/health');
+                const data = await response.json();
+                appendResult('✅ /health: ' + JSON.stringify(data), 'success');
+            } catch (error) {
+                appendResult('❌ Erro /health: ' + error.message, 'error');
+            }
+        };
+
+        window.testRoot = async function() {
+            appendResult('🔍 Testando endpoint / (raiz)...');
+            try {
+                const response = await fetch(window.API_CONFIG.backendUrl + '/');
+                const data = await response.json();
+                appendResult('✅ / (raiz): ' + JSON.stringify(data), 'success');
+            } catch (error) {
+                appendResult('❌ Erro / (raiz): ' + error.message, 'error');
+            }
+        };
+
+        window.testCatalog = async function() {
+            appendResult('🔍 Testando catalog.json local...');
+            try {
+                const response = await fetch('/data/catalog.json');
+                const data = await response.json();
+                appendResult('✅ catalog.json local: ' + data.tracks.length + ' tracks encontradas', 'success');
+            } catch (error) {
+                appendResult('❌ Erro catalog.json: ' + error.message, 'error');
+            }
+        };
+
+        window.testUpload = async function() {
+            appendResult('🔍 Testando endpoint /api/upload...');
+            try {
+                // Testar com dados simulados
+                const testData = {
+                    files: [
+                        { name: 'test-song.mp3', size: 1024000, type: 'audio/mpeg' }
+                    ],
+                    metadata: { source: 'integration-test' }
+                };
+
+                const response = await fetch(window.API_CONFIG.backendUrl + '/api/upload', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testData)
+                });
+                
+                const data = await response.json();
+                appendResult('✅ /api/upload: ' + JSON.stringify(data), 'success');
+            } catch (error) {
+                appendResult('❌ Erro /api/upload: ' + error.message, 'error');
+            }
+        };
+
+        window.testFullIntegration = async function() {
+            appendResult('🚀 Iniciando teste completo de integração...');
+            
+            // Teste 1: Backend Local
+            appendResult('📍 FASE 1: Testando Backend Local');
+            switchToLocal();
+            await testHealth();
+            await testRoot();
+            await testUpload();
+            
+            // Teste 2: Backend Produção
+            appendResult('📍 FASE 2: Testando Backend Produção');
+            switchToProduction();
+            await testHealth();
+            await testRoot();
+            await testUpload();
+            
+            // Teste 3: Dados Locais
+            appendResult('📍 FASE 3: Testando Dados Locais');
+            await testCatalog();
+            
+            // Teste 4: Integração Completa
+            appendResult('📍 FASE 4: Teste de Integração PWA + API');
+            await testPWAIntegration();
+            
+            appendResult('🎉 Teste completo finalizado!', 'info');
+        };
+
+        window.testPWAIntegration = async function() {
+            appendResult('🔍 Testando integração PWA + API...');
+            
+            try {
+                // Simular carregamento da aplicação principal
+                appendResult('📱 Simulando carregamento da PWA...');
+                
+                // Testar se conseguimos acessar a configuração da API
+                if (window.API_CONFIG) {
+                    appendResult('✅ Configuração da API disponível');
+                } else {
+                    appendResult('❌ Configuração da API não encontrada', 'error');
+                    return;
+                }
+                
+                // Testar conectividade com ambos backends
+                appendResult('🌐 Testando conectividade dual (local + produção)...');
+                
+                const localTest = fetch('http://localhost:8080/health').then(r => r.ok).catch(() => false);
+                const prodTest = fetch(window.API_CONFIG.productionUrl + '/health').then(r => r.ok).catch(() => false);
+                
+                const [localOk, prodOk] = await Promise.all([localTest, prodTest]);
+                
+                appendResult(`🏠 Backend Local: ${localOk ? '✅ Online' : '❌ Offline'}`);
+                appendResult(`☁️ Backend Produção: ${prodOk ? '✅ Online' : '❌ Offline'}`);
+                
+                // Testar dados locais
+                const catalogTest = fetch('/data/catalog.json').then(r => r.ok).catch(() => false);
+                const catalogOk = await catalogTest;
+                appendResult(`📁 Catalog Local: ${catalogOk ? '✅ Disponível' : '❌ Indisponível'}`);
+                
+                // Resultado final
+                if (localOk && prodOk && catalogOk) {
+                    appendResult('🎉 INTEGRAÇÃO COMPLETA: Todos os sistemas funcionando!', 'success');
+                } else {
+                    appendResult('⚠️ INTEGRAÇÃO PARCIAL: Alguns sistemas offline', 'info');
+                }
+                
+            } catch (error) {
+                appendResult('❌ Erro na integração PWA: ' + error.message, 'error');
+            }
+        };
+
+        function appendResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = 'status ' + type;
+            div.innerHTML = '<pre>' + message + '</pre>';
+            results.appendChild(div);
+        }
+
+        // Auto-executar teste básico ao carregar
+        window.addEventListener('load', () => {
+            appendResult('🎵 Radio Importante - Sistema de testes carregado!');
+            appendResult('Backend URL: ' + window.API_CONFIG.backendUrl);
+        });
+    </script>
+</body>
+</html>

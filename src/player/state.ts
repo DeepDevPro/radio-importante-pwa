@@ -83,20 +83,40 @@ export class StateManager {
   private async reloadCatalog(): Promise<void> {
     try {
       console.log('🔄 Recarregando catálogo...');
-      const timestamp = Date.now();
-      const response = await fetch(`/data/catalog.json?t=${timestamp}`, {
-        cache: 'no-cache',
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
-      });
       
-      if (response.ok) {
-        const newCatalog = await response.json();
-        this.catalog = newCatalog;
+      // Tentar API do backend primeiro, fallback para arquivo local
+      let response;
+      try {
+        response = await fetch('http://localhost:8080/api/catalog');
+        if (response.ok) {
+          const apiResult = await response.json();
+          this.catalog = apiResult.catalog;
+          console.log('✅ Catálogo recarregado via API backend');
+        } else {
+          throw new Error('API não disponível');
+        }
+      } catch {
+        console.log('⚠️ API backend não disponível, usando arquivo local');
+        const timestamp = Date.now();
+        response = await fetch(`/data/catalog.json?t=${timestamp}`, {
+          cache: 'no-cache',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        });
         
+        if (response.ok) {
+          this.catalog = await response.json();
+        }
+      }
+        
+        // Regenerar safeFilenames
+        if (this.catalog?.tracks) {
+          this.catalog.tracks.forEach(track => {
+            track.safeFilename = track.filename; // Usar filename direto (já sanitizado no admin)
+          });
         // Regenerar safeFilenames
         if (this.catalog?.tracks) {
           this.catalog.tracks.forEach(track => {
@@ -172,14 +192,27 @@ export class StateManager {
   // Carrega o catálogo de músicas
   public async loadCatalog(): Promise<Catalog> {
     try {
-      console.log('📂 Carregando catálogo...');
+      console.log('📂 Carregando catálogo via API...');
       
-      const response = await fetch('/data/catalog.json');
-      if (!response.ok) {
-        throw new Error(`Erro ao carregar catálogo: ${response.status}`);
+      // Tentar API do backend primeiro, fallback para arquivo local
+      let response;
+      try {
+        response = await fetch('http://localhost:8080/api/catalog');
+        if (response.ok) {
+          const apiResult = await response.json();
+          this.catalog = apiResult.catalog;
+          console.log('✅ Catálogo carregado via API backend');
+        } else {
+          throw new Error('API não disponível');
+        }
+      } catch (apiError) {
+        console.log('⚠️ API backend não disponível, usando arquivo local');
+        response = await fetch('/data/catalog.json');
+        if (!response.ok) {
+          throw new Error(`Erro ao carregar catálogo: ${response.status}`);
+        }
+        this.catalog = await response.json();
       }
-
-      this.catalog = await response.json();
       
       if (!this.catalog) {
         throw new Error('Catálogo inválido');

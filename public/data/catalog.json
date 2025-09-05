@@ -6,141 +6,80 @@
       "title": "Damn feat. Kinny",
       "artist": "TM Juke",
       "filename": "01 Damn feat Kinny.mp3",
-      "duration": 315,
-      "format": "mp3"
+      "duration": 319,
+      "format": "mp3",
+      "uploadedAt": "2025-09-01T10:00:00.000Z"
     },
     {
       "id": "track002",
       "title": "Intro (A Jazz Experiment)",
       "artist": "Drumagick",
       "filename": "01 Intro (A Jazz Experiment).mp3",
-      "duration": 336,
-      "format": "mp3"
+      "duration": 243,
+      "format": "mp3",
+      "uploadedAt": "2025-09-01T11:00:00.000Z"
     },
     {
       "id": "track003",
-      "title": "Comadi",
-      "artist": "Céu",
-      "filename": "03 Comadi 89.mp3",
-      "duration": 292,
-      "format": "mp3"
-    },
-    {
-      "id": "track004",
-      "title": "Menino",
-      "artist": "Patricia Marx",
-      "filename": "2-03 Menino.mp3",
-      "duration": 332,
-      "format": "mp3"
-    },
-    {
-      "id": "track005",
-      "title": "Take My Time feat. Jack Davey",
-      "artist": "4 Hero",
-      "filename": "4-Hero-take-my-time-(feat.-jack-davey).mp3",
-      "duration": 322,
-      "format": "mp3"
-    },
-    {
-      "id": "track006",
-      "title": "Sing",
-      "artist": "Artista",
-      "filename": "Artista-Sing.mp3",
-      "duration": 305,
-      "format": "mp3"
-    },
-    {
-      "id": "track007",
-      "title": "13.6.35 (Natural Self Remix)",
-      "artist": "Belleruche",
-      "filename": "Belleruche - 13.6.35 (Natural Self Remix).mp3",
-      "duration": 240,
-      "format": "mp3"
-    },
-    {
-      "id": "track008",
-      "title": "Midnight Session",
-      "artist": "Buscemi",
-      "filename": "Buscemi - Midnight Session.mp3",
-      "duration": 263,
-      "format": "mp3"
-    },
-    {
-      "id": "track009",
-      "title": "Beach Towel (I Cube Cosmix Marathon Remix)",
-      "artist": "Karma",
-      "filename": "Karma - Beach Towel (I Cube Cosmix Marathon Remix).mp3",
-      "duration": 334,
-      "format": "mp3"
-    },
-    {
-      "id": "track010",
-      "title": "All That (Natural Self Remix)",
-      "artist": "Lizzy Parks",
-      "filename": "Lizzy Parks - All That (Natural Self Remix).mp3",
-      "duration": 266,
-      "format": "mp3"
-    },
-    {
-      "id": "track011",
-      "title": "Bridge Through Time",
-      "artist": "Lonnie Liston Smith",
-      "filename": "Lonnie Liston Smith - Bridge Through Time.mp3",
-      "duration": 350,
-      "format": "mp3"
-    },
-    {
-      "id": "track012",
-      "title": "Nightlife",
-      "artist": "Lonnie Liston Smith",
-      "filename": "Lonnie Liston Smith - Nightlife.mp3",
-      "duration": 259,
-      "format": "mp3"
-    },
-    {
-      "id": "track013",
-      "title": "Danda Luanda",
-      "artist": "Luciana Oliveira",
-      "filename": "Luciana Oliveira - Danda Luanda.mp3",
-      "duration": 241,
-      "format": "mp3"
-    },
-    {
-      "id": "track014",
-      "title": "So Far",
-      "artist": "Lukas Greenberg",
-      "filename": "Lukas Greenberg - So Far.mp3",
-      "duration": 322,
-      "format": "mp3"
-    },
-    {
-      "id": "track015",
-      "title": "Para Entrar",
-      "artist": "Bruno Morais",
-      "filename": "Para-Entrar.mp3",
-      "duration": 290,
-      "format": "mp3"
-    },
-    {
-      "id": "track016",
-      "title": "Sun Is Shining",
-      "artist": "Bebel Gilberto",
-      "filename": "bebel-gilberto-sun-is-Shining.mp3",
-      "duration": 355,
-      "format": "mp3"
-    },
-    {
-      "id": "track017",
       "title": "Ovasoul7 feat. Nia Andrews",
       "artist": "Koko and Lee Roe Bembe Tawiah",
       "filename": "01_koko_and_lee_roe_w_bembe_tawiah_ovasoul7_nia_andrews.mp3",
-      "duration": 291,
-      "format": "mp3"
+      "duration": 276,
+      "format": "mp3",
+      "uploadedAt": "2025-09-01T12:00:00.000Z"
+    },
+    {
+      "id": "track004",
+      "title": "01_northern_girls",
+      "artist": "Artista Desconhecido",
+      "filename": "01_northern_girls.mp3",
+      "duration": 180,
+      "format": "mp3",
+      "uploadedAt": "2025-09-05T01:10:22.382Z",
+      "orderIndex": 1757034622382
+    },
+    {
+      "id": "track005",
+      "title": "03_beach_111_towel_i_cube_cosmix_marathon_remix",
+      "artist": "Artista Desconhecido",
+      "filename": "03_beach_111_towel_i_cube_cosmix_marathon_remix.mp3",
+      "duration": 180,
+      "format": "mp3",
+      "uploadedAt": "2025-09-05T01:00:03.028Z",
+      "orderIndex": 1757034003028
+    },
+    {
+      "id": "track006",
+      "title": "03_comadi_89",
+      "artist": "Artista Desconhecido",
+      "filename": "03_comadi_89.mp3",
+      "duration": 180,
+      "format": "mp3",
+      "uploadedAt": "2025-09-05T00:58:39.633Z",
+      "orderIndex": 1757033919633
+    },
+    {
+      "id": "track007",
+      "title": "Nightlife",
+      "artist": "Lonnie Liston Smith",
+      "filename": "Lonnie Liston Smith - Nightlife.mp3",
+      "duration": 297,
+      "format": "mp3",
+      "uploadedAt": "2025-09-01T13:00:00.000Z"
+    },
+    {
+      "id": "track008",
+      "title": "Danda Luanda",
+      "artist": "Luciana Oliveira",
+      "filename": "Luciana Oliveira - Danda Luanda.mp3",
+      "duration": 355,
+      "format": "mp3",
+      "uploadedAt": "2025-09-01T14:00:00.000Z"
     }
   ],
   "metadata": {
-    "totalTracks": 17,
-    "totalDuration": 5113,
+    "totalTracks": 8,
+    "totalDuration": 2400,
     "artwork": "/images/cover.jpg",
     "radioName": "Radio Importante"
   }

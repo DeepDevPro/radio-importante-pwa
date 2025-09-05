@@ -22,11 +22,8 @@ class AdminManager {
   }
 
   private checkEnvironmentAndSetup(): void {
-    const isProduction = !window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1');
-    
-    if (isProduction) {
-      this.setupProductionMode();
-    }
+    // Remover detecção de produção - agora temos backend funcional
+    console.log('🌐 Sistema de upload habilitado para desenvolvimento e produção');
   }
 
   private setupProductionMode(): void {
@@ -224,44 +221,67 @@ class AdminManager {
     }
   }
 
+  private showUploadStatus(message: string, type: 'success' | 'error' | 'info'): void {
+    const statusDiv = document.getElementById('upload-status');
+    if (!statusDiv) return;
+
+    statusDiv.className = `status ${type}`;
+    statusDiv.textContent = message;
+    statusDiv.style.display = 'block';
+
+    // Auto-hide após 5 segundos
+    setTimeout(() => {
+      statusDiv.style.display = 'none';
+    }, 5000);
+  }
+
   private async uploadFile(file: File): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
+    // Usar a configuração de API centralizada
+    const { getApiUrl } = await import('./config/api.js');
+    const backendUrl = getApiUrl('upload').replace('/api/upload', ''); // Extrair baseUrl
+    
+    console.log(`🌐 Usando backend: ${backendUrl}`);
+    console.log(`📁 Enviando arquivo: ${file.name} (${this.formatFileSize(file.size)})`);
+
+    // Aplicar limpeza de nome de arquivo antes do upload
+    const cleanFilename = this.cleanFilenameForUpload(file.name);
+    console.log(`🧹 Limpando nome: "${file.name}" → "${cleanFilename}"`);
+
+    // Criar FormData para upload real de arquivo
+    const formData = new FormData();
+    
+    // Criar um novo arquivo com nome limpo
+    const cleanFile = new File([file], cleanFilename, { type: file.type });
+    formData.append('audioFiles', cleanFile);
+
+    try {
+      const response = await fetch(`${backendUrl}/api/upload`, {
+        method: 'POST',
+        body: formData // Enviar FormData, não JSON
+      });
+
+      const result = await response.json();
       
-      reader.onload = async () => {
-        try {
-          const base64Data = (reader.result as string).split(',')[1]; // Remove data:audio/...;base64,
-          
-          // Aplicar limpeza de nome de arquivo antes do upload
-          const cleanFilename = this.cleanFilenameForUpload(file.name);
-          console.log(`🧹 Limpando nome: "${file.name}" → "${cleanFilename}"`);
-          
-          const response = await fetch('/api/upload', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              filename: cleanFilename,
-              fileData: base64Data
-            })
-          });
-
-          const result = await response.json();
-          
-          if (result.success) {
-            resolve();
-          } else {
-            reject(new Error(result.error || 'Erro no upload'));
-          }
-        } catch (error) {
-          reject(error);
-        }
-      };
-
-      reader.onerror = () => reject(new Error('Erro ao ler arquivo'));
-      reader.readAsDataURL(file);
-    });
+      if (result.success) {
+        console.log(`✅ Upload realizado com sucesso:`, result);
+        this.showUploadStatus(
+          `✅ ${cleanFilename} enviado! Total: ${result.catalog?.totalTracks || 'N/A'} faixas`,
+          'success'
+        );
+        
+        // Forçar refresh da lista após upload bem-sucedido
+        setTimeout(() => {
+          this.refreshFileList();
+        }, 1000);
+        
+      } else {
+        throw new Error(result.error || 'Erro no upload');
+      }
+    } catch (error) {
+      console.error('❌ Erro no upload:', error);
+      this.showUploadStatus(`❌ Erro no upload de ${cleanFilename}: ${error}`, 'error');
+      throw error;
+    }
   }
 
   private async regenerateCatalog(): Promise<any> {
@@ -547,11 +567,64 @@ class AdminManager {
     }
   }
 
-  public removeFile(index: number): void {
+  public async removeFile(index: number): Promise<void> {
     if (confirm('Tem certeza que deseja remover este arquivo?')) {
-      this.audioFiles.splice(index, 1);
-      this.renderFileList();
-      // Preview removido - admin não precisa ver
+      try {
+        const file = this.audioFiles[index];
+        
+        // Usar a configuração de API centralizada
+        const { getApiUrl } = await import('./config/api.js');
+        const backendUrl = getApiUrl('upload').replace('/api/upload', ''); // Extrair baseUrl
+        
+        // Encontrar o trackId correspondente - assumindo que o filename é único
+        const catalogResponse = await fetch(`${backendUrl}/api/catalog`);
+        const catalogResult = await catalogResponse.json();
+        
+        if (catalogResult.success && catalogResult.catalog) {
+          const track = catalogResult.catalog.tracks.find((t: any) => t.filename === file.filename);
+          
+          if (track) {
+            // Deletar via API
+            const deleteResponse = await fetch(`${backendUrl}/api/delete/${track.id}`, {
+              method: 'DELETE'
+            });
+            
+            const deleteResult = await deleteResponse.json();
+            
+            if (deleteResult.success) {
+              console.log(`✅ Arquivo removido: ${deleteResult.deletedTrack.title}`);
+              
+              // Remover da lista local
+              this.audioFiles.splice(index, 1);
+              this.renderFileList();
+              
+              this.showUploadStatus(
+                `🗑️ "${deleteResult.deletedTrack.title}" removido com sucesso! Total: ${deleteResult.totalTracks} faixas`,
+                'success'
+              );
+              
+              // Forçar refresh da lista após exclusão
+              setTimeout(() => {
+                this.refreshFileList();
+              }, 1000);
+              
+            } else {
+              throw new Error(deleteResult.error || 'Erro ao deletar arquivo');
+            }
+          } else {
+            throw new Error('Arquivo não encontrado no catálogo');
+          }
+        } else {
+          throw new Error('Não foi possível carregar o catálogo');
+        }
+        
+      } catch (error) {
+        console.error('❌ Erro ao remover arquivo:', error);
+        this.showUploadStatus(
+          `❌ Erro ao remover arquivo: ${error}`,
+          'error'
+        );
+      }
     }
   }
 
