@@ -54,39 +54,18 @@ jobs:
           echo "📦 Bucket $S3_BUCKET não existe, criando..."
           aws s3 mb s3://$S3_BUCKET --region us-west-2
           
-          # Configurar bucket para website estático
+          # Configurar bucket para website estático (sem policy pública)
           aws s3 website s3://$S3_BUCKET --index-document index.html --error-document index.html
           
-          # Configurar bucket policy para acesso público
-          cat > bucket-policy.json << 'EOF'
-        {
-          "Version": "2012-10-17",
-          "Statement": [
-            {
-              "Sid": "PublicReadGetObject",
-              "Effect": "Allow",
-              "Principal": "*",
-              "Action": "s3:GetObject",
-              "Resource": "arn:aws:s3:::BUCKET_NAME/*"
-            }
-          ]
-        }
-        EOF
-          
-          # Substituir BUCKET_NAME no policy
-          sed -i "s/BUCKET_NAME/$S3_BUCKET/g" bucket-policy.json
-          
-          # Aplicar policy
-          aws s3api put-bucket-policy --bucket $S3_BUCKET --policy file://bucket-policy.json
-          
           echo "✅ Bucket criado e configurado para hosting estático"
+          echo "ℹ️ Bucket configurado como privado - use CloudFront para acesso público"
         fi
         
-        # Upload principal
-        aws s3 sync dist/ s3://$S3_BUCKET --delete
+        # Upload principal - com permissões corretas para arquivos
+        aws s3 sync dist/ s3://$S3_BUCKET --delete --acl public-read
         
         # Backup da versão em releases/
-        aws s3 sync dist/ s3://$S3_BUCKET/releases/${TAG_NAME}/ 
+        aws s3 sync dist/ s3://$S3_BUCKET/releases/${TAG_NAME}/ --acl public-read
         
         echo "✅ Frontend deployed to S3"
         echo "📦 Backup created at releases/${TAG_NAME}/"
