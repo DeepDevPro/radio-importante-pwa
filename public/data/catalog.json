@@ -1,5 +1,5 @@
 {
-  "version": "v2.1.6",
+  "version": "v2.2.0",
   "tracks": [
     {
       "id": 1,
@@ -9,7 +9,7 @@
       "url": "/audio/01_ancestors.mp3",
       "duration": 180,
       "fileSize": 1132368,
-      "lastModified": "2025-09-05T16:03:43.374Z",
+      "lastModified": "2025-09-05T17:38:56.826Z",
       "displayName": "Artista Desconhecido - 01 ancestors"
     },
     {
@@ -20,7 +20,7 @@
       "url": "/audio/01_northern_girls.mp3",
       "duration": 180,
       "fileSize": 1004875,
-      "lastModified": "2025-09-05T16:03:43.379Z",
+      "lastModified": "2025-09-05T17:38:56.831Z",
       "displayName": "Artista Desconhecido - 01 northern girls"
     },
     {
@@ -31,7 +31,7 @@
       "url": "/audio/03_beach_111_towel_i_cube_cosmix_marathon_remix.mp3",
       "duration": 180,
       "fileSize": 1433903,
-      "lastModified": "2025-09-05T16:03:43.386Z",
+      "lastModified": "2025-09-05T17:38:56.838Z",
       "displayName": "Artista Desconhecido - 03 beach 111 towel i cube cosmix marathon remix"
     },
     {
@@ -42,7 +42,7 @@
       "url": "/audio/03_comadi_89.mp3",
       "duration": 180,
       "fileSize": 4811744,
-      "lastModified": "2025-09-05T16:03:43.395Z",
+      "lastModified": "2025-09-05T17:38:56.850Z",
       "displayName": "Artista Desconhecido - 03 comadi 89"
     },
     {
@@ -53,7 +53,7 @@
       "url": "/audio/Lonnie Liston Smith - Nightlife.mp3",
       "duration": 180,
       "fileSize": 1197523,
-      "lastModified": "2025-09-05T16:03:43.400Z",
+      "lastModified": "2025-09-05T17:38:56.855Z",
       "displayName": "Lonnie Liston Smith - Nightlife"
     },
     {
@@ -64,7 +64,7 @@
       "url": "/audio/Luciana Oliveira - Danda Luanda.mp3",
       "duration": 180,
       "fileSize": 1081411,
-      "lastModified": "2025-09-05T16:03:43.405Z",
+      "lastModified": "2025-09-05T17:38:56.859Z",
       "displayName": "Luciana Oliveira - Danda Luanda"
     },
     {
@@ -75,7 +75,7 @@
       "url": "/audio/jackin__around._-travino_reprise_master.mp3",
       "duration": 180,
       "fileSize": 1955792,
-      "lastModified": "2025-09-05T16:03:43.551Z",
+      "lastModified": "2025-09-05T17:38:57.014Z",
       "displayName": "Artista Desconhecido - jackin around. travino reprise master"
     },
     {
@@ -86,7 +86,7 @@
       "url": "/audio/radio-importante-continuous.aac",
       "duration": 180,
       "fileSize": 7973048,
-      "lastModified": "2025-09-05T16:03:43.585Z",
+      "lastModified": "2025-09-05T17:38:57.048Z",
       "displayName": "Artista Desconhecido - radio importante continuous"
     },
     {
@@ -97,7 +97,7 @@
       "url": "/audio/radio-importante-continuous.mp3",
       "duration": 180,
       "fileSize": 0,
-      "lastModified": "2025-09-05T16:03:43.585Z",
+      "lastModified": "2025-09-05T17:38:57.048Z",
       "displayName": "Artista Desconhecido - radio importante continuous"
     }
   ],
@@ -109,7 +109,7 @@
     "description": "Uma seleção de música eletrônica, soul e experimental",
     "genre": "Electronic, Soul, Experimental",
     "language": "pt-BR",
-    "lastUpdated": "2025-09-05T16:03:52.249Z",
-    "deployVersion": "v2.1.6"
+    "lastUpdated": "2025-09-05T17:39:02.292Z",
+    "deployVersion": "v2.2.0"
   }
 }
