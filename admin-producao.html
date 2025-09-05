@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Radio Importante</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+
+        .section h2 {
+            color: #555;
+            margin-top: 0;
+        }
+
+        .file-list {
+            display: grid;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .total-tracks-header {
+            background: linear-gradient(135deg, #271F30, #3d2f4a);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(39, 31, 48, 0.2);
+        }
+
+        .total-tracks-header h3 {
+            margin: 0 0 8px 0;
+            font-size: 1.5em;
+            font-weight: 600;
+        }
+
+        .total-tracks-header p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 0.95em;
+        }
+
+        .file-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .track-number {
+            background: #271F30;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.85em;
+            min-width: 32px;
+            text-align: center;
+        }
+
+        .file-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+
+        .file-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .metadata-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr auto auto;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .metadata-form input {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn:hover {
+            background: #5a6fd8;
+        }
+
+        .btn:hover[style*="background: #e67e22"] {
+            background: #d35400 !important;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .btn-success {
+            background: #27ae60;
+        }
+
+        .btn-success:hover {
+            background: #219a52;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 14px;
+            margin-left: 5px;
+            min-width: 40px;
+            height: 32px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+        }
+
+        .metadata-form .btn-sm {
+            margin-left: 0;
+        }
+
+        .upload-area {
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9ff;
+        }
+
+        .upload-area:hover,
+        .upload-area.drag-over {
+            border-color: #271F30;
+            background: #ede8f5;
+            transform: translateY(-2px);
+        }
+
+        .upload-area.drag-over {
+            border-style: solid;
+            background: #e8f4fd;
+        }
+
+        #upload-preview {
+            background: #f0f8ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 6px;
+            padding: 15px;
+        }
+
+        .upload-file-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .upload-file-item:last-child {
+            border-bottom: none;
+        }
+
+        .file-icon {
+            font-size: 18px;
+        }
+
+        .file-name {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .file-size {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        #file-input {
+            display: none;
+        }
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover {
+            border-color: #5a6fd8;
+            background: #f0f3ff;
+        }
+
+        .upload-area.dragover {
+            border-color: #27ae60;
+            background: #f0fff4;
+        }
+
+        .status {
+            margin: 20px 0;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .status.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .file-info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        #fileInput {
+            display: none;
+        }
+    </style>
+  <script type="module" crossorigin src="/assets/admin-Cr_1ereF.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-B5Qt9EMX.js">
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 Admin - Radio Importante</h1>
+        
+        <!-- Menu de Navegação -->
+        <div style="text-align: center; margin-bottom: 30px; padding: 15px; background: #f8f9ff; border-radius: 8px; border: 1px solid #e0e6ff;">
+            <a href="/" class="btn" style="margin: 0 10px; text-decoration: none;">🎵 Player</a>
+            <a href="/analytics.html" target="_blank" class="btn" style="margin: 0 10px; text-decoration: none; background: #e67e22;">📊 Estatísticas</a>
+            <span style="color: #666; font-size: 14px; margin-left: 20px;">Administração do Sistema</span>
+        </div>
+
+        <!-- Upload de Arquivos -->
+        <div class="section">
+            <h2>📁 Sistema de Upload de Áudio - Conectado ao Backend</h2>
+            <div style="background: #e8f5e8; border: 1px solid #4caf50; border-radius: 6px; padding: 12px; margin: 10px 0;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 20px;">✅</span>
+                    <div>
+                        <strong>Sistema Híbrido Funcionando:</strong><br>
+                        <span style="font-size: 14px; color: #2e7d2e;">
+                            🏠 Backend Local (localhost:8080) + ☁️ Backend Produção (AWS) disponíveis
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <p><strong>✨ Funcionalidades:</strong> Upload com auto-detecção de backend, limpeza automática de nomes, progress tracking e validação de arquivos</p>
+            
+            <div id="upload-area" class="upload-area">
+                <div style="font-size: 24px; margin-bottom: 10px;">📤</div>
+                <div style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">
+                    Clique aqui ou arraste arquivos de áudio
+                </div>
+                <div style="font-size: 14px; color: #666; margin-bottom: 10px;">
+                    Formatos suportados: MP3, WAV, OGG • Máximo 50MB por arquivo
+                </div>
+                <div style="font-size: 12px; color: #888;">
+                    🧹 Nomes serão automaticamente limpos (acentos e caracteres especiais removidos)
+                </div>
+            </div>
+            
+            <input type="file" id="file-input" multiple accept=".mp3,.wav,.ogg">
+            
+            <div id="upload-preview" style="display: none; margin-top: 15px;"></div>
+            
+            <button id="upload-btn" class="btn btn-success" style="display: none; margin-top: 15px;">
+                📤 Enviar para Backend
+            </button>
+            
+            <div id="upload-status" class="status"></div>
+            
+            <div style="margin-top: 15px; padding: 10px; background: #f8f9ff; border-radius: 6px; border: 1px solid #e0e6ff;">
+                <strong>🔧 Status da Conexão:</strong>
+                <div id="backend-status" style="margin-top: 8px; font-family: monospace; font-size: 14px;">
+                    🔍 Verificando backends disponíveis...
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de Arquivos e Metadados -->
+        <div class="section">
+            <h2>🎼 Gerenciar Metadados</h2>
+            <p>Edite os nomes de exibição, artistas e títulos como devem aparecer no player:</p>
+            
+            <div id="music-list" class="file-list">
+                <!-- Arquivos serão carregados aqui dinamicamente -->
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <!-- Botões globais removidos - cada faixa tem seu próprio botão Save e atualiza automaticamente -->
+                <!-- <button class="btn btn-success" onclick="saveAllMetadata()">💾 Salvar Todas as Alterações</button> -->
+                <!-- <button class="btn" onclick="refreshFileList()">🔄 Atualizar Lista</button> -->
+                <!-- <button class="btn btn-danger" onclick="syncWithFolder()" style="background: #e67e22;">🔄 Sincronizar com Pasta</button> -->
+                <p style="text-align: center; color: #666; font-style: italic;">
+                    💡 Use os botões 💾 ao lado de cada faixa para salvar alterações individuais
+                </p>
+            </div>
+        </div>
+
+        <!-- Preview do Catálogo (Oculto - Admin não precisa ver) -->
+        <div class="section" style="display: none;">
+            <h2>📋 Preview do Catálogo</h2>
+            <pre id="catalogPreview" style="background: #f4f4f4; padding: 15px; border-radius: 4px; overflow: auto; max-height: 300px;"></pre>
+        </div>
+    </div>
+
+    
+    <script>
+        // Verificar status dos backends ao carregar a página
+        window.addEventListener('load', async () => {
+            const statusDiv = document.getElementById('backend-status');
+            if (!statusDiv) return;
+
+            const API_CONFIG = {
+                backendUrl: 'http://localhost:8080',
+                productionUrl: 'http://radio-importante-backend-prod.eba-heipfui9.us-west-2.elasticbeanstalk.com'
+            };
+
+            try {
+                statusDiv.innerHTML = '🔍 Testando conexões...';
+
+                // Testar backend local
+                let localStatus = '❌ Offline';
+                try {
+                    const localResponse = await fetch(API_CONFIG.backendUrl + '/health', { 
+                        method: 'GET',
+                        mode: 'cors'
+                    });
+                    if (localResponse.ok) {
+                        localStatus = '✅ Online';
+                    }
+                } catch (e) {
+                    localStatus = '❌ Offline';
+                }
+
+                // Testar backend produção
+                let prodStatus = '❌ Offline';
+                try {
+                    const prodResponse = await fetch(API_CONFIG.productionUrl + '/health', {
+                        method: 'GET',
+                        mode: 'cors'
+                    });
+                    if (prodResponse.ok) {
+                        prodStatus = '✅ Online';
+                    }
+                } catch (e) {
+                    prodStatus = '❌ Offline';
+                }
+
+                statusDiv.innerHTML = `
+                    🏠 Local (localhost:8080): ${localStatus}<br>
+                    ☁️ Produção (AWS): ${prodStatus}<br>
+                    <small style="color: #666;">Sistema usará backend disponível automaticamente</small>
+                `;
+
+            } catch (error) {
+                statusDiv.innerHTML = `❌ Erro ao verificar status: ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html>

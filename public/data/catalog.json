@@ -3,78 +3,71 @@
   "tracks": [
     {
       "id": "track001",
-      "title": "Damn feat. Kinny",
-      "artist": "TM Juke",
-      "filename": "01 Damn feat Kinny.mp3",
-      "duration": 319,
+      "title": "Nightlife",
+      "artist": "Lonnie Liston Smith",
+      "filename": "Lonnie Liston Smith - Nightlife.mp3",
+      "duration": 60,
       "format": "mp3",
-      "uploadedAt": "2025-09-01T10:00:00.000Z"
+      "uploadedAt": "2025-09-01T13:00:00.000Z"
     },
     {
       "id": "track002",
-      "title": "Intro (A Jazz Experiment)",
-      "artist": "Drumagick",
-      "filename": "01 Intro (A Jazz Experiment).mp3",
-      "duration": 243,
+      "title": "Danda Luanda",
+      "artist": "Luciana Oliveira",
+      "filename": "Luciana Oliveira - Danda Luanda.mp3",
+      "duration": 60,
       "format": "mp3",
-      "uploadedAt": "2025-09-01T11:00:00.000Z"
+      "uploadedAt": "2025-09-01T14:00:00.000Z"
     },
     {
       "id": "track003",
-      "title": "Ovasoul7 feat. Nia Andrews",
-      "artist": "Koko and Lee Roe Bembe Tawiah",
-      "filename": "01_koko_and_lee_roe_w_bembe_tawiah_ovasoul7_nia_andrews.mp3",
-      "duration": 276,
-      "format": "mp3",
-      "uploadedAt": "2025-09-01T12:00:00.000Z"
-    },
-    {
-      "id": "track004",
-      "title": "01_northern_girls",
-      "artist": "Artista Desconhecido",
-      "filename": "01_northern_girls.mp3",
-      "duration": 180,
-      "format": "mp3",
-      "uploadedAt": "2025-09-05T01:10:22.382Z",
-      "orderIndex": 1757034622382
-    },
-    {
-      "id": "track005",
-      "title": "03_beach_111_towel_i_cube_cosmix_marathon_remix",
-      "artist": "Artista Desconhecido",
-      "filename": "03_beach_111_towel_i_cube_cosmix_marathon_remix.mp3",
-      "duration": 180,
-      "format": "mp3",
-      "uploadedAt": "2025-09-05T01:00:03.028Z",
-      "orderIndex": 1757034003028
-    },
-    {
-      "id": "track006",
       "title": "03_comadi_89",
       "artist": "Artista Desconhecido",
       "filename": "03_comadi_89.mp3",
-      "duration": 180,
+      "duration": 60,
       "format": "mp3",
       "uploadedAt": "2025-09-05T00:58:39.633Z",
       "orderIndex": 1757033919633
     },
     {
-      "id": "track007",
-      "title": "Nightlife",
-      "artist": "Lonnie Liston Smith",
-      "filename": "Lonnie Liston Smith - Nightlife.mp3",
-      "duration": 297,
+      "id": "track004",
+      "title": "03_beach_111_towel_i_cube_cosmix_marathon_remix",
+      "artist": "Artista Desconhecido",
+      "filename": "03_beach_111_towel_i_cube_cosmix_marathon_remix.mp3",
+      "duration": 60,
       "format": "mp3",
-      "uploadedAt": "2025-09-01T13:00:00.000Z"
+      "uploadedAt": "2025-09-05T01:00:03.028Z",
+      "orderIndex": 1757034003028
     },
     {
-      "id": "track008",
-      "title": "Danda Luanda",
-      "artist": "Luciana Oliveira",
-      "filename": "Luciana Oliveira - Danda Luanda.mp3",
-      "duration": 355,
+      "id": "track005",
+      "title": "01_northern_girls",
+      "artist": "Artista Desconhecido",
+      "filename": "01_northern_girls.mp3",
+      "duration": 60,
       "format": "mp3",
-      "uploadedAt": "2025-09-01T14:00:00.000Z"
+      "uploadedAt": "2025-09-05T01:10:22.382Z",
+      "orderIndex": 1757034622382
+    },
+    {
+      "id": "track006",
+      "title": "01 Ancestors",
+      "artist": "Artista Desconhecido",
+      "filename": "01_ancestors.mp3",
+      "duration": 60,
+      "format": "mp3",
+      "uploadedAt": "2025-09-05T11:36:14.626Z",
+      "orderIndex": 1757072174626
+    },
+    {
+      "id": "track007",
+      "title": "_Jackin_ Around. -Travino Reprise Master",
+      "artist": "Artista Desconhecido",
+      "filename": "jackin__around._-travino_reprise_master.mp3",
+      "duration": 120,
+      "format": "mp3",
+      "uploadedAt": "2025-09-05T11:55:18.857Z",
+      "orderIndex": 1757073318857
     }
   ],
   "metadata": {

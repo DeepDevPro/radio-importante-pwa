@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Radio Importante</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh; padding: 20px;
+        }
+        .container {
+            max-width: 1000px; margin: 0 auto; background: white;
+            border-radius: 12px; padding: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        h1 { color: #271F30; margin-bottom: 30px; text-align: center; font-size: 2.5em; }
+        .status-panel {
+            background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px;
+            padding: 20px; margin-bottom: 30px; text-align: center;
+        }
+        .tabs { display: flex; margin-bottom: 30px; border-bottom: 2px solid #e0e0e0; }
+        .tab {
+            background: none; border: none; padding: 15px 25px; cursor: pointer;
+            font-size: 16px; color: #666; transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+        .tab.active { color: #667eea; border-bottom-color: #667eea; background: #f8f9ff; }
+        .tab:hover { background: #f5f5f5; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .upload-area {
+            border: 2px dashed #667eea; border-radius: 8px; padding: 40px;
+            text-align: center; cursor: pointer; transition: all 0.3s ease;
+            background: #f8f9ff; margin-bottom: 30px;
+        }
+        .upload-area:hover, .upload-area.drag-over {
+            border-color: #271F30; background: #ede8f5; transform: translateY(-2px);
+        }
+        .btn {
+            background: #667eea; color: white; border: none; padding: 12px 24px;
+            border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 600;
+            transition: all 0.3s ease; margin-right: 10px; margin-bottom: 10px;
+        }
+        .btn:hover { background: #5a6fd8; transform: translateY(-1px); }
+        .btn:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+        .btn-danger { background: #e74c3c; }
+        .btn-success { background: #27ae60; }
+        .btn-secondary { background: #6c757d; }
+        .form-group { margin-bottom: 20px; }
+        input[type="text"], textarea, input[type="file"] {
+            width: 100%; padding: 12px; border: 2px solid #e0e0e0;
+            border-radius: 6px; font-size: 16px;
+        }
+        .alert {
+            padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid;
+        }
+        .alert-info { background: #e3f2fd; border-color: #2196f3; color: #1976d2; }
+        .alert-success { background: #d4edda; border-color: #27ae60; color: #155724; }
+        .alert-error { background: #f8d7da; border-color: #e74c3c; color: #721c24; }
+        .music-item {
+            background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px;
+            padding: 20px; margin-bottom: 15px; display: flex;
+            justify-content: space-between; align-items: center;
+        }
+        .music-info { flex: 1; }
+        .music-title { font-weight: 600; font-size: 18px; color: #333; margin-bottom: 5px; }
+        .music-meta { color: #666; font-size: 14px; }
+        .progress-bar {
+            background: #e0e0e0; border-radius: 10px; height: 20px;
+            margin: 20px 0; overflow: hidden;
+        }
+        .progress-fill {
+            background: linear-gradient(90deg, #667eea, #764ba2); height: 100%;
+            transition: width 0.3s ease; display: flex; align-items: center;
+            justify-content: center; color: white; font-weight: 600; font-size: 12px;
+        }
+        .file-preview {
+            background: #f0f8ff; border: 1px solid #b3d9ff; border-radius: 6px;
+            padding: 15px; margin: 15px 0;
+        }
+        .file-item {
+            display: flex; align-items: center; gap: 10px; padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .file-item:last-child { border-bottom: none; }
+        .two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) {
+            .container { padding: 20px; margin: 10px; }
+            .two-column { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 Radio Importante - Admin</h1>
+
+        <div class="status-panel">
+            <div id="backend-status">�� Verificando status do backend...</div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('upload')">📤 Upload</button>
+            <button class="tab" onclick="switchTab('manage')">🎵 Gerenciar</button>
+        </div>
+
+        <div id="upload-tab" class="tab-content active">
+            <div class="alert alert-info">
+                ℹ️ Faça upload de arquivos MP3. O sistema irá automaticamente atualizar o catálogo e regenerar o arquivo contínuo para iOS.
+            </div>
+
+            <div class="upload-area" id="upload-area">
+                <div style="font-size: 48px; margin-bottom: 20px;">📁</div>
+                <h3>Arraste arquivos MP3 aqui ou clique para selecionar</h3>
+                <input type="file" id="file-input" multiple accept=".mp3,audio/mp3,audio/mpeg" style="display: none;">
+            </div>
+
+            <div id="file-preview" class="file-preview" style="display: none;">
+                <h4>Arquivos Selecionados:</h4>
+                <div id="file-list"></div>
+            </div>
+
+            <button class="btn" onclick="uploadFiles()" id="upload-btn" disabled>
+                📤 Fazer Upload
+            </button>
+
+            <div id="upload-progress" class="progress-bar" style="display: none;">
+                <div class="progress-fill" id="progress-fill">0%</div>
+            </div>
+
+            <div id="upload-status"></div>
+        </div>
+
+        <div id="manage-tab" class="tab-content">
+            <div class="alert alert-info">
+                �� Gerencie os arquivos de música da playlist.
+            </div>
+
+            <button class="btn btn-secondary" onclick="loadMusicList()">🔄 Recarregar Lista</button>
+
+            <div id="music-list"></div>
+        </div>
+    </div>
+
+    <script>
+        const isProduction = window.location.hostname !== 'localhost' && 
+                            window.location.hostname !== '127.0.0.1';
+        
+        const API_CONFIG = {
+            backendUrl: isProduction 
+                ? 'http://radio-importante-backend-prod.eba-heipfui9.us-west-2.elasticbeanstalk.com'
+                : 'http://localhost:8080'
+        };
+
+        console.log('🔧 Admin carregado - Backend:', API_CONFIG.backendUrl);
+
+        let selectedFiles = [];
+
+        window.addEventListener('load', async () => {
+            await checkBackendStatus();
+            setupUploadHandlers();
+            loadMusicList();
+        });
+
+        async function checkBackendStatus() {
+            const statusDiv = document.getElementById('backend-status');
+            try {
+                const response = await fetch(API_CONFIG.backendUrl + '/health');
+                if (response.ok) {
+                    statusDiv.innerHTML = '✅ Backend Online - ' + API_CONFIG.backendUrl;
+                } else {
+                    statusDiv.innerHTML = '❌ Backend Offline';
+                }
+            } catch (e) {
+                statusDiv.innerHTML = '❌ Backend Offline - ' + e.message;
+            }
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-tab').classList.add('active');
+            
+            if (tabName === 'manage') loadMusicList();
+        }
+
+        function setupUploadHandlers() {
+            const uploadArea = document.getElementById('upload-area');
+            const fileInput = document.getElementById('file-input');
+
+            uploadArea.addEventListener('click', () => fileInput.click());
+
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('drag-over');
+            });
+
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('drag-over');
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('drag-over');
+                handleFiles(e.dataTransfer.files);
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                handleFiles(e.target.files);
+            });
+        }
+
+        function handleFiles(files) {
+            selectedFiles = Array.from(files).filter(file => 
+                file.type.startsWith('audio/') || file.name.toLowerCase().endsWith('.mp3')
+            );
+            
+            displayFiles();
+            document.getElementById('upload-btn').disabled = selectedFiles.length === 0;
+        }
+
+        function displayFiles() {
+            const preview = document.getElementById('file-preview');
+            const fileList = document.getElementById('file-list');
+
+            if (selectedFiles.length === 0) {
+                preview.style.display = 'none';
+                return;
+            }
+
+            preview.style.display = 'block';
+            fileList.innerHTML = selectedFiles.map(file => `
+                <div class="file-item">
+                    🎵 <strong>${file.name}</strong> (${formatFileSize(file.size)})
+                </div>
+            `).join('');
+        }
+
+        async function uploadFiles() {
+            if (selectedFiles.length === 0) {
+                alert('Selecione pelo menos um arquivo');
+                return;
+            }
+
+            const uploadBtn = document.getElementById('upload-btn');
+            const progressBar = document.getElementById('upload-progress');
+            const progressFill = document.getElementById('progress-fill');
+            const statusDiv = document.getElementById('upload-status');
+
+            try {
+                uploadBtn.disabled = true;
+                uploadBtn.textContent = '📤 Enviando...';
+                progressBar.style.display = 'block';
+                statusDiv.innerHTML = '';
+
+                const formData = new FormData();
+                selectedFiles.forEach(file => {
+                    formData.append('audioFiles', file);
+                });
+
+                const xhr = new XMLHttpRequest();
+                
+                xhr.upload.addEventListener('progress', (e) => {
+                    if (e.lengthComputable) {
+                        const percent = Math.round((e.loaded / e.total) * 100);
+                        progressFill.style.width = percent + '%';
+                        progressFill.textContent = percent + '%';
+                    }
+                });
+
+                xhr.addEventListener('load', () => {
+                    if (xhr.status === 200) {
+                        const response = JSON.parse(xhr.responseText);
+                        statusDiv.innerHTML = `
+                            <div class="alert alert-success">
+                                ✅ Upload concluído! ${response.files.length} arquivo(s) enviado(s).
+                            </div>
+                        `;
+                        clearUploadForm();
+                        if (document.getElementById('manage-tab').classList.contains('active')) {
+                            loadMusicList();
+                        }
+                    } else {
+                        throw new Error(`Erro HTTP: ${xhr.status}`);
+                    }
+                });
+
+                xhr.addEventListener('error', () => {
+                    throw new Error('Erro de rede durante o upload');
+                });
+
+                xhr.open('POST', API_CONFIG.backendUrl + '/api/upload');
+                xhr.send(formData);
+
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <div class="alert alert-error">
+                        ❌ Erro no upload: ${error.message}
+                    </div>
+                `;
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = '📤 Fazer Upload';
+                progressBar.style.display = 'none';
+            }
+        }
+
+        function clearUploadForm() {
+            selectedFiles = [];
+            document.getElementById('file-input').value = '';
+            document.getElementById('file-preview').style.display = 'none';
+            document.getElementById('upload-btn').disabled = true;
+        }
+
+        async function loadMusicList() {
+            const musicList = document.getElementById('music-list');
+
+            try {
+                musicList.innerHTML = '<p>🔄 Carregando...</p>';
+
+                const response = await fetch(API_CONFIG.backendUrl + '/api/catalog');
+                if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
+
+                const data = await response.json();
+                const tracks = data.catalog?.tracks || [];
+
+                if (tracks.length === 0) {
+                    musicList.innerHTML = '<div class="alert alert-info">ℹ️ Nenhuma música encontrada.</div>';
+                    return;
+                }
+
+                musicList.innerHTML = tracks.map(track => `
+                    <div class="music-item">
+                        <div class="music-info">
+                            <div class="music-title">${track.title || track.filename}</div>
+                            <div class="music-meta">
+                                ${track.artist ? `🎤 ${track.artist}` : ''} 
+                                ${track.format || 'MP3'}
+                            </div>
+                        </div>
+                        <button class="btn btn-danger" onclick="deleteTrack('${track.id}')">
+                            🗑️ Deletar
+                        </button>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                musicList.innerHTML = `
+                    <div class="alert alert-error">
+                        ❌ Erro ao carregar: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function deleteTrack(trackId) {
+            if (!confirm('Tem certeza que deseja deletar esta música?')) return;
+
+            try {
+                const response = await fetch(API_CONFIG.backendUrl + `/api/delete/${trackId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Arquivo deletado!');
+                    loadMusicList();
+                } else {
+                    throw new Error(result.error || 'Erro desconhecido');
+                }
+
+            } catch (error) {
+                alert(`❌ Erro ao deletar: ${error.message}`);
+            }
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        console.log('🎵 Admin Interface carregado!');
+    </script>
+</body>
+</html>

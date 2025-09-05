@@ -5,140 +5,214 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Radio Importante</title>
     <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            line-height: 1.6;
-            margin: 0;
-            padding: 20px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
+            padding: 20px;
         }
 
         .container {
             max-width: 1200px;
             margin: 0 auto;
             background: white;
-            border-radius: 10px;
+            border-radius: 12px;
             padding: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
         }
 
         h1 {
-            color: #333;
-            text-align: center;
+            color: #271F30;
             margin-bottom: 30px;
+            text-align: center;
+            font-size: 2.5em;
         }
 
-        .section {
-            margin-bottom: 40px;
-            padding: 20px;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            background: #f9f9f9;
-        }
-
-        .section h2 {
-            color: #555;
-            margin-top: 0;
-        }
-
-        .file-list {
-            display: grid;
+        /* Navegação Principal */
+        .nav-menu {
+            display: flex;
+            justify-content: center;
             gap: 15px;
-            margin-top: 20px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9ff;
+            border-radius: 12px;
+            border: 1px solid #e0e6ff;
+            flex-wrap: wrap;
         }
 
-        .total-tracks-header {
+        .nav-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            color: white;
+            min-width: 140px;
+            justify-content: center;
+        }
+
+        .nav-link.home { background: #667eea; }
+        .nav-link.home:hover { background: #5a6fd8; }
+
+        .nav-link.analytics { background: #e67e22; }
+        .nav-link.analytics:hover { background: #d35400; }
+
+        .nav-link.debug { background: #9b59b6; }
+        .nav-link.debug:hover { background: #8e44ad; }
+
+        .nav-link.test { background: #27ae60; }
+        .nav-link.test:hover { background: #219a52; }
+
+        .nav-link.upload-advanced { background: #34495e; }
+        .nav-link.upload-advanced:hover { background: #2c3e50; }
+
+        /* Status do Sistema */
+        .status-panel {
             background: linear-gradient(135deg, #271F30, #3d2f4a);
             color: white;
             padding: 20px;
             border-radius: 12px;
-            margin-bottom: 25px;
-            text-align: center;
-            box-shadow: 0 4px 12px rgba(39, 31, 48, 0.2);
-        }
-
-        .total-tracks-header h3 {
-            margin: 0 0 8px 0;
-            font-size: 1.5em;
-            font-weight: 600;
-        }
-
-        .total-tracks-header p {
-            margin: 0;
-            opacity: 0.9;
-            font-size: 0.95em;
-        }
-
-        .file-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 8px;
-        }
-
-        .track-number {
-            background: #271F30;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-weight: bold;
-            font-size: 0.85em;
-            min-width: 32px;
+            margin-bottom: 30px;
             text-align: center;
         }
 
-        .file-item {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
+        .status-panel h3 {
+            margin-bottom: 15px;
+            font-size: 1.3em;
         }
 
-        .file-name {
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 10px;
-        }
-
-        .metadata-form {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr auto auto;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .metadata-form input {
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+        #backend-status {
+            font-family: monospace;
             font-size: 14px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
         }
 
+        /* Tabs */
+        .tabs {
+            display: flex;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e0e0e0;
+            overflow-x: auto;
+        }
+
+        .tab {
+            background: none;
+            border: none;
+            padding: 15px 25px;
+            cursor: pointer;
+            font-size: 16px;
+            color: #666;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+            white-space: nowrap;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .tab:hover {
+            background: #f5f5f5;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Upload Area */
+        .upload-area {
+            border: 2px dashed #667eea;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9ff;
+            margin-bottom: 30px;
+        }
+
+        .upload-area:hover,
+        .upload-area.drag-over {
+            border-color: #271F30;
+            background: #ede8f5;
+            transform: translateY(-2px);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        /* Formulários */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        input[type="text"], 
+        input[type="file"], 
+        select, 
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus, 
+        select:focus, 
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Botões */
         .btn {
             background: #667eea;
             color: white;
             border: none;
-            padding: 8px 15px;
-            border-radius: 4px;
+            padding: 12px 24px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
         }
 
         .btn:hover {
             background: #5a6fd8;
-        }
-
-        .btn:hover[style*="background: #e67e22"] {
-            background: #d35400 !important;
-        }
-
-        .btn-danger {
-            background: #e74c3c;
-        }
-
-        .btn-danger:hover {
-            background: #c0392b;
+            transform: translateY(-1px);
         }
 
         .btn-success {
@@ -149,229 +223,375 @@
             background: #219a52;
         }
 
-        .btn-sm {
-            padding: 6px 12px;
-            font-size: 14px;
-            margin-left: 5px;
-            min-width: 40px;
-            height: 32px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 4px;
+        .btn-danger {
+            background: #e74c3c;
         }
 
-        .metadata-form .btn-sm {
-            margin-left: 0;
+        .btn-danger:hover {
+            background: #c0392b;
         }
 
-        .upload-area {
-            border: 2px dashed #667eea;
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        /* Seções */
+        .section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .section h2 {
+            color: #271F30;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        /* Lista de Músicas */
+        .music-list {
+            display: grid;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .music-item {
+            background: white;
+            border: 1px solid #e0e0e0;
             border-radius: 8px;
-            padding: 40px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            background: #f8f9ff;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.2s ease;
         }
 
-        .upload-area:hover,
-        .upload-area.drag-over {
-            border-color: #271F30;
-            background: #ede8f5;
+        .music-item:hover {
             transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
-        .upload-area.drag-over {
-            border-style: solid;
-            background: #e8f4fd;
+        .music-info {
+            flex: 1;
         }
 
-        #upload-preview {
+        .music-title {
+            font-weight: 600;
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .music-meta {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .music-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Alertas */
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            border-color: #27ae60;
+            color: #155724;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            border-color: #e74c3c;
+            color: #721c24;
+        }
+
+        .alert-info {
+            background: #e3f2fd;
+            border-color: #2196f3;
+            color: #1976d2;
+        }
+
+        .alert-warning {
+            background: #fff3e0;
+            border-color: #ff9800;
+            color: #f57c00;
+        }
+
+        /* Preview de arquivos */
+        .file-preview {
             background: #f0f8ff;
             border: 1px solid #b3d9ff;
-            border-radius: 6px;
+            border-radius: 8px;
             padding: 15px;
+            margin: 15px 0;
         }
 
-        .upload-file-item {
+        .file-item {
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 8px 0;
+            padding: 10px 0;
             border-bottom: 1px solid #e0e0e0;
         }
 
-        .upload-file-item:last-child {
+        .file-item:last-child {
             border-bottom: none;
         }
 
         .file-icon {
-            font-size: 18px;
-        }
-
-        .file-name {
-            flex: 1;
-            font-weight: 500;
-        }
-
-        .file-size {
-            color: #666;
-            font-size: 0.9em;
-        }
-
-        #file-input {
-            display: none;
-        }
-            padding: 40px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .upload-area:hover {
-            border-color: #5a6fd8;
-            background: #f0f3ff;
-        }
-
-        .upload-area.dragover {
-            border-color: #27ae60;
-            background: #f0fff4;
-        }
-
-        .status {
-            margin: 20px 0;
-            padding: 10px;
-            border-radius: 4px;
-            display: none;
-        }
-
-        .status.success {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
-        }
-
-        .status.error {
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
+            font-size: 24px;
         }
 
         .file-info {
-            font-size: 12px;
-            color: #666;
-            margin-top: 5px;
+            flex: 1;
         }
 
-        #fileInput {
+        .file-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .file-size {
+            font-size: 12px;
+            color: #666;
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            background: #e0e0e0;
+            border-radius: 10px;
+            height: 20px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        /* Loading */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            .nav-menu {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .tabs {
+                flex-wrap: wrap;
+            }
+            
+            .tab {
+                flex: 1;
+                min-width: 120px;
+            }
+            
+            .music-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .music-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+        }
+
+        /* Hidden input */
+        #file-input {
             display: none;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎵 Admin - Radio Importante</h1>
-        
-        <!-- Menu de Navegação -->
-        <div style="text-align: center; margin-bottom: 30px; padding: 15px; background: #f8f9ff; border-radius: 8px; border: 1px solid #e0e6ff;">
-            <a href="/" class="btn" style="margin: 0 10px; text-decoration: none;">🎵 Player</a>
-            <a href="/analytics.html" target="_blank" class="btn" style="margin: 0 10px; text-decoration: none; background: #e67e22;">📊 Estatísticas</a>
-            <span style="color: #666; font-size: 14px; margin-left: 20px;">Administração do Sistema</span>
+        <h1>🎵 Radio Importante - Admin</h1>
+
+        <!-- Menu de Navegação Principal -->
+        <div class="nav-menu">
+            <a href="/" class="nav-link home">
+                🎵 <span>Player Principal</span>
+            </a>
+            <a href="/analytics.html" target="_blank" rel="noopener noreferrer" class="nav-link analytics">
+                📊 <span>Estatísticas</span>
+            </a>
+            <a href="/debug.html" target="_blank" rel="noopener noreferrer" class="nav-link debug">
+                🐛 <span>Debug Console</span>
+            </a>
+            <a href="/test-integration.html" target="_blank" rel="noopener noreferrer" class="nav-link test">
+                🧪 <span>Testes Backend</span>
+            </a>
         </div>
 
-        <!-- Upload de Arquivos -->
-        <div class="section">
-            <h2>📁 Sistema de Upload de Áudio - Conectado ao Backend</h2>
-            <div style="background: #e8f5e8; border: 1px solid #4caf50; border-radius: 6px; padding: 12px; margin: 10px 0;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <span style="font-size: 20px;">✅</span>
-                    <div>
-                        <strong>Sistema Híbrido Funcionando:</strong><br>
-                        <span style="font-size: 14px; color: #2e7d2e;">
-                            🏠 Backend Local (localhost:8080) + ☁️ Backend Produção (AWS) disponíveis
-                        </span>
+        <!-- Status do Backend -->
+        <div class="status-panel">
+            <h3>🔧 Status do Sistema</h3>
+            <div id="backend-status">🔍 Verificando backends disponíveis...</div>
+        </div>
+
+        <!-- Navegação por Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('upload')">📤 Upload Rápido</button>
+            <button class="tab" onclick="switchTab('manage')">🎵 Gerenciar Músicas</button>
+        </div>
+
+        <!-- Tab: Upload -->
+        <div id="upload-tab" class="tab-content active">
+            <div class="section">
+                <h2>📤 Upload de Arquivos de Áudio</h2>
+                
+                <div class="alert alert-info">
+                    ℹ️ <strong>Sistema Híbrido Ativo:</strong> Upload funcionará automaticamente com backend local (desenvolvimento) ou AWS (produção)
+                </div>
+                
+                <div class="upload-area" id="upload-area">
+                    <span class="upload-icon">📁</span>
+                    <div style="font-size: 20px; font-weight: bold; margin-bottom: 10px;">
+                        Clique aqui ou arraste arquivos de áudio
+                    </div>
+                    <div style="font-size: 14px; color: #666; margin-bottom: 15px;">
+                        Formatos suportados: MP3, WAV, OGG • Máximo 50MB por arquivo
+                    </div>
+                    <button class="btn" onclick="document.getElementById('file-input').click()">
+                        Selecionar Arquivos
+                    </button>
+                </div>
+                
+                <input type="file" id="file-input" multiple accept=".mp3,.wav,.ogg,.aac">
+                
+                <div id="file-preview" class="file-preview" style="display: none;">
+                    <h4>📁 Arquivos Selecionados:</h4>
+                    <div id="file-list"></div>
+                    <div style="margin-top: 20px;">
+                        <button class="btn btn-success" onclick="uploadFiles()" id="upload-btn">
+                            📤 Enviar para Backend
+                        </button>
+                        <button class="btn btn-secondary" onclick="clearFiles()" style="margin-left: 10px;">
+                            🗑️ Limpar
+                        </button>
                     </div>
                 </div>
-            </div>
-            <p><strong>✨ Funcionalidades:</strong> Upload com auto-detecção de backend, limpeza automática de nomes, progress tracking e validação de arquivos</p>
-            
-            <div id="upload-area" class="upload-area">
-                <div style="font-size: 24px; margin-bottom: 10px;">📤</div>
-                <div style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">
-                    Clique aqui ou arraste arquivos de áudio
+                
+                <div id="upload-progress" class="progress-bar" style="display: none;">
+                    <div class="progress-fill" id="progress-fill">0%</div>
                 </div>
-                <div style="font-size: 14px; color: #666; margin-bottom: 10px;">
-                    Formatos suportados: MP3, WAV, OGG • Máximo 50MB por arquivo
-                </div>
-                <div style="font-size: 12px; color: #888;">
-                    🧹 Nomes serão automaticamente limpos (acentos e caracteres especiais removidos)
-                </div>
-            </div>
-            
-            <input type="file" id="file-input" multiple accept=".mp3,.wav,.ogg">
-            
-            <div id="upload-preview" style="display: none; margin-top: 15px;"></div>
-            
-            <button id="upload-btn" class="btn btn-success" style="display: none; margin-top: 15px;">
-                📤 Enviar para Backend
-            </button>
-            
-            <div id="upload-status" class="status"></div>
-            
-            <div style="margin-top: 15px; padding: 10px; background: #f8f9ff; border-radius: 6px; border: 1px solid #e0e6ff;">
-                <strong>🔧 Status da Conexão:</strong>
-                <div id="backend-status" style="margin-top: 8px; font-family: monospace; font-size: 14px;">
-                    🔍 Verificando backends disponíveis...
-                </div>
+                
+                <div id="upload-status"></div>
             </div>
         </div>
 
-        <!-- Lista de Arquivos e Metadados -->
-        <div class="section">
-            <h2>🎼 Gerenciar Metadados</h2>
-            <p>Edite os nomes de exibição, artistas e títulos como devem aparecer no player:</p>
-            
-            <div id="music-list" class="file-list">
-                <!-- Arquivos serão carregados aqui dinamicamente -->
+        <!-- Tab: Gerenciar -->
+        <div id="manage-tab" class="tab-content">
+            <div class="section">
+                <h2>🎵 Gerenciar Biblioteca Musical</h2>
+                
+                <div id="music-totals" style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #2196f3; color: #1976d2;">
+                    <!-- Totalizador será atualizado dinamicamente -->
+                </div>
+                
+                <div id="bulk-actions" style="background: #fff3e0; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #ff9800; display: none;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <label style="display: flex; align-items: center; gap: 8px; margin: 0;">
+                                <input type="checkbox" id="select-all" onchange="toggleSelectAll()" style="transform: scale(1.2);">
+                                <strong>Selecionar Todas</strong>
+                            </label>
+                            <span id="selected-count" style="color: #f57c00;">0 músicas selecionadas</span>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-danger" onclick="deleteSelectedTracks()" id="delete-selected" disabled>
+                                🗑️ Deletar Selecionadas
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="music-list" class="music-list">
+                    <!-- Lista será carregada dinamicamente -->
+                </div>
+                
+                <div id="manage-status"></div>
             </div>
-            
-            <div style="margin-top: 20px;">
-                <!-- Botões globais removidos - cada faixa tem seu próprio botão Save e atualiza automaticamente -->
-                <!-- <button class="btn btn-success" onclick="saveAllMetadata()">💾 Salvar Todas as Alterações</button> -->
-                <!-- <button class="btn" onclick="refreshFileList()">🔄 Atualizar Lista</button> -->
-                <!-- <button class="btn btn-danger" onclick="syncWithFolder()" style="background: #e67e22;">🔄 Sincronizar com Pasta</button> -->
-                <p style="text-align: center; color: #666; font-style: italic;">
-                    💡 Use os botões 💾 ao lado de cada faixa para salvar alterações individuais
-                </p>
-            </div>
-        </div>
-
-        <!-- Preview do Catálogo (Oculto - Admin não precisa ver) -->
-        <div class="section" style="display: none;">
-            <h2>📋 Preview do Catálogo</h2>
-            <pre id="catalogPreview" style="background: #f4f4f4; padding: 15px; border-radius: 4px; overflow: auto; max-height: 300px;"></pre>
         </div>
     </div>
 
-    <script src="/src/admin-simple.ts" type="module"></script>
-    
     <script>
-        // Verificar status dos backends ao carregar a página
+        // Configuração da API
+        const API_CONFIG = {
+            backendUrl: 'http://localhost:8080',
+            productionUrl: 'http://radio-importante-backend-prod.eba-heipfui9.us-west-2.elasticbeanstalk.com',
+            currentBackend: null
+        };
+
+        let selectedFiles = [];
+
+        // ===== INICIALIZAÇÃO =====
         window.addEventListener('load', async () => {
+            await checkBackendStatus();
+            setupUploadHandlers();
+            loadMusicList();
+        });
+
+        // ===== STATUS DO BACKEND =====
+        async function checkBackendStatus() {
             const statusDiv = document.getElementById('backend-status');
-            if (!statusDiv) return;
-
-            const API_CONFIG = {
-                backendUrl: 'http://localhost:8080',
-                productionUrl: 'http://radio-importante-backend-prod.eba-heipfui9.us-west-2.elasticbeanstalk.com'
-            };
-
+            
             try {
                 statusDiv.innerHTML = '🔍 Testando conexões...';
 
                 // Testar backend local
                 let localStatus = '❌ Offline';
+                let localAvailable = false;
                 try {
                     const localResponse = await fetch(API_CONFIG.backendUrl + '/health', { 
                         method: 'GET',
@@ -379,13 +599,16 @@
                     });
                     if (localResponse.ok) {
                         localStatus = '✅ Online';
+                        localAvailable = true;
+                        API_CONFIG.currentBackend = API_CONFIG.backendUrl;
                     }
                 } catch (e) {
-                    localStatus = '❌ Offline';
+                    console.log('Backend local não disponível');
                 }
 
                 // Testar backend produção
                 let prodStatus = '❌ Offline';
+                let prodAvailable = false;
                 try {
                     const prodResponse = await fetch(API_CONFIG.productionUrl + '/health', {
                         method: 'GET',
@@ -393,21 +616,453 @@
                     });
                     if (prodResponse.ok) {
                         prodStatus = '✅ Online';
+                        prodAvailable = true;
+                        if (!localAvailable) {
+                            API_CONFIG.currentBackend = API_CONFIG.productionUrl;
+                        }
                     }
                 } catch (e) {
-                    prodStatus = '❌ Offline';
+                    console.log('Backend produção não disponível');
+                }
+
+                // Determinar qual backend usar
+                let activeBackend = 'Nenhum disponível';
+                if (localAvailable) {
+                    activeBackend = '🏠 Local (localhost:8080)';
+                } else if (prodAvailable) {
+                    activeBackend = '☁️ Produção (AWS)';
                 }
 
                 statusDiv.innerHTML = `
-                    🏠 Local (localhost:8080): ${localStatus}<br>
-                    ☁️ Produção (AWS): ${prodStatus}<br>
-                    <small style="color: #666;">Sistema usará backend disponível automaticamente</small>
+                    🏠 Local: ${localStatus} | ☁️ Produção: ${prodStatus}<br>
+                    <strong>Backend Ativo:</strong> ${activeBackend}
                 `;
 
             } catch (error) {
                 statusDiv.innerHTML = `❌ Erro ao verificar status: ${error.message}`;
             }
-        });
+        }
+
+        // ===== TABS =====
+        function switchTab(tabName) {
+            // Remover active de todas as tabs e conteúdos
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // Ativar tab e conteúdo selecionados
+            document.querySelector(`button[onclick="switchTab('${tabName}')"]`).classList.add('active');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        }
+
+        // ===== UPLOAD HANDLERS =====
+        function setupUploadHandlers() {
+            const uploadArea = document.getElementById('upload-area');
+            const fileInput = document.getElementById('file-input');
+
+            // Drag and drop
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('drag-over');
+            });
+
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('drag-over');
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('drag-over');
+                handleFiles(e.dataTransfer.files);
+            });
+
+            // File input change
+            fileInput.addEventListener('change', (e) => {
+                handleFiles(e.target.files);
+            });
+
+            // Click no upload area
+            uploadArea.addEventListener('click', () => {
+                fileInput.click();
+            });
+        }
+
+        function handleFiles(files) {
+            selectedFiles = Array.from(files).filter(file => 
+                file.type.startsWith('audio/') || 
+                file.name.toLowerCase().match(/\.(mp3|wav|ogg|aac)$/)
+            );
+            
+            displayFiles();
+        }
+
+        function displayFiles() {
+            const preview = document.getElementById('file-preview');
+            const fileList = document.getElementById('file-list');
+            
+            if (selectedFiles.length === 0) {
+                preview.style.display = 'none';
+                return;
+            }
+
+            preview.style.display = 'block';
+            fileList.innerHTML = selectedFiles.map((file, index) => `
+                <div class="file-item">
+                    <span class="file-icon">🎵</span>
+                    <div class="file-info">
+                        <div class="file-name">${file.name}</div>
+                        <div class="file-size">${formatFileSize(file.size)}</div>
+                    </div>
+                    <button class="btn btn-danger" onclick="removeFile(${index})" style="padding: 6px 12px; font-size: 14px;">
+                        ✕
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            displayFiles();
+        }
+
+        function clearFiles() {
+            selectedFiles = [];
+            document.getElementById('file-input').value = '';
+            displayFiles();
+        }
+
+        // ===== UPLOAD =====
+        async function uploadFiles() {
+            if (selectedFiles.length === 0) {
+                showAlert('upload-status', 'Selecione pelo menos um arquivo', 'error');
+                return;
+            }
+
+            if (!API_CONFIG.currentBackend) {
+                showAlert('upload-status', 'Nenhum backend disponível', 'error');
+                return;
+            }
+
+            const progressBar = document.getElementById('upload-progress');
+            const progressFill = document.getElementById('progress-fill');
+            const uploadBtn = document.getElementById('upload-btn');
+            
+            try {
+                progressBar.style.display = 'block';
+                uploadBtn.disabled = true;
+                uploadBtn.textContent = '📤 Enviando...';
+
+                // Preparar FormData com todos os arquivos de uma vez
+                const formData = new FormData();
+                selectedFiles.forEach(file => {
+                    formData.append('audioFiles', file);
+                });
+
+                progressFill.style.width = '50%';
+                progressFill.textContent = `50% - Enviando ${selectedFiles.length} arquivo(s)...`;
+
+                const response = await fetch(API_CONFIG.currentBackend + '/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erro no upload: ${response.statusText}`);
+                }
+
+                progressFill.style.width = '100%';
+                progressFill.textContent = `100% - Upload concluído!`;
+
+                showAlert('upload-status', `✅ Upload concluído! ${selectedFiles.length} arquivo(s) enviado(s)`, 'success');
+                clearFiles();
+                
+                // Atualizar lista de músicas
+                setTimeout(() => {
+                    loadMusicList();
+                }, 1000);
+
+            } catch (error) {
+                console.error('Erro no upload:', error);
+                showAlert('upload-status', `❌ Erro no upload: ${error.message}`, 'error');
+            } finally {
+                progressBar.style.display = 'none';
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = '📤 Enviar para Backend';
+            }
+        }
+
+        // ===== GERENCIAR MÚSICAS =====
+        async function loadMusicList() {
+            const musicList = document.getElementById('music-list');
+            const statusDiv = document.getElementById('manage-status');
+            const totalsDiv = document.getElementById('music-totals');
+            
+            try {
+                musicList.innerHTML = '<div style="text-align: center; padding: 20px;">🔄 Carregando músicas...</div>';
+                totalsDiv.innerHTML = '🔄 Calculando totais...';
+                
+                // Tentar carregar do backend
+                let tracks = [];
+                if (API_CONFIG.currentBackend) {
+                    try {
+                        const response = await fetch(API_CONFIG.currentBackend + '/api/catalog');
+                        if (response.ok) {
+                            const data = await response.json();
+                            tracks = data.tracks || [];
+                        }
+                    } catch (e) {
+                        console.log('Erro ao carregar do backend, tentando catálogo local');
+                    }
+                }
+                
+                // Fallback para catálogo local
+                if (tracks.length === 0) {
+                    try {
+                        const response = await fetch('/data/catalog.json');
+                        if (response.ok) {
+                            const data = await response.json();
+                            tracks = data.tracks || [];
+                        }
+                    } catch (e) {
+                        console.log('Erro ao carregar catálogo local');
+                    }
+                }
+
+                if (tracks.length === 0) {
+                    musicList.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">📭 Nenhuma música encontrada</div>';
+                    totalsDiv.innerHTML = '📊 <strong>Total:</strong> 0 músicas • 0:00 de duração';
+                    return;
+                }
+
+                // Calcular totais
+                const totalTracks = tracks.length;
+                const totalDuration = tracks.reduce((sum, track) => {
+                    return sum + (track.duration || 0);
+                }, 0);
+
+                // Atualizar totalizador
+                totalsDiv.innerHTML = `📊 <strong>Total:</strong> ${totalTracks} música${totalTracks !== 1 ? 's' : ''} • ${formatDuration(totalDuration)} de duração`;
+
+                musicList.innerHTML = tracks.map((track, index) => `
+                    <div class="music-item">
+                        <div style="background: #667eea; color: white; padding: 8px 12px; border-radius: 50%; font-weight: bold; margin-right: 15px; min-width: 35px; text-align: center;">
+                            ${index + 1}
+                        </div>
+                        <div class="music-info">
+                            <div class="music-title">${track.title || track.name}</div>
+                            <div class="music-meta">
+                                ${track.artist || 'Artista não definido'} • 
+                                ${track.duration ? formatDuration(track.duration) : 'Duração desconhecida'} • 
+                                ${track.file || track.src}
+                            </div>
+                        </div>
+                        <div class="music-actions">
+                            <input type="checkbox" class="music-checkbox" data-track-id="${track.id}" style="margin-right: 10px; transform: scale(1.2);">
+                            <button class="btn btn-danger" onclick="deleteTrack('${track.id}')" style="padding: 8px 12px;" title="Deletar música">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+
+                showAlert('manage-status', `✅ ${tracks.length} música(s) carregada(s)`, 'success');
+                
+                // Mostrar/esconder controles de seleção múltipla
+                const bulkActions = document.getElementById('bulk-actions');
+                if (tracks.length > 0) {
+                    bulkActions.style.display = 'block';
+                    setupBulkSelection();
+                } else {
+                    bulkActions.style.display = 'none';
+                }
+
+            } catch (error) {
+                console.error('Erro ao carregar lista:', error);
+                musicList.innerHTML = '<div style="text-align: center; padding: 40px; color: #e74c3c;">❌ Erro ao carregar músicas</div>';
+                totalsDiv.innerHTML = '❌ Erro ao calcular totais';
+                showAlert('manage-status', `❌ Erro: ${error.message}`, 'error');
+            }
+        }
+
+        async function deleteTrack(trackId) {
+            if (!confirm('Tem certeza que deseja deletar esta música?')) {
+                return;
+            }
+
+            try {
+                if (API_CONFIG.currentBackend) {
+                    const response = await fetch(API_CONFIG.currentBackend + `/api/delete/${trackId}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (response.ok) {
+                        showAlert('manage-status', '✅ Música deletada com sucesso', 'success');
+                        loadMusicList();
+                    } else {
+                        throw new Error('Erro ao deletar no backend');
+                    }
+                } else {
+                    throw new Error('Backend não disponível para deletar');
+                }
+            } catch (error) {
+                console.error('Erro ao deletar:', error);
+                showAlert('manage-status', `❌ Erro ao deletar: ${error.message}`, 'error');
+            }
+        }
+
+        async function regenerateCatalog() {
+            const statusDiv = document.getElementById('manage-status');
+            
+            try {
+                if (!API_CONFIG.currentBackend) {
+                    throw new Error('Backend não disponível');
+                }
+
+                showAlert('manage-status', '🔄 Regenerando catálogo...', 'info');
+
+                const response = await fetch(API_CONFIG.currentBackend + '/api/regenerate-catalog', {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    showAlert('manage-status', '✅ Catálogo regenerado com sucesso', 'success');
+                    setTimeout(() => loadMusicList(), 1000);
+                } else {
+                    throw new Error('Erro ao regenerar catálogo');
+                }
+
+            } catch (error) {
+                console.error('Erro na regeneração:', error);
+                showAlert('manage-status', `❌ Erro: ${error.message}`, 'error');
+            }
+        }
+
+        // ===== SELEÇÃO MÚLTIPLA =====
+        function setupBulkSelection() {
+            const checkboxes = document.querySelectorAll('.music-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', updateSelectedCount);
+            });
+            updateSelectedCount();
+        }
+
+        function toggleSelectAll() {
+            const selectAllCheckbox = document.getElementById('select-all');
+            const checkboxes = document.querySelectorAll('.music-checkbox');
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+            
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            const checkboxes = document.querySelectorAll('.music-checkbox');
+            const selectedCheckboxes = document.querySelectorAll('.music-checkbox:checked');
+            const selectedCount = selectedCheckboxes.length;
+            
+            document.getElementById('selected-count').textContent = `${selectedCount} música${selectedCount !== 1 ? 's' : ''} selecionada${selectedCount !== 1 ? 's' : ''}`;
+            
+            const deleteButton = document.getElementById('delete-selected');
+            deleteButton.disabled = selectedCount === 0;
+            
+            // Atualizar checkbox "Selecionar Todas"
+            const selectAllCheckbox = document.getElementById('select-all');
+            if (selectedCount === 0) {
+                selectAllCheckbox.indeterminate = false;
+                selectAllCheckbox.checked = false;
+            } else if (selectedCount === checkboxes.length) {
+                selectAllCheckbox.indeterminate = false;
+                selectAllCheckbox.checked = true;
+            } else {
+                selectAllCheckbox.indeterminate = true;
+            }
+        }
+
+        async function deleteSelectedTracks() {
+            const selectedCheckboxes = document.querySelectorAll('.music-checkbox:checked');
+            const selectedCount = selectedCheckboxes.length;
+            
+            if (selectedCount === 0) {
+                showAlert('manage-status', 'Nenhuma música selecionada', 'error');
+                return;
+            }
+            
+            if (!confirm(`Tem certeza que deseja deletar ${selectedCount} música${selectedCount !== 1 ? 's' : ''}?`)) {
+                return;
+            }
+
+            try {
+                const trackIds = Array.from(selectedCheckboxes).map(checkbox => checkbox.dataset.trackId);
+                let deletedCount = 0;
+                
+                showAlert('manage-status', `🔄 Deletando ${selectedCount} música${selectedCount !== 1 ? 's' : ''}...`, 'info');
+                
+                for (const trackId of trackIds) {
+                    if (API_CONFIG.currentBackend) {
+                        const response = await fetch(API_CONFIG.currentBackend + `/api/delete/${trackId}`, {
+                            method: 'DELETE'
+                        });
+
+                        if (response.ok) {
+                            deletedCount++;
+                        }
+                    }
+                }
+                
+                if (deletedCount > 0) {
+                    showAlert('manage-status', `✅ ${deletedCount} música${deletedCount !== 1 ? 's' : ''} deletada${deletedCount !== 1 ? 's' : ''} com sucesso`, 'success');
+                    loadMusicList();
+                } else {
+                    throw new Error('Nenhuma música foi deletada');
+                }
+                
+            } catch (error) {
+                console.error('Erro ao deletar músicas:', error);
+                showAlert('manage-status', `❌ Erro ao deletar músicas: ${error.message}`, 'error');
+            }
+        }
+
+        // ===== UTILITÁRIOS =====
+        function showAlert(containerId, message, type) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = `
+                <div class="alert alert-${type}">
+                    ${message}
+                </div>
+            `;
+            
+            // Auto-hide após 5 segundos
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 5000);
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function formatDuration(seconds) {
+            if (!seconds || seconds === 0) return '0:00';
+            const minutes = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${minutes}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // ===== DEBUG =====
+        window.adminDebug = {
+            API_CONFIG,
+            selectedFiles,
+            checkBackendStatus,
+            loadMusicList
+        };
+
+        console.log('🎵 Admin Interface carregado!');
+        console.log('🔧 Debug disponível em: window.adminDebug');
     </script>
 </body>
 </html>

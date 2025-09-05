@@ -3,6 +3,7 @@ const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 const { exec } = require('child_process');
+const { parseFile } = require('music-metadata');
 const app = express();
 
 // Configurar multer para upload de arquivos
@@ -86,6 +87,29 @@ app.get('/', function(req, res) {
   });
 });
 
+// Função para extrair metadados de áudio (duração, artista, título)
+async function extractAudioMetadata(filePath) {
+  try {
+    const metadata = await parseFile(filePath);
+    const duration = metadata.format.duration || 0; // Duração em segundos
+    const title = metadata.common.title || null;
+    const artist = metadata.common.artist || null;
+    
+    return {
+      duration: Math.round(duration), // Arredondar para segundos inteiros
+      title,
+      artist
+    };
+  } catch (error) {
+    console.error(`Erro ao extrair metadados de ${filePath}:`, error.message);
+    return {
+      duration: 0, // Fallback se não conseguir ler
+      title: null,
+      artist: null
+    };
+  }
+}
+
 // Função para atualizar catalog.json
 async function updateCatalog(newFiles) {
   const catalogPath = path.join(__dirname, '../public/data/catalog.json');
@@ -99,20 +123,26 @@ async function updateCatalog(newFiles) {
     }
     
     // Adicionar novas faixas ao final do catálogo existente
-    newFiles.forEach((file, index) => {
+    for (let i = 0; i < newFiles.length; i++) {
+      const file = newFiles[i];
+      const filePath = path.join(__dirname, '../public/audio', file.filename);
+      
+      // Extrair metadados automaticamente
+      const metadata = await extractAudioMetadata(filePath);
+      
       const newTrack = {
         id: 'temp', // Será reindexado
-        title: extractTitle(file.originalname),
-        artist: extractArtist(file.originalname),
+        title: metadata.title || extractTitle(file.originalname),
+        artist: metadata.artist || extractArtist(file.originalname),
         filename: file.filename,
-        duration: 180,
+        duration: metadata.duration, // Duração real extraída do arquivo
         format: path.extname(file.filename).substring(1),
         uploadedAt: new Date().toISOString(),
-        orderIndex: Date.now() + index
+        orderIndex: Date.now() + i
       };
       
       catalog.tracks.push(newTrack);
-    });
+    }
     
     // Ordenar todas as tracks por uploadedAt (ordem de upload)
     catalog.tracks.sort((a, b) => {
@@ -452,6 +482,69 @@ app.post('/api/regenerate-continuous', async function(req, res) {
     
   } catch (error) {
     console.error('Erro ao regenerar arquivo contínuo:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Endpoint para regenerar catálogo com durações corrigidas
+app.post('/api/regenerate-catalog', async function(req, res) {
+  try {
+    const catalogPath = path.join(__dirname, '../public/data/catalog.json');
+    const audioDir = path.join(__dirname, '../public/audio');
+    
+    if (!fs.existsSync(catalogPath)) {
+      return res.status(404).json({
+        success: false,
+        error: 'Catálogo não encontrado'
+      });
+    }
+
+    const catalogData = fs.readFileSync(catalogPath, 'utf8');
+    const catalog = JSON.parse(catalogData);
+    
+    // Atualizar durações extraindo metadados reais dos arquivos
+    for (let i = 0; i < catalog.tracks.length; i++) {
+      const track = catalog.tracks[i];
+      const audioFilePath = path.join(__dirname, '../public/audio', track.filename);
+      
+      if (fs.existsSync(audioFilePath)) {
+        const metadata = await extractAudioMetadata(audioFilePath);
+        track.duration = metadata.duration;
+        
+        // Também atualizar título e artista se extraídos dos metadados
+        if (metadata.title && !track.title) {
+          track.title = metadata.title;
+        }
+        if (metadata.artist && !track.artist) {
+          track.artist = metadata.artist;
+        }
+      }
+    }
+    
+    // Reindexar IDs
+    catalog.tracks.forEach((track, index) => {
+      track.id = `track${String(index + 1).padStart(3, '0')}`;
+    });
+    
+    // Salvar catálogo atualizado
+    fs.writeFileSync(catalogPath, JSON.stringify(catalog, null, 2));
+    
+    // Gerar arquivo contínuo com shuffle para iOS
+    await generateContinuousFile(catalog);
+    
+    res.json({
+      success: true,
+      message: 'Catálogo regenerado com durações reais extraídas dos arquivos',
+      totalTracks: catalog.tracks.length,
+      totalDuration: catalog.tracks.reduce((sum, track) => sum + track.duration, 0),
+      updatedDuration: 'Durações extraídas automaticamente dos metadados'
+    });
+
+  } catch (error) {
+    console.error('Erro ao regenerar catálogo:', error);
     res.status(500).json({
       success: false,
       error: error.message
