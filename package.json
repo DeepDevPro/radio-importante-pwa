@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "release": "echo "Use: git tag v1.0.0 && git push origin v1.0.0"",
+    "release": "echo \"Use: git tag v1.0.0 && git push origin v1.0.0\"",
     "dev": "vite",
     "build": "tsc && vite build",
     "build:deploy": "tsc --noEmit && vite build",
