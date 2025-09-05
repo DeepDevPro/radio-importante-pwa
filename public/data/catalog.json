@@ -1,85 +1,115 @@
 {
-  "version": "1.0.0",
+  "version": "v2.1.6",
   "tracks": [
     {
-      "id": "track001",
+      "id": 1,
+      "title": "01 ancestors",
+      "artist": "Artista Desconhecido",
+      "filename": "01_ancestors.mp3",
+      "url": "/audio/01_ancestors.mp3",
+      "duration": 180,
+      "fileSize": 1132368,
+      "lastModified": "2025-09-05T16:03:43.374Z",
+      "displayName": "Artista Desconhecido - 01 ancestors"
+    },
+    {
+      "id": 2,
+      "title": "01 northern girls",
+      "artist": "Artista Desconhecido",
+      "filename": "01_northern_girls.mp3",
+      "url": "/audio/01_northern_girls.mp3",
+      "duration": 180,
+      "fileSize": 1004875,
+      "lastModified": "2025-09-05T16:03:43.379Z",
+      "displayName": "Artista Desconhecido - 01 northern girls"
+    },
+    {
+      "id": 3,
+      "title": "03 beach 111 towel i cube cosmix marathon remix",
+      "artist": "Artista Desconhecido",
+      "filename": "03_beach_111_towel_i_cube_cosmix_marathon_remix.mp3",
+      "url": "/audio/03_beach_111_towel_i_cube_cosmix_marathon_remix.mp3",
+      "duration": 180,
+      "fileSize": 1433903,
+      "lastModified": "2025-09-05T16:03:43.386Z",
+      "displayName": "Artista Desconhecido - 03 beach 111 towel i cube cosmix marathon remix"
+    },
+    {
+      "id": 4,
+      "title": "03 comadi 89",
+      "artist": "Artista Desconhecido",
+      "filename": "03_comadi_89.mp3",
+      "url": "/audio/03_comadi_89.mp3",
+      "duration": 180,
+      "fileSize": 4811744,
+      "lastModified": "2025-09-05T16:03:43.395Z",
+      "displayName": "Artista Desconhecido - 03 comadi 89"
+    },
+    {
+      "id": 5,
       "title": "Nightlife",
       "artist": "Lonnie Liston Smith",
       "filename": "Lonnie Liston Smith - Nightlife.mp3",
-      "duration": 60,
-      "format": "mp3",
-      "uploadedAt": "2025-09-01T13:00:00.000Z",
-      "name": "Nightlife"
+      "url": "/audio/Lonnie Liston Smith - Nightlife.mp3",
+      "duration": 180,
+      "fileSize": 1197523,
+      "lastModified": "2025-09-05T16:03:43.400Z",
+      "displayName": "Lonnie Liston Smith - Nightlife"
     },
     {
-      "id": "track002",
+      "id": 6,
       "title": "Danda Luanda",
       "artist": "Luciana Oliveira",
       "filename": "Luciana Oliveira - Danda Luanda.mp3",
-      "duration": 60,
-      "format": "mp3",
-      "uploadedAt": "2025-09-01T14:00:00.000Z"
+      "url": "/audio/Luciana Oliveira - Danda Luanda.mp3",
+      "duration": 180,
+      "fileSize": 1081411,
+      "lastModified": "2025-09-05T16:03:43.405Z",
+      "displayName": "Luciana Oliveira - Danda Luanda"
     },
     {
-      "id": "track003",
-      "title": "Comadi",
-      "artist": "Céu",
-      "filename": "03_comadi_89.mp3",
-      "duration": 60,
-      "format": "mp3",
-      "uploadedAt": "2025-09-05T00:58:39.633Z",
-      "orderIndex": 1757033919633,
-      "name": "Comadi"
-    },
-    {
-      "id": "track004",
-      "title": "Beach Towel (I Cube Cosmix Marathon Remix)",
-      "artist": "Karma",
-      "filename": "03_beach_111_towel_i_cube_cosmix_marathon_remix.mp3",
-      "duration": 60,
-      "format": "mp3",
-      "uploadedAt": "2025-09-05T01:00:03.028Z",
-      "orderIndex": 1757034003028,
-      "name": "Beach Towel (I Cube Cosmix Marathon Remix)"
-    },
-    {
-      "id": "track005",
-      "title": "Northern Girls",
-      "artist": "Belleruche",
-      "filename": "01_northern_girls.mp3",
-      "duration": 60,
-      "format": "mp3",
-      "uploadedAt": "2025-09-05T01:10:22.382Z",
-      "orderIndex": 1757034622382,
-      "name": "Northern Girls"
-    },
-    {
-      "id": "track006",
-      "title": "Ancestors",
-      "artist": "Julius Papp",
-      "filename": "01_ancestors.mp3",
-      "duration": 60,
-      "format": "mp3",
-      "uploadedAt": "2025-09-05T11:36:14.626Z",
-      "orderIndex": 1757072174626,
-      "name": "Ancestors"
-    },
-    {
-      "id": "track007",
-      "title": "Jackin Around (Travino Reprise Master)",
-      "artist": "Travino",
+      "id": 7,
+      "title": "jackin around. travino reprise master",
+      "artist": "Artista Desconhecido",
       "filename": "jackin__around._-travino_reprise_master.mp3",
-      "duration": 120,
-      "format": "mp3",
-      "uploadedAt": "2025-09-05T11:55:18.857Z",
-      "orderIndex": 1757073318857,
-      "name": "Jackin Around (Travino Reprise Master)"
+      "url": "/audio/jackin__around._-travino_reprise_master.mp3",
+      "duration": 180,
+      "fileSize": 1955792,
+      "lastModified": "2025-09-05T16:03:43.551Z",
+      "displayName": "Artista Desconhecido - jackin around. travino reprise master"
+    },
+    {
+      "id": 8,
+      "title": "radio importante continuous",
+      "artist": "Artista Desconhecido",
+      "filename": "radio-importante-continuous.aac",
+      "url": "/audio/radio-importante-continuous.aac",
+      "duration": 180,
+      "fileSize": 7973048,
+      "lastModified": "2025-09-05T16:03:43.585Z",
+      "displayName": "Artista Desconhecido - radio importante continuous"
+    },
+    {
+      "id": 9,
+      "title": "radio importante continuous",
+      "artist": "Artista Desconhecido",
+      "filename": "radio-importante-continuous.mp3",
+      "url": "/audio/radio-importante-continuous.mp3",
+      "duration": 180,
+      "fileSize": 0,
+      "lastModified": "2025-09-05T16:03:43.585Z",
+      "displayName": "Artista Desconhecido - radio importante continuous"
     }
   ],
   "metadata": {
-    "totalTracks": 8,
-    "totalDuration": 2400,
-    "artwork": "/images/cover.jpg",
-    "radioName": "Radio Importante"
+    "totalTracks": 9,
+    "totalDuration": 1620,
+    "artwork": "/img/radio-importante-logo.png",
+    "radioName": "Rádio Importante",
+    "description": "Uma seleção de música eletrônica, soul e experimental",
+    "genre": "Electronic, Soul, Experimental",
+    "language": "pt-BR",
+    "lastUpdated": "2025-09-05T16:03:52.249Z",
+    "deployVersion": "v2.1.6"
   }
 }
