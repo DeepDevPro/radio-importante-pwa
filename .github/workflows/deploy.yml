@@ -49,6 +49,39 @@ jobs:
         
         echo "Deploying to S3 bucket: $S3_BUCKET"
         
+        # Verificar se bucket existe, criar se necessário
+        if ! aws s3 ls "s3://$S3_BUCKET" 2>/dev/null; then
+          echo "📦 Bucket $S3_BUCKET não existe, criando..."
+          aws s3 mb s3://$S3_BUCKET --region us-west-2
+          
+          # Configurar bucket para website estático
+          aws s3 website s3://$S3_BUCKET --index-document index.html --error-document index.html
+          
+          # Configurar bucket policy para acesso público
+          cat > bucket-policy.json << 'EOF'
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "PublicReadGetObject",
+              "Effect": "Allow",
+              "Principal": "*",
+              "Action": "s3:GetObject",
+              "Resource": "arn:aws:s3:::BUCKET_NAME/*"
+            }
+          ]
+        }
+        EOF
+          
+          # Substituir BUCKET_NAME no policy
+          sed -i "s/BUCKET_NAME/$S3_BUCKET/g" bucket-policy.json
+          
+          # Aplicar policy
+          aws s3api put-bucket-policy --bucket $S3_BUCKET --policy file://bucket-policy.json
+          
+          echo "✅ Bucket criado e configurado para hosting estático"
+        fi
+        
         # Upload principal
         aws s3 sync dist/ s3://$S3_BUCKET --delete
         

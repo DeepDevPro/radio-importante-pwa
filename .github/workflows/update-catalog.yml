@@ -23,6 +23,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
 
     - name: 📦 Setup Node.js
       uses: actions/setup-node@v4
@@ -120,11 +121,94 @@ jobs:
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         
+        # Se estamos em tag (detached HEAD), checkout para main
+        if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+          echo "🏷️ Detected tag deployment, switching to main branch"
+          git checkout main
+          git pull origin main
+        fi
+        
+        # Regenerar catálogo na branch main
+        node -e "
+        const fs = require('fs');
+        const path = require('path');
+        
+        const audioDir = path.join(process.cwd(), 'public', 'audio');
+        const catalogPath = path.join(process.cwd(), 'public', 'data', 'catalog.json');
+        
+        console.log('🎵 Regenerating catalog on main branch');
+        
+        if (!fs.existsSync(audioDir)) {
+          console.log('❌ Audio directory not found');
+          process.exit(0); // Don't fail, just skip
+        }
+        
+        const audioFiles = fs.readdirSync(audioDir)
+          .filter(file => /\.(mp3|wav|aac)$/i.test(file))
+          .filter(file => !file.startsWith('.'));
+        
+        console.log(\`📁 Found \${audioFiles.length} audio files\`);
+        
+        const tracks = audioFiles.map((filename, index) => {
+          const filePath = path.join(audioDir, filename);
+          const stats = fs.statSync(filePath);
+          
+          let title = filename.replace(/\.(mp3|wav|aac)$/i, '');
+          let artist = 'Artista Desconhecido';
+          
+          if (title.includes(' - ')) {
+            const parts = title.split(' - ');
+            artist = parts[0].trim();
+            title = parts.slice(1).join(' - ').trim();
+          }
+          
+          title = title.replace(/[-_]/g, ' ').replace(/\s+/g, ' ').trim();
+          artist = artist.replace(/[-_]/g, ' ').replace(/\s+/g, ' ').trim();
+          
+          return {
+            id: index + 1,
+            title: title || 'Título Desconhecido',
+            artist: artist,
+            filename: filename,
+            url: \`/audio/\${filename}\`,
+            duration: 180,
+            fileSize: stats.size,
+            lastModified: stats.mtime.toISOString(),
+            displayName: \`\${artist} - \${title}\`
+          };
+        });
+        
+        const catalog = {
+          version: '${{ github.ref_name }}',
+          tracks: tracks,
+          metadata: {
+            totalTracks: tracks.length,
+            totalDuration: tracks.length * 180,
+            artwork: '/img/radio-importante-logo.png',
+            radioName: 'Rádio Importante',
+            description: 'Uma seleção de música eletrônica, soul e experimental',
+            genre: 'Electronic, Soul, Experimental',
+            language: 'pt-BR',
+            lastUpdated: new Date().toISOString(),
+            deployVersion: '${{ github.ref_name }}'
+          }
+        };
+        
+        const dataDir = path.dirname(catalogPath);
+        if (!fs.existsSync(dataDir)) {
+          fs.mkdirSync(dataDir, { recursive: true });
+        }
+        
+        fs.writeFileSync(catalogPath, JSON.stringify(catalog, null, 2), 'utf8');
+        
+        console.log(\`✅ Catalog updated with \${tracks.length} tracks for version ${{ github.ref_name }}\`);
+        "
+        
         if git diff --quiet public/data/catalog.json; then
           echo "📋 No changes to catalog"
         else
           git add public/data/catalog.json
-          git commit -m "🎵 Auto-update catalog with new tracks"
-          git push
-          echo "✅ Catalog updated and pushed"
+          git commit -m "🎵 Auto-update catalog for ${{ github.ref_name }}"
+          git push origin main
+          echo "✅ Catalog updated and pushed to main"
         fi
