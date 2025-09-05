@@ -180,7 +180,7 @@ jobs:
         
         if [ -z "$URL" ] || [ "$URL" = "None" ]; then
           echo "⚠️ Could not get environment URL, using environment name..."
-          URL="radio-importante-backend-prod.us-west-2.elasticbeanstalk.com"
+          URL="radio-importante-backend-prod.eba-heipfui9.us-west-2.elasticbeanstalk.com"
         fi
         
         FULL_URL="http://$URL"
