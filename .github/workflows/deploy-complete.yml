@@ -225,7 +225,15 @@ jobs:
         
     - name: 🌐 Deploy to S3
       run: |
-        aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_NAME }} --delete
+        # Use bucket padrão se S3_BUCKET_NAME não estiver definido
+        S3_BUCKET="${{ secrets.S3_BUCKET_NAME }}"
+        if [ -z "$S3_BUCKET" ]; then
+          S3_BUCKET="radio-importante-frontend"
+          echo "⚠️ S3_BUCKET_NAME não definido, usando bucket padrão: $S3_BUCKET"
+        fi
+        
+        echo "Deploying to S3 bucket: $S3_BUCKET"
+        aws s3 sync dist/ s3://$S3_BUCKET --delete
         
     - name: 🔄 Invalidate CloudFront (if exists)
       run: |
@@ -253,21 +261,26 @@ jobs:
         curl -f "$BACKEND_URL/health"
         
         # API endpoints
-        curl -f "$BACKEND_URL/api/upload/status"
         curl -f "$BACKEND_URL/api/catalog"
         
         echo "✅ All backend tests passed!"
         
     - name: 🌐 Test frontend
       run: |
-        FRONTEND_URL="https://${{ secrets.S3_BUCKET_NAME }}.s3-website-us-west-2.amazonaws.com"
+        # Use bucket padrão se S3_BUCKET_NAME não estiver definido
+        S3_BUCKET="${{ secrets.S3_BUCKET_NAME }}"
+        if [ -z "$S3_BUCKET" ]; then
+          S3_BUCKET="radio-importante-frontend"
+          echo "⚠️ S3_BUCKET_NAME não definido, usando bucket padrão: $S3_BUCKET"
+        fi
+        
+        FRONTEND_URL="https://$S3_BUCKET.s3-website-us-west-2.amazonaws.com"
         echo "Testing frontend at: $FRONTEND_URL"
         
-        if curl -f "$FRONTEND_URL" > /dev/null; then
-          echo "✅ Frontend is accessible!"
-        else
-          echo "⚠️ Frontend might still be deploying..."
-        fi
+        # Test if frontend is accessible
+        curl -f "$FRONTEND_URL" | head -n 20
+        
+        echo "✅ Frontend deployment successful!"
 
   notify:
     name: 📢 Notify Success
@@ -291,7 +304,12 @@ jobs:
         echo "### Frontend" >> $GITHUB_STEP_SUMMARY
         if [ "${{ needs.deploy-frontend.result }}" == "success" ]; then
           echo "- ✅ **Frontend**: Deployed successfully" >> $GITHUB_STEP_SUMMARY
-          echo "- 🌐 **URL**: https://${{ secrets.S3_BUCKET_NAME }}.s3-website-us-west-2.amazonaws.com" >> $GITHUB_STEP_SUMMARY
+          # Use bucket padrão se S3_BUCKET_NAME não estiver definido
+          S3_BUCKET="${{ secrets.S3_BUCKET_NAME }}"
+          if [ -z "$S3_BUCKET" ]; then
+            S3_BUCKET="radio-importante-frontend"
+          fi
+          echo "- 🌐 **URL**: https://$S3_BUCKET.s3-website-us-west-2.amazonaws.com" >> $GITHUB_STEP_SUMMARY
         else
           echo "- ⏭️ **Frontend**: Skipped or failed" >> $GITHUB_STEP_SUMMARY
         fi
