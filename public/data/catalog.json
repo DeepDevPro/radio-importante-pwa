@@ -1,49 +1,15 @@
 {
   "version": "v2.2.0",
-  "tracks": [
-    {
-      "id": "track001",
-      "title": "Ancestors",
-      "artist": "Julius Papp",
-      "filename": "01_ancestors.mp3",
-      "duration": 0,
-      "format": "mp3",
-      "uploadedAt": "2025-09-05T19:49:06.039Z",
-      "orderIndex": 1757101746039,
-      "name": "Ancestors"
-    },
-    {
-      "id": "track002",
-      "title": "Check My Machine (Nirobi Re-Edit)",
-      "artist": "Paul McCartney",
-      "filename": "01_check_82_my_machine__nirobi_re-edit_.mp3",
-      "duration": 0,
-      "format": "mp3",
-      "uploadedAt": "2025-09-05T19:49:06.040Z",
-      "orderIndex": 1757101746041,
-      "name": "Check My Machine (Nirobi Re-Edit)"
-    },
-    {
-      "id": "track003",
-      "title": "Damn feat. Kinny",
-      "artist": "TM Juke",
-      "filename": "01_damn_feat_kinny.mp3",
-      "duration": 0,
-      "format": "mp3",
-      "uploadedAt": "2025-09-05T19:49:06.040Z",
-      "orderIndex": 1757101746042,
-      "name": "Damn feat. Kinny"
-    }
-  ],
+  "tracks": [],
   "metadata": {
-    "totalTracks": 9,
-    "totalDuration": 1620,
+    "totalTracks": 0,
+    "totalDuration": 0,
     "artwork": "/img/radio-importante-logo.png",
     "radioName": "Rádio Importante",
     "description": "Uma seleção de música eletrônica, soul e experimental",
     "genre": "Electronic, Soul, Experimental",
     "language": "pt-BR",
-    "lastUpdated": "2025-09-05T17:39:02.292Z",
+    "lastUpdated": "2025-09-05T20:03:37.538Z",
     "deployVersion": "v2.2.0"
   }
 }

@@ -42,19 +42,35 @@ app.get('/health', (req, res) => {
 });
 
 // Configuração do multer para upload
-const storage = multer.memoryStorage();
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const audioPath = path.join(__dirname, '../public/audio');
+    // Criar diretório se não existir
+    if (!fs.existsSync(audioPath)) {
+      fs.mkdirSync(audioPath, { recursive: true });
+    }
+    cb(null, audioPath);
+  },
+  filename: function (req, file, cb) {
+    // Manter nome original do arquivo
+    cb(null, file.originalname);
+  }
+});
+
 const upload = multer({ 
   storage: storage,
   limits: { fileSize: 50 * 1024 * 1024 } // 50MB
 });
 
-// Catálogo em memória
+// Catálogo em memória (formato compatível com frontend)
 let catalog = {
+  version: "v2.2.4",
   tracks: [],
   metadata: {
     totalTracks: 0,
-    radioName: "Radio Importante",
-    lastUpdated: new Date().toISOString()
+    totalDuration: 0,
+    artwork: "/icons/icon-192x192.png",
+    radioName: "Radio Importante"
   }
 };
 
@@ -63,7 +79,22 @@ try {
   const catalogPath = path.join(__dirname, '../public/data/catalog.json');
   if (fs.existsSync(catalogPath)) {
     const catalogData = fs.readFileSync(catalogPath, 'utf8');
-    catalog = JSON.parse(catalogData);
+    const loadedCatalog = JSON.parse(catalogData);
+    
+    // Usar apenas os tracks no formato correto
+    if (loadedCatalog.tracks) {
+      catalog.tracks = loadedCatalog.tracks.map(track => ({
+        id: track.id,
+        title: track.title,
+        artist: track.artist,
+        filename: track.filename,
+        duration: track.duration || 0,
+        format: track.format || path.extname(track.filename).toLowerCase()
+      }));
+      
+      catalog.metadata.totalTracks = catalog.tracks.length;
+      catalog.metadata.totalDuration = catalog.tracks.reduce((sum, track) => sum + (track.duration || 0), 0);
+    }
   }
 } catch (error) {
   console.log('⚠️ Catálogo não encontrado, usando catálogo vazio');
@@ -95,8 +126,7 @@ app.post('/api/upload', upload.array('audioFiles'), (req, res) => {
         artist: 'Artista não definido',
         filename: file.originalname,
         duration: duration ? parseFloat(duration) : 0,
-        url: `/audio/${file.originalname}`,
-        uploadedAt: new Date().toISOString()
+        format: path.extname(file.originalname).toLowerCase()
       };
       
       newTracks.push(track);
@@ -105,7 +135,7 @@ app.post('/api/upload', upload.array('audioFiles'), (req, res) => {
 
     // Atualizar metadados
     catalog.metadata.totalTracks = catalog.tracks.length;
-    catalog.metadata.lastUpdated = new Date().toISOString();
+    catalog.metadata.totalDuration = catalog.tracks.reduce((sum, track) => sum + (track.duration || 0), 0);
 
     // Salvar catálogo atualizado
     saveCatalog();
@@ -144,7 +174,8 @@ app.put('/api/tracks/:id/metadata', (req, res) => {
     if (title !== undefined) catalog.tracks[trackIndex].title = title;
     if (artist !== undefined) catalog.tracks[trackIndex].artist = artist;
     
-    catalog.metadata.lastUpdated = new Date().toISOString();
+    catalog.metadata.totalTracks = catalog.tracks.length;
+    catalog.metadata.totalDuration = catalog.tracks.reduce((sum, track) => sum + (track.duration || 0), 0);
     saveCatalog();
 
     res.json({
@@ -174,9 +205,21 @@ app.delete('/api/delete/:id', (req, res) => {
       });
     }
 
-    const deletedTrack = catalog.tracks.splice(trackIndex, 1)[0];
+    const deletedTrack = catalog.tracks[trackIndex];
+    
+    // Remover arquivo físico
+    if (deletedTrack.filename) {
+      const filePath = path.join(__dirname, '../public/audio', deletedTrack.filename);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        console.log(`🗑️ Arquivo removido: ${deletedTrack.filename}`);
+      }
+    }
+    
+    // Remover do catálogo
+    catalog.tracks.splice(trackIndex, 1);
     catalog.metadata.totalTracks = catalog.tracks.length;
-    catalog.metadata.lastUpdated = new Date().toISOString();
+    catalog.metadata.totalDuration = catalog.tracks.reduce((sum, track) => sum + (track.duration || 0), 0);
     
     saveCatalog();
 
@@ -196,12 +239,26 @@ app.delete('/api/delete/:id', (req, res) => {
 });
 
 app.post('/api/regenerate-catalog', (req, res) => {
-  catalog.metadata.lastUpdated = new Date().toISOString();
+  catalog.metadata.totalTracks = catalog.tracks.length;
+  catalog.metadata.totalDuration = catalog.tracks.reduce((sum, track) => sum + (track.duration || 0), 0);
   saveCatalog();
   
   res.json({
     success: true,
     message: 'Catálogo regenerado com sucesso',
+    catalog: catalog
+  });
+});
+
+app.post('/api/clear-catalog', (req, res) => {
+  catalog.tracks = [];
+  catalog.metadata.totalTracks = 0;
+  catalog.metadata.totalDuration = 0;
+  saveCatalog();
+  
+  res.json({
+    success: true,
+    message: 'Catálogo limpo com sucesso',
     catalog: catalog
   });
 });
