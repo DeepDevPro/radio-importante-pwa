@@ -61,11 +61,11 @@ jobs:
           echo "ℹ️ Bucket configurado como privado - use CloudFront para acesso público"
         fi
         
-        # Upload principal - com permissões corretas para arquivos
-        aws s3 sync dist/ s3://$S3_BUCKET --delete --acl public-read
+        # Upload principal - sem ACL (usar bucket policy ou permissions padrão)
+        aws s3 sync dist/ s3://$S3_BUCKET --delete
         
         # Backup da versão em releases/
-        aws s3 sync dist/ s3://$S3_BUCKET/releases/${TAG_NAME}/ --acl public-read
+        aws s3 sync dist/ s3://$S3_BUCKET/releases/${TAG_NAME}/
         
         echo "✅ Frontend deployed to S3"
         echo "📦 Backup created at releases/${TAG_NAME}/"
