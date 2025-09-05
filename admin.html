@@ -690,6 +690,10 @@
             
             try {
                 statusDiv.innerHTML = '🔍 Testando conexões...';
+                
+                // Verificar Mixed Content (HTTPS -> HTTP)
+                const isHttps = window.location.protocol === 'https:';
+                const httpBackendWarning = isHttps ? ' ⚠️ (Mixed Content bloqueado)' : '';
 
                 // Testar backend local
                 let localStatus = '❌ Offline';
@@ -704,7 +708,10 @@
                         localAvailable = true;
                     }
                 } catch (e) {
-                    console.log('Backend local não disponível');
+                    console.log('Backend local não disponível:', e.message);
+                    if (isHttps && API_CONFIG.backendUrl.startsWith('http:')) {
+                        localStatus = '❌ Offline' + httpBackendWarning;
+                    }
                 }
 
                 // Testar backend produção
@@ -720,7 +727,28 @@
                         prodAvailable = true;
                     }
                 } catch (e) {
-                    console.log('Backend produção não disponível');
+                    console.log('Backend produção não disponível:', e.message);
+                    if (isHttps && API_CONFIG.productionUrl.startsWith('http:')) {
+                        prodStatus = '❌ Offline' + httpBackendWarning;
+                    }
+                }
+
+                // Mostrar aviso de Mixed Content se necessário
+                let mixedContentWarning = '';
+                if (isHttps && (!localAvailable && !prodAvailable)) {
+                    mixedContentWarning = `
+                        <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin: 15px 0; color: #856404;">
+                            <h4>⚠️ Aviso: Mixed Content</h4>
+                            <p>Esta página está sendo servida via <strong>HTTPS</strong>, mas o backend AWS usa <strong>HTTP</strong>. 
+                            O navegador bloqueia requisições HTTP de páginas HTTPS por segurança.</p>
+                            <p><strong>Soluções:</strong></p>
+                            <ul>
+                                <li>📱 Use o <strong>Safari no iPhone</strong> que permite Mixed Content em PWAs</li>
+                                <li>🔧 Configure HTTPS no AWS Load Balancer</li>
+                                <li>🌐 Acesse via HTTP: <a href="http://radio.importantestudio.com/admin.html" target="_blank">http://radio.importantestudio.com/admin.html</a></li>
+                            </ul>
+                        </div>
+                    `;
                 }
 
                 // Determinar qual backend usar baseado no ambiente
@@ -750,9 +778,10 @@
                 }
 
                 statusDiv.innerHTML = `
-                    � Ambiente: ${isProduction ? 'PRODUÇÃO' : 'DESENVOLVIMENTO'}<br>
-                    �🏠 Local: ${localStatus} | ☁️ Produção: ${prodStatus}<br>
+                    🌐 Ambiente: ${isProduction ? 'PRODUÇÃO' : 'DESENVOLVIMENTO'}<br>
+                    🏠 Local: ${localStatus} | ☁️ Produção: ${prodStatus}<br>
                     <strong>Backend Ativo:</strong> ${activeBackend}
+                    ${mixedContentWarning}
                 `;
 
             } catch (error) {
