@@ -268,8 +268,9 @@
             padding: 20px;
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start; /* Mudar para flex-start para melhor alinhamento */
             transition: transform 0.2s ease;
+            gap: 15px; /* Adicionar gap entre elementos */
         }
 
         .music-item:hover {
@@ -279,6 +280,8 @@
 
         .music-info {
             flex: 1;
+            min-width: 0; /* Permite que flex items encolham */
+            max-width: calc(100% - 200px); /* Deixa espaço para os botões */
         }
 
         .music-title {
@@ -296,6 +299,86 @@
         .music-actions {
             display: flex;
             gap: 10px;
+        }
+
+        /* Editor Inline de Metadados */
+        .music-title-container, .artist-container, .duration-container {
+            position: relative;
+            display: inline-block;
+            max-width: 100%;
+        }
+
+        .music-title-container {
+            width: 100%;
+            margin-bottom: 5px;
+        }
+
+        .display-mode {
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+            border: 1px solid transparent;
+            word-break: break-word;
+            max-width: 100%;
+            display: inline-block;
+        }
+
+        .display-mode:hover {
+            background: #f0f8ff;
+            border-color: #667eea;
+        }
+
+        .edit-mode {
+            border: 2px solid #667eea;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: inherit;
+            font-family: inherit;
+            background: #fff;
+            color: #333;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
+        .edit-mode:focus {
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+
+        .music-title .edit-mode {
+            width: 100%;
+            min-width: 300px; /* Reduzir para não quebrar layout */
+            max-width: 100%; /* Respeitar o container pai */
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .artist-container .edit-mode {
+            min-width: 200px;
+            max-width: 300px; /* Limitar largura máxima */
+        }
+
+        .duration-display {
+            color: #666;
+            font-style: italic;
+        }
+
+        .editing {
+            background: #f8f9ff !important;
+            border-color: #667eea !important;
+        }
+
+        /* Elementos de teclado */
+        kbd {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 3px;
+            padding: 2px 6px;
+            font-size: 0.9em;
+            font-family: monospace;
+            color: #495057;
         }
 
         /* Alertas */
@@ -441,6 +524,21 @@
                 gap: 15px;
             }
             
+            .music-info {
+                max-width: 100%;
+                width: 100%;
+            }
+            
+            .music-title .edit-mode {
+                min-width: 250px; /* Reduzir em mobile */
+                max-width: 100%;
+            }
+            
+            .artist-container .edit-mode {
+                min-width: 150px;
+                max-width: 250px;
+            }
+            
             .music-actions {
                 width: 100%;
                 justify-content: flex-end;
@@ -534,6 +632,10 @@
         <div id="manage-tab" class="tab-content">
             <div class="section">
                 <h2>🎵 Gerenciar Biblioteca Musical</h2>
+                
+                <div class="alert alert-info">
+                    ✏️ <strong>Editor de Metadados:</strong> Clique nos campos editáveis (título, artista) para editá-los diretamente. A duração é calculada automaticamente pelo sistema. Use <kbd>Enter</kbd> para salvar ou <kbd>Escape</kbd> para cancelar.
+                </div>
                 
                 <div id="music-totals" style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #2196f3; color: #1976d2;">
                     <!-- Totalizador será atualizado dinamicamente -->
@@ -790,6 +892,134 @@
             }
         }
 
+        // ===== EDITOR DE METADADOS INLINE =====
+        function enableEdit(trackId, field) {
+            const trackElement = document.getElementById(`track-${trackId}`);
+            const container = trackElement.querySelector(`.${field}-container`) || 
+                             trackElement.querySelector('.music-title-container');
+            
+            if (!container) return;
+            
+            const displayElement = container.querySelector('.display-mode');
+            const editElement = container.querySelector('.edit-mode');
+            
+            if (displayElement && editElement) {
+                // Marcar item como sendo editado
+                trackElement.classList.add('editing');
+                
+                // Alternar visibilidade
+                displayElement.style.display = 'none';
+                editElement.style.display = 'inline-block';
+                
+                // Focar no campo e selecionar texto
+                editElement.focus();
+                editElement.select();
+            }
+        }
+
+        function handleEditKeydown(event, trackId, field, value) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                saveEdit(trackId, field, value);
+            } else if (event.key === 'Escape') {
+                event.preventDefault();
+                cancelEdit(trackId, field);
+            }
+        }
+
+        function cancelEdit(trackId, field) {
+            const trackElement = document.getElementById(`track-${trackId}`);
+            const container = trackElement.querySelector(`.${field}-container`) || 
+                             trackElement.querySelector('.music-title-container');
+            
+            if (!container) return;
+            
+            const displayElement = container.querySelector('.display-mode');
+            const editElement = container.querySelector('.edit-mode');
+            
+            if (displayElement && editElement) {
+                // Remover marca de edição
+                trackElement.classList.remove('editing');
+                
+                // Alternar visibilidade
+                displayElement.style.display = 'inline';
+                editElement.style.display = 'none';
+            }
+        }
+
+        async function saveEdit(trackId, field, value) {
+            const trackElement = document.getElementById(`track-${trackId}`);
+            const container = trackElement.querySelector(`.${field}-container`) || 
+                             trackElement.querySelector('.music-title-container');
+            
+            if (!container) return;
+            
+            const displayElement = container.querySelector('.display-mode');
+            const editElement = container.querySelector('.edit-mode');
+            
+            try {
+                // Validações
+                if (field === 'title' && !value.trim()) {
+                    showAlert('manage-status', 'Título não pode estar vazio', 'error');
+                    editElement.focus();
+                    return;
+                }
+
+                // Salvar no backend
+                if (API_CONFIG.currentBackend) {
+                    const response = await fetch(`${API_CONFIG.currentBackend}/api/tracks/${trackId}/metadata`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            [field]: value
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Erro ao salvar: ${response.statusText}`);
+                    }
+                }
+
+                // Atualizar interface
+                displayElement.textContent = value || (field === 'artist' ? 'Artista não definido' : 'Sem título');
+
+                // Remover marca de edição e alternar visibilidade
+                trackElement.classList.remove('editing');
+                displayElement.style.display = 'inline';
+                editElement.style.display = 'none';
+
+                // Feedback visual
+                displayElement.style.background = '#d4edda';
+                setTimeout(() => {
+                    displayElement.style.background = '';
+                }, 1000);
+
+                // Recarregar totais
+                loadMusicList();
+
+            } catch (error) {
+                console.error('Erro ao salvar:', error);
+                showAlert('manage-status', `❌ Erro ao salvar: ${error.message}`, 'error');
+                editElement.focus();
+            }
+        }
+
+        function editMetadata(trackId) {
+            const trackElement = document.getElementById(`track-${trackId}`);
+            
+            // Destacar o item sendo editado
+            document.querySelectorAll('.music-item').forEach(item => {
+                item.style.background = '';
+            });
+            
+            trackElement.style.background = '#f8f9ff';
+            trackElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            showAlert('manage-status', '✏️ Clique nos campos editáveis (título, artista) para editá-los. A duração é calculada automaticamente. Use Enter para salvar, Escape para cancelar.', 'info');
+        }
+
         // ===== GERENCIAR MÚSICAS =====
         async function loadMusicList() {
             const musicList = document.getElementById('music-list');
@@ -843,20 +1073,43 @@
                 totalsDiv.innerHTML = `📊 <strong>Total:</strong> ${totalTracks} música${totalTracks !== 1 ? 's' : ''} • ${formatDuration(totalDuration)} de duração`;
 
                 musicList.innerHTML = tracks.map((track, index) => `
-                    <div class="music-item">
+                    <div class="music-item" id="track-${track.id}">
                         <div style="background: #667eea; color: white; padding: 8px 12px; border-radius: 50%; font-weight: bold; margin-right: 15px; min-width: 35px; text-align: center;">
                             ${index + 1}
                         </div>
-                        <div class="music-info">
-                            <div class="music-title">${track.title || track.name}</div>
+                        <div class="music-info" style="flex: 1;">
+                            <div class="music-title-container">
+                                <div class="music-title display-mode" onclick="enableEdit('${track.id}', 'title')" title="Clique para editar">
+                                    ${track.title || track.name}
+                                </div>
+                                <input type="text" class="music-title edit-mode" value="${(track.title || track.name).replace(/"/g, '&quot;')}" 
+                                       onblur="saveEdit('${track.id}', 'title', this.value)" 
+                                       onkeydown="handleEditKeydown(event, '${track.id}', 'title', this.value)" 
+                                       style="display: none;">
+                            </div>
                             <div class="music-meta">
-                                ${track.artist || 'Artista não definido'} • 
-                                ${track.duration ? formatDuration(track.duration) : 'Duração desconhecida'} • 
-                                ${track.file || track.src}
+                                <span class="artist-container">
+                                    <span class="display-mode" onclick="enableEdit('${track.id}', 'artist')" title="Clique para editar artista">
+                                        ${track.artist || 'Artista não definido'}
+                                    </span>
+                                    <input type="text" class="edit-mode" value="${(track.artist || '').replace(/"/g, '&quot;')}" 
+                                           onblur="saveEdit('${track.id}', 'artist', this.value)" 
+                                           onkeydown="handleEditKeydown(event, '${track.id}', 'artist', this.value)" 
+                                           style="display: none;">
+                                </span>
+                                •
+                                <span class="duration-display" title="Duração calculada automaticamente">
+                                    ${track.duration ? formatDuration(track.duration) : 'Duração desconhecida'}
+                                </span>
+                                • 
+                                ${track.filename || 'Arquivo não identificado'}
                             </div>
                         </div>
                         <div class="music-actions">
                             <input type="checkbox" class="music-checkbox" data-track-id="${track.id}" style="margin-right: 10px; transform: scale(1.2);">
+                            <button class="btn" onclick="editMetadata('${track.id}')" style="padding: 8px 12px; background: #28a745;" title="Editar metadados">
+                                ✏️
+                            </button>
                             <button class="btn btn-danger" onclick="deleteTrack('${track.id}')" style="padding: 8px 12px;" title="Deletar música">
                                 🗑️
                             </button>

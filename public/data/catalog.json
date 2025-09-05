@@ -8,7 +8,8 @@
       "filename": "Lonnie Liston Smith - Nightlife.mp3",
       "duration": 60,
       "format": "mp3",
-      "uploadedAt": "2025-09-01T13:00:00.000Z"
+      "uploadedAt": "2025-09-01T13:00:00.000Z",
+      "name": "Nightlife"
     },
     {
       "id": "track002",
@@ -21,53 +22,58 @@
     },
     {
       "id": "track003",
-      "title": "03_comadi_89",
-      "artist": "Artista Desconhecido",
+      "title": "Comadi",
+      "artist": "Céu",
       "filename": "03_comadi_89.mp3",
       "duration": 60,
       "format": "mp3",
       "uploadedAt": "2025-09-05T00:58:39.633Z",
-      "orderIndex": 1757033919633
+      "orderIndex": 1757033919633,
+      "name": "Comadi"
     },
     {
       "id": "track004",
-      "title": "03_beach_111_towel_i_cube_cosmix_marathon_remix",
-      "artist": "Artista Desconhecido",
+      "title": "Beach Towel (I Cube Cosmix Marathon Remix)",
+      "artist": "Karma",
       "filename": "03_beach_111_towel_i_cube_cosmix_marathon_remix.mp3",
       "duration": 60,
       "format": "mp3",
       "uploadedAt": "2025-09-05T01:00:03.028Z",
-      "orderIndex": 1757034003028
+      "orderIndex": 1757034003028,
+      "name": "Beach Towel (I Cube Cosmix Marathon Remix)"
     },
     {
       "id": "track005",
-      "title": "01_northern_girls",
-      "artist": "Artista Desconhecido",
+      "title": "Northern Girls",
+      "artist": "Belleruche",
       "filename": "01_northern_girls.mp3",
       "duration": 60,
       "format": "mp3",
       "uploadedAt": "2025-09-05T01:10:22.382Z",
-      "orderIndex": 1757034622382
+      "orderIndex": 1757034622382,
+      "name": "Northern Girls"
     },
     {
       "id": "track006",
-      "title": "01 Ancestors",
-      "artist": "Artista Desconhecido",
+      "title": "Ancestors",
+      "artist": "Julius Papp",
       "filename": "01_ancestors.mp3",
       "duration": 60,
       "format": "mp3",
       "uploadedAt": "2025-09-05T11:36:14.626Z",
-      "orderIndex": 1757072174626
+      "orderIndex": 1757072174626,
+      "name": "Ancestors"
     },
     {
       "id": "track007",
-      "title": "_Jackin_ Around. -Travino Reprise Master",
-      "artist": "Artista Desconhecido",
+      "title": "Jackin Around (Travino Reprise Master)",
+      "artist": "Travino",
       "filename": "jackin__around._-travino_reprise_master.mp3",
       "duration": 120,
       "format": "mp3",
       "uploadedAt": "2025-09-05T11:55:18.857Z",
-      "orderIndex": 1757073318857
+      "orderIndex": 1757073318857,
+      "name": "Jackin Around (Travino Reprise Master)"
     }
   ],
   "metadata": {

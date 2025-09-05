@@ -456,6 +456,93 @@ app.delete('/api/delete/:trackId', async function(req, res) {
   }
 });
 
+// Endpoint para atualizar metadados de uma música
+app.put('/api/tracks/:trackId/metadata', async function(req, res) {
+  try {
+    const trackId = req.params.trackId;
+    const { title, artist, duration } = req.body;
+    const catalogPath = path.join(__dirname, '../public/data/catalog.json');
+    
+    if (!fs.existsSync(catalogPath)) {
+      return res.status(404).json({
+        success: false,
+        error: 'Catálogo não encontrado'
+      });
+    }
+    
+    const catalogData = fs.readFileSync(catalogPath, 'utf8');
+    const catalog = JSON.parse(catalogData);
+    
+    // Encontrar a música
+    const trackIndex = catalog.tracks.findIndex(track => track.id === trackId);
+    if (trackIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        error: 'Música não encontrada'
+      });
+    }
+    
+    const track = catalog.tracks[trackIndex];
+    const originalData = { ...track };
+    
+    // Atualizar campos fornecidos
+    if (title !== undefined) {
+      track.title = title.trim();
+      track.name = title.trim(); // Manter compatibilidade
+    }
+    
+    if (artist !== undefined) {
+      track.artist = artist.trim();
+    }
+    
+    if (duration !== undefined) {
+      const parsedDuration = parseInt(duration);
+      if (!isNaN(parsedDuration) && parsedDuration >= 0) {
+        track.duration = parsedDuration;
+      } else {
+        return res.status(400).json({
+          success: false,
+          error: 'Duração deve ser um número válido em segundos'
+        });
+      }
+    }
+    
+    // Salvar catálogo atualizado
+    fs.writeFileSync(catalogPath, JSON.stringify(catalog, null, 2));
+    
+    console.log(`✏️ Metadados atualizados para: ${track.title} (${track.filename})`);
+    console.log(`   Alterações: ${JSON.stringify({
+      title: originalData.title !== track.title ? `${originalData.title} → ${track.title}` : 'sem alteração',
+      artist: originalData.artist !== track.artist ? `${originalData.artist} → ${track.artist}` : 'sem alteração',
+      duration: originalData.duration !== track.duration ? `${originalData.duration}s → ${track.duration}s` : 'sem alteração'
+    }, null, 2)}`);
+    
+    res.json({
+      success: true,
+      message: `Metadados atualizados com sucesso`,
+      track: {
+        id: trackId,
+        title: track.title,
+        artist: track.artist,
+        duration: track.duration,
+        filename: track.filename
+      },
+      changes: {
+        title: originalData.title !== track.title,
+        artist: originalData.artist !== track.artist,
+        duration: originalData.duration !== track.duration
+      }
+    });
+    
+  } catch (error) {
+    console.error('Erro ao atualizar metadados:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Endpoint para regenerar arquivo contínuo manualmente
 app.post('/api/regenerate-continuous', async function(req, res) {
   try {
