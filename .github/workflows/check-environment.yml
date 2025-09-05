@@ -1,0 +1,45 @@
+name: 🔍 Check Environment Status
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check-status:
+    name: 🔍 Check EB Environment Status
+    runs-on: ubuntu-latest
+        
+    steps:
+    - name: 🔧 Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-west-2
+
+    - name: 🔍 Check Environment Status
+      run: |
+        echo "=== Verificando status do ambiente ==="
+        
+        # Status detalhado do ambiente
+        aws elasticbeanstalk describe-environments \
+          --environment-names radio-importante-backend-prod \
+          --region us-west-2
+        
+        echo ""
+        echo "=== Health do ambiente ==="
+        aws elasticbeanstalk describe-environment-health \
+          --environment-name radio-importante-backend-prod \
+          --attribute-names All \
+          --region us-west-2
+        
+        echo ""
+        echo "=== Últimos eventos ==="
+        aws elasticbeanstalk describe-events \
+          --environment-name radio-importante-backend-prod \
+          --region us-west-2 \
+          --max-records 10
+          
+        echo ""
+        echo "=== Plataformas disponíveis ==="
+        aws elasticbeanstalk list-available-solution-stacks \
+          --region us-west-2 | grep -i "node"

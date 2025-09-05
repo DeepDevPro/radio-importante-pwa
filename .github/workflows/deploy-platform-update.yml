@@ -1,0 +1,88 @@
+name: 🚀 Deploy with Platform Update
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_tag:
+        description: 'Version tag to deploy (e.g., v2.2.0)'
+        required: true
+        default: 'v2.2.0'
+
+jobs:
+  deploy-with-platform-update:
+    name: 🏗️ Deploy with Platform Update
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+        
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.inputs.version_tag }}
+    
+    - name: 🔧 Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-west-2
+
+    - name: 🚀 Deploy with Platform Update
+      run: |
+        echo "=== Deploy com Atualização de Plataforma ==="
+        
+        # Configuração AWS
+        ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+        S3_BUCKET="elasticbeanstalk-us-west-2-$ACCOUNT_ID"
+        VERSION_LABEL="${{ github.event.inputs.version_tag }}-platform-$(date +%s)"
+        
+        echo "Version Label: $VERSION_LABEL"
+        
+        # Criar package
+        zip -r deploy-package.zip . \
+          -x "*.git*" \
+             "node_modules/*" \
+             "*.log" "*.tmp" "*.zip" \
+             ".DS_Store" "*.swp" ".env" \
+             "test-api.sh" "eb-init.sh" \
+             ".elasticbeanstalk/*" \
+             "*.mp3" "*.wav" "*.ogg" "*.aac" \
+             "audio/*" "uploads/*" "public/audio/*"
+        
+        # Upload para S3
+        aws s3 cp deploy-package.zip s3://$S3_BUCKET/radio-importante-backend/deploy-package.zip
+        
+        # Buscar última plataforma Node.js disponível
+        LATEST_PLATFORM=$(aws elasticbeanstalk list-available-solution-stacks \
+          --region us-west-2 \
+          --query 'SolutionStacks[?contains(@, `Node.js`) && contains(@, `Amazon Linux 2023`)]' \
+          --output text | head -1)
+        
+        echo "Plataforma mais recente: $LATEST_PLATFORM"
+        
+        # Criar versão da aplicação
+        aws elasticbeanstalk create-application-version \
+          --application-name radio-importante-backend \
+          --version-label $VERSION_LABEL \
+          --description "Deploy ${{ github.event.inputs.version_tag }} with platform update" \
+          --source-bundle S3Bucket="$S3_BUCKET",S3Key="radio-importante-backend/deploy-package.zip" \
+          --region us-west-2
+        
+        # Aguardar processamento
+        echo "Aguardando processamento..."
+        aws elasticbeanstalk wait application-version-processed \
+          --application-name radio-importante-backend \
+          --version-labels $VERSION_LABEL \
+          --region us-west-2
+        
+        # Update environment com nova plataforma E versão
+        echo "Atualizando ambiente com nova plataforma..."
+        aws elasticbeanstalk update-environment \
+          --environment-name radio-importante-backend-prod \
+          --version-label $VERSION_LABEL \
+          --solution-stack-name "$LATEST_PLATFORM" \
+          --region us-west-2
+        
+        echo "✅ Deploy iniciado com atualização de plataforma!"

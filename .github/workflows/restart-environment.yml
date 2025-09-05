@@ -1,0 +1,37 @@
+name: 🔄 Restart Environment
+
+on:
+  workflow_dispatch:
+
+jobs:
+  restart-environment:
+    name: 🔄 Restart EB Environment
+    runs-on: ubuntu-latest
+        
+    steps:
+    - name: 🔧 Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-west-2
+
+    - name: 🔄 Restart Environment
+      run: |
+        echo "=== Reiniciando ambiente ==="
+        
+        # Restart app servers
+        aws elasticbeanstalk restart-app-server \
+          --environment-name radio-importante-backend-prod \
+          --region us-west-2
+        
+        echo "✅ Restart iniciado"
+        
+        # Aguardar um pouco
+        sleep 30
+        
+        # Verificar status
+        aws elasticbeanstalk describe-environments \
+          --environment-names radio-importante-backend-prod \
+          --region us-west-2 \
+          --query 'Environments[0].{Status:Status,Health:Health}'
