@@ -1,10 +1,9 @@
-name: 🚀 Deploy to AWS S3
+name: 🚀 Deploy Frontend to S3
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    tags: ['v*']  # Trigger apenas em TAGs
+  workflow_dispatch: # Permite trigger manual
 
 jobs:
   deploy:
@@ -23,123 +22,45 @@ jobs:
     - name: 📦 Install dependencies
       run: npm ci
 
-    - name: 🎵 Prepare for production build (no audio files)
-      run: |
-        # Backup audio files and catalog
-        mkdir -p temp_backup
-        mv public/audio temp_backup/ || true
-        cp public/data/catalog.json temp_backup/catalog_backup.json || true
-        
-        # Create minimal audio structure
-        mkdir -p public/audio/hls
-        echo '{"tracks":[],"totalDuration":0,"generatedAt":"'$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)'","version":"1.0"}' > public/audio/hls/track-cues.json
-        
-        # Create empty catalog for initial deploy
-        echo '{
-          "version": "1.1.2",
-          "tracks": [],
-          "metadata": {
-            "totalTracks": 0,
-            "totalDuration": 0,
-            "artwork": "/img/radio-importante-logo.png",
-            "radioName": "Rádio Importante",
-            "description": "Uma seleção de música eletrônica, soul e experimental - Use o admin para adicionar músicas",
-            "genre": "Electronic, Soul, Experimental",
-            "language": "pt-BR",
-            "lastUpdated": "'$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)'"
-          }
-        }' > public/data/catalog.json
-
-    - name: 🏗️ Build project (deploy mode)
-      run: npm run build:deploy
-
-    - name: 🧪 Test build (preview)
-      run: |
-        npm run preview &
-        sleep 5
-        curl -f http://localhost:4173 || exit 1
-        pkill -f "npm run preview"
-
-    - name: ⚙️ Configure AWS credentials
+    - name: 🔧 Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_REGION }}
 
-    - name: 🌐 Deploy to S3
+    - name: 🏗️ Build production
       run: |
-        # Create bucket if it doesn't exist (with proper domain name)
-        aws s3 mb s3://radio.importantestudio.com --region us-west-2 || echo "Bucket already exists"
+        # Build com TAG para versionamento
+        VITE_VERSION="${{ github.ref_name }}" npm run build
         
-        # FIRST: Disable block public access (required before setting public policy)
-        echo "🔓 Disabling block public access settings..."
-        aws s3api put-public-access-block --bucket radio.importantestudio.com --public-access-block-configuration BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false
-        
-        # Wait a moment for the setting to propagate
-        sleep 5
-        
-        # Configure bucket policy for public read access
-        echo '{
-          "Version": "2012-10-17",
-          "Statement": [
-            {
-              "Sid": "PublicReadGetObject",
-              "Effect": "Allow",
-              "Principal": "*",
-              "Action": "s3:GetObject",
-              "Resource": "arn:aws:s3:::radio.importantestudio.com/*"
-            }
-          ]
-        }' > bucket-policy.json
-        
-        # Apply bucket policy
-        echo "📋 Applying public read policy..."
-        aws s3api put-bucket-policy --bucket radio.importantestudio.com --policy file://bucket-policy.json
-        
-        # Configure bucket for static website hosting
-        echo "🌐 Configuring static website hosting..."
-        aws s3 website s3://radio.importantestudio.com --index-document index.html --error-document index.html
-        
-        # Sync files to the correctly named bucket
-        echo "📁 Syncing files to S3..."
-        aws s3 sync dist/ s3://radio.importantestudio.com --delete --exact-timestamps
-        
-    - name: 🔧 Set S3 content types
-      run: |
-        # Set correct MIME types for PWA assets
-        aws s3 cp s3://radio.importantestudio.com/manifest.webmanifest s3://radio.importantestudio.com/manifest.webmanifest --content-type "application/manifest+json" --metadata-directive REPLACE
-        aws s3 cp s3://radio.importantestudio.com/sw.js s3://radio.importantestudio.com/sw.js --content-type "application/javascript" --metadata-directive REPLACE
-        
-        # Set cache headers for non-SVG assets first
-        aws s3 cp s3://radio.importantestudio.com/audio/ s3://radio.importantestudio.com/audio/ --recursive --cache-control "max-age=31536000" --metadata-directive REPLACE || true
-        
-        # Fix SVG content types individually (AFTER other cache operations)
-        echo "🔧 Fixing SVG content types..."
-        for svg in $(aws s3 ls s3://radio.importantestudio.com/icons/ --recursive | grep '\.svg' | awk '{print $4}'); do
-          echo "📝 Fixing: $svg"
-          aws s3 cp s3://radio.importantestudio.com/$svg s3://radio.importantestudio.com/$svg \
-            --content-type "image/svg+xml" \
-            --cache-control "max-age=31536000" \
-            --metadata-directive REPLACE
-        done
+        echo "Build completed for version ${{ github.ref_name }}"
 
-    - name: ✅ Verify deployment
+    - name: 🚀 Deploy to S3
       run: |
-        echo "🎯 Deployment completed!"
-        echo "🌐 URL: https://radio.importantestudio.com"
-        echo "📊 S3 bucket: radio.importantestudio.com"
+        TAG_NAME="${{ github.ref_name }}"
         
-        # Basic health check
-        sleep 10
-        curl -f https://radio.importantestudio.com || echo "⚠️ Site não acessível ainda (DNS propagation)"
+        # Upload principal
+        aws s3 sync dist/ s3://${{ secrets.S3_BUCKET }} --delete
+        
+        # Backup da versão em releases/
+        aws s3 sync dist/ s3://${{ secrets.S3_BUCKET }}/releases/${TAG_NAME}/ 
+        
+        echo "✅ Frontend deployed to S3"
+        echo "📦 Backup created at releases/${TAG_NAME}/"
 
-    - name: 📊 Deployment summary
+    - name: 🔄 Invalidate CloudFront
       run: |
-        echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
-        echo "- **URL**: https://radio.importantestudio.com" >> $GITHUB_STEP_SUMMARY
-        echo "- **S3 Bucket**: ${{ secrets.S3_BUCKET }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Region**: ${{ secrets.AWS_REGION }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Status**: ✅ Success" >> $GITHUB_STEP_SUMMARY
+        if [ -n "${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}" ]; then
+          aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
+          echo "✅ CloudFront cache invalidated"
+        else
+          echo "⚠️ CloudFront distribution ID not configured"
+        fi
+
+    - name: 📋 Deployment Summary
+      run: |
+        echo "📋 Frontend Deployment Summary:" >> $GITHUB_STEP_SUMMARY
+        echo "- 🌐 **URL**: https://${{ secrets.S3_BUCKET }}" >> $GITHUB_STEP_SUMMARY
+        echo "- 🏷️ **Version**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "- 📦 **Backup**: s3://${{ secrets.S3_BUCKET }}/releases/${{ github.ref_name }}/" >> $GITHUB_STEP_SUMMARY

@@ -1,10 +1,8 @@
-# GitHub Actions - Deploy Backend Automático
 name: 🚀 Deploy Backend to Elastic Beanstalk
 
 on:
   push:
-    branches: [main]
-    paths: ['backend/**']
+    tags: ['v*']  # Trigger apenas em TAGs
   workflow_dispatch: # Permite trigger manual
 
 jobs:
@@ -19,7 +17,7 @@ jobs:
     - name: 📥 Checkout code
       uses: actions/checkout@v4
     
-    - name: 🟢 Setup Node.js 18
+    - name: 🟢 Setup Node.js 20
       uses: actions/setup-node@v4
       with:
         node-version: '20'
@@ -28,17 +26,6 @@ jobs:
         
     - name: 📦 Install dependencies
       run: npm ci
-      
-    - name: 🧪 Run tests
-      run: |
-        # Criar arquivo de teste simples se não existir
-        if [ ! -f "test-api.sh" ]; then
-          echo "No tests configured - skipping"
-        else
-          echo "Running API tests..."
-          chmod +x test-api.sh
-          # ./test-api.sh # Comentado para não precisar do servidor rodando
-        fi
       
     - name: 🔧 Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
@@ -50,177 +37,97 @@ jobs:
     - name: 🛠️ Install EB CLI
       run: |
         pip install awsebcli
-        eb --version
         
-    - name: 📋 Create deployment package
+    - name: 📦 Create deployment package
       run: |
-        echo "Creating deployment ZIP..."
-        
-        # Upload para S3 bucket do Elastic Beanstalk primeiro
         ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
         S3_BUCKET="elasticbeanstalk-us-west-2-$ACCOUNT_ID"
         
         echo "Uploading source to S3 bucket: $S3_BUCKET"
-        zip -r deploy-package.zip . -x "node_modules/*" ".git/*" "*.log" ".env" "test-api.sh" "eb-init.sh" "deploy-package.zip"
+        zip -r deploy-package.zip . -x "*.git*" "node_modules/*" "*.log" "*.tmp"
         
-        # Upload para S3
         aws s3 cp deploy-package.zip s3://$S3_BUCKET/radio-importante-backend/deploy-package.zip
-        
-        echo "Source uploaded successfully to S3"
-        ls -lh deploy-package.zip
         
     - name: 🚀 Deploy to Elastic Beanstalk
       run: |
-        echo "Initializing EB application..."
+        # Configurar EB CLI
         if [ ! -d ".elasticbeanstalk" ]; then
           eb init radio-importante-backend --region us-west-2 --platform node.js
-        fi
-        
-        echo "Checking environment status..."
-        # Força reinicialização se o environment existe mas não está acessível
-        if ! eb status radio-importante-backend-prod >/dev/null 2>&1; then
-          echo "Environment not accessible, removing config and reinitializing..."
+        else
           rm -rf .elasticbeanstalk
           eb init radio-importante-backend --region us-west-2 --platform node.js
         fi
         
-        echo "Deploying to environment..."
-        # Verifica novamente se o environment está acessível após reinicialização
-        if eb status radio-importante-backend-prod >/dev/null 2>&1; then
-          echo "Environment exists and accessible, deploying..."
-          eb deploy radio-importante-backend-prod --timeout 20
-        else
-          echo "Environment not found or not accessible. Checking if it exists in AWS..."
-          # Tenta usar AWS CLI para verificar se o environment existe
-          if aws elasticbeanstalk describe-environments --environment-names radio-importante-backend-prod --region us-west-2 --query 'Environments[0].Status' --output text 2>/dev/null | grep -q "Ready"; then
-            echo "Environment exists in AWS but not accessible via EB CLI."
-            echo "Creating application version first..."
-            
-            # Criar versão da aplicação manualmente
-            VERSION_LABEL="app-$(date +%y%m%d_%H%M%S)"
-            echo "Creating application version: $VERSION_LABEL"
-            aws elasticbeanstalk create-application-version \
-              --application-name radio-importante-backend \
-              --version-label $VERSION_LABEL \
-              --description "Automated deployment $(date)" \
-              --source-bundle S3Bucket="elasticbeanstalk-us-west-2-$(aws sts get-caller-identity --query Account --output text)",S3Key="radio-importante-backend/deploy-package.zip" \
-              --region us-west-2 || echo "Version creation failed, trying direct deploy..."
-            
-            echo "Waiting for application version to be processed..."
-            # Wait until version is PROCESSED - with fallback
-            TIMEOUT_REACHED=false
-            for i in {1..15}; do
-              STATUS=$(aws elasticbeanstalk describe-application-versions --application-name radio-importante-backend --version-labels $VERSION_LABEL --region us-west-2 --query 'ApplicationVersions[0].Status' --output text 2>/dev/null || echo "NOTFOUND")
-              echo "Attempt $i: Version status is $STATUS"
-              if [ "$STATUS" = "PROCESSED" ]; then
-                echo "✅ Application version is ready for deployment"
-                break
-              elif [ "$STATUS" = "FAILED" ]; then
-                echo "❌ Application version processing failed"
-                break
-              elif [ "$i" -eq 15 ]; then
-                echo "⚠️ Timeout reached, proceeding with deployment anyway..."
-                TIMEOUT_REACHED=true
-                break
-              fi
-              sleep 3
-            done
-            
-            echo "Deploying version to environment using AWS CLI..."
-            if [ "$TIMEOUT_REACHED" = true ]; then
-              echo "⚠️ Using direct EB deploy due to timeout..."
-              eb deploy radio-importante-backend-prod --timeout 20 || echo "EB deploy failed"
+        # Usar TAG como version-label
+        VERSION_LABEL="${{ github.ref_name }}"
+        
+        # Deploy com version-label da TAG
+        if aws elasticbeanstalk describe-environments --environment-names radio-importante-backend-prod --region us-west-2 --query 'Environments[0].Status' --output text 2>/dev/null | grep -q "Ready"; then
+          echo "Environment exists and is ready. Creating new version..."
+          
+          aws elasticbeanstalk create-application-version \
+            --application-name radio-importante-backend \
+            --version-label $VERSION_LABEL \
+            --description "Deploy from TAG $VERSION_LABEL" \
+            --source-bundle S3Bucket="elasticbeanstalk-us-west-2-$(aws sts get-caller-identity --query Account --output text)",S3Key="radio-importante-backend/deploy-package.zip" \
+            --region us-west-2
+          
+          # Aguardar criação da versão
+          for i in {1..12}; do
+            STATUS=$(aws elasticbeanstalk describe-application-versions --application-name radio-importante-backend --version-labels $VERSION_LABEL --region us-west-2 --query 'ApplicationVersions[0].Status' --output text 2>/dev/null || echo "NOTFOUND")
+            if [ "$STATUS" = "PROCESSED" ]; then
+              echo "Application version $VERSION_LABEL is ready"
+              break
+            elif [ "$STATUS" = "FAILED" ]; then
+              echo "Application version creation failed"
+              exit 1
             else
-              aws elasticbeanstalk update-environment \
-                --environment-name radio-importante-backend-prod \
-                --version-label $VERSION_LABEL \
-                --region us-west-2 || echo "AWS CLI deploy failed, trying EB CLI..."
+              echo "Waiting for version $VERSION_LABEL to be processed... (attempt $i/12)"
+              sleep 10
             fi
-            
-            echo "Waiting for deployment to complete..."
-            aws elasticbeanstalk wait environment-updated --environment-names radio-importante-backend-prod --region us-west-2
-            
-            echo "✅ Deployment completed successfully!"
-          else
-            echo "Creating new environment..."
-            eb create radio-importante-backend-prod --instance-type t3.micro --timeout 20 --envvars NODE_ENV=production,AWS_REGION=us-west-2,S3_BUCKET_NAME=radio-importante-storage
+          done
+          
+          if [ "$STATUS" != "PROCESSED" ]; then
+            echo "Timeout waiting for application version"
+            exit 1
           fi
+          
+          # Deploy da nova versão
+          aws elasticbeanstalk update-environment \
+            --environment-name radio-importante-backend-prod \
+            --version-label $VERSION_LABEL \
+            --region us-west-2
+            
+          # Aguardar deploy
+          aws elasticbeanstalk wait environment-updated --environment-names radio-importante-backend-prod --region us-west-2
+          
+        else
+          echo "Environment does not exist. Creating..."
+          eb create radio-importante-backend-prod --instance-type t3.micro --timeout 20 --envvars NODE_ENV=production,AWS_REGION=us-west-2,S3_BUCKET_NAME=radio-importante-storage
         fi
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         
-    - name: 🔍 Get deployment URL
+    - name: ✅ Verify deployment
       run: |
-        echo "Getting environment URL..."
-        # Try multiple methods to get the URL
-        URL=$(eb status radio-importante-backend-prod | grep "CNAME" | awk '{print $2}' || echo "")
-        
-        if [ -z "$URL" ]; then
-          echo "EB CLI didn't return URL, trying AWS CLI..."
-          URL=$(aws elasticbeanstalk describe-environments --environment-names radio-importante-backend-prod --region us-west-2 --query 'Environments[0].CNAME' --output text 2>/dev/null || echo "")
-        fi
+        URL=$(aws elasticbeanstalk describe-environments --environment-names radio-importante-backend-prod --region us-west-2 --query 'Environments[0].CNAME' --output text 2>/dev/null || echo "")
         
         if [ -z "$URL" ] || [ "$URL" = "None" ]; then
-          echo "⚠️ Could not get environment URL, using environment name..."
           URL="radio-importante-backend-prod.us-west-2.elasticbeanstalk.com"
         fi
         
-        echo "🌐 Backend deployed to: http://$URL"
-        echo "BACKEND_URL=http://$URL" >> $GITHUB_ENV
+        echo "🌐 Backend URL: http://$URL"
         
-    - name: ✅ Health check
-      run: |
-        echo "Waiting for deployment to be ready..."
-        sleep 30
-        
-        # Get URL with fallback methods
-        URL=$(eb status radio-importante-backend-prod | grep "CNAME" | awk '{print $2}' || echo "")
-        
-        if [ -z "$URL" ]; then
-          echo "EB CLI didn't return URL, trying AWS CLI..."
-          URL=$(aws elasticbeanstalk describe-environments --environment-names radio-importante-backend-prod --region us-west-2 --query 'Environments[0].CNAME' --output text 2>/dev/null || echo "")
-        fi
-        
-        if [ -z "$URL" ] || [ "$URL" = "None" ]; then
-          echo "⚠️ Using default environment URL..."
-          URL="radio-importante-backend-prod.us-west-2.elasticbeanstalk.com"
-        fi
-        
-        echo "Testing health check at: http://$URL/health"
-        
-        # Try health check with retries
-        for i in {1..3}; do
-          if curl -f "http://$URL/health"; then
-            echo "✅ Backend is healthy!"
-            exit 0
+        # Test health endpoint
+        for i in {1..5}; do
+          if curl -f "http://$URL/health" > /dev/null 2>&1; then
+            echo "✅ Health check passed!"
+            break
           else
-            echo "❌ Health check attempt $i failed, retrying..."
-            sleep 10
+            echo "⏳ Waiting for backend to be ready... (attempt $i/5)"
+            sleep 30
           fi
         done
         
-        echo "❌ Backend health check failed after 3 attempts"
-        echo "🔍 Environment status:"
-        eb status radio-importante-backend-prod || aws elasticbeanstalk describe-environments --environment-names radio-importante-backend-prod --region us-west-2
-        exit 1
-        
-    - name: 📊 Deployment summary
-      run: |
-        # Get URL with fallback methods
-        URL=$(eb status radio-importante-backend-prod | grep "CNAME" | awk '{print $2}' || echo "")
-        
-        if [ -z "$URL" ]; then
-          URL=$(aws elasticbeanstalk describe-environments --environment-names radio-importante-backend-prod --region us-west-2 --query 'Environments[0].CNAME' --output text 2>/dev/null || echo "")
-        fi
-        
-        if [ -z "$URL" ] || [ "$URL" = "None" ]; then
-          URL="radio-importante-backend-prod.us-west-2.elasticbeanstalk.com"
-        fi
-        
-        echo "## 🚀 Backend Deployment Summary" >> $GITHUB_STEP_SUMMARY
-        echo "- **Application**: radio-importante-backend" >> $GITHUB_STEP_SUMMARY
-        echo "- **Environment**: radio-importante-backend-prod" >> $GITHUB_STEP_SUMMARY
-        echo "- **Region**: us-west-2" >> $GITHUB_STEP_SUMMARY
-        echo "- **URL**: http://$URL" >> $GITHUB_STEP_SUMMARY
-        echo "- **Health**: ✅ Healthy" >> $GITHUB_STEP_SUMMARY
+        echo "📋 Deployment Summary:" >> $GITHUB_STEP_SUMMARY
+        echo "- 🏗️ **Backend**: Deployed successfully" >> $GITHUB_STEP_SUMMARY
+        echo "- 🌐 **URL**: http://$URL" >> $GITHUB_STEP_SUMMARY
+        echo "- 🏷️ **Version**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY

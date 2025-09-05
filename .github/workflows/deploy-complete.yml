@@ -86,29 +86,29 @@ jobs:
         zip -r deploy-package.zip . -x "node_modules/*" ".git/*" "*.log" ".env" "test-api.sh" "eb-init.sh" "deploy-package.zip"
         
         # Upload para S3
-        aws s3 cp deploy-package.zip s3://$S3_BUCKET/radio-pwa-backend/deploy-package.zip
+        aws s3 cp deploy-package.zip s3://$S3_BUCKET/radio-importante-backend/deploy-package.zip
         echo "Source uploaded successfully to S3"
         
         if [ ! -d ".elasticbeanstalk" ]; then
-          eb init radio-pwa-backend --region us-west-2 --platform node.js
+          eb init radio-importante-backend --region us-west-2 --platform node.js
         fi
         
         # Força reinicialização se o environment existe mas não está acessível
-        if ! eb status radio-pwa-backend-prod >/dev/null 2>&1; then
+        if ! eb status radio-importante-backend-prod >/dev/null 2>&1; then
           echo "Environment not accessible, removing config and reinitializing..."
           rm -rf .elasticbeanstalk
-          eb init radio-pwa-backend --region us-west-2 --platform node.js
+          eb init radio-importante-backend --region us-west-2 --platform node.js
         fi
         
         echo "Deploying to environment..."
         # Verifica novamente se o environment está acessível após reinicialização
-        if eb status radio-pwa-backend-prod >/dev/null 2>&1; then
+        if eb status radio-importante-backend-prod >/dev/null 2>&1; then
           echo "Environment exists and accessible, deploying..."
-          eb deploy radio-pwa-backend-prod --timeout 20
+          eb deploy radio-importante-backend-prod --timeout 20
         else
           echo "Environment not found or not accessible. Checking if it exists in AWS..."
           # Tenta usar AWS CLI para verificar se o environment existe
-          if aws elasticbeanstalk describe-environments --environment-names radio-pwa-backend-prod --region us-west-2 --query 'Environments[0].Status' --output text 2>/dev/null | grep -q "Ready"; then
+          if aws elasticbeanstalk describe-environments --environment-names radio-importante-backend-prod --region us-west-2 --query 'Environments[0].Status' --output text 2>/dev/null | grep -q "Ready"; then
             echo "Environment exists in AWS but not accessible via EB CLI."
             echo "Creating application version first..."
             
@@ -116,17 +116,17 @@ jobs:
             VERSION_LABEL="app-$(date +%y%m%d_%H%M%S)"
             echo "Creating application version: $VERSION_LABEL"
             aws elasticbeanstalk create-application-version \
-              --application-name radio-pwa-backend \
+              --application-name radio-importante-backend \
               --version-label $VERSION_LABEL \
               --description "Automated deployment $(date)" \
-              --source-bundle S3Bucket="elasticbeanstalk-us-west-2-$(aws sts get-caller-identity --query Account --output text)",S3Key="radio-pwa-backend/deploy-package.zip" \
+              --source-bundle S3Bucket="elasticbeanstalk-us-west-2-$(aws sts get-caller-identity --query Account --output text)",S3Key="radio-importante-backend/deploy-package.zip" \
               --region us-west-2 || echo "Version creation failed, trying direct deploy..."
             
             echo "Waiting for application version to be processed..."
             # Wait until version is PROCESSED - with fallback
             TIMEOUT_REACHED=false
             for i in {1..15}; do
-              STATUS=$(aws elasticbeanstalk describe-application-versions --application-name radio-pwa-backend --version-labels $VERSION_LABEL --region us-west-2 --query 'ApplicationVersions[0].Status' --output text 2>/dev/null || echo "NOTFOUND")
+              STATUS=$(aws elasticbeanstalk describe-application-versions --application-name radio-importante-backend --version-labels $VERSION_LABEL --region us-west-2 --query 'ApplicationVersions[0].Status' --output text 2>/dev/null || echo "NOTFOUND")
               echo "Attempt $i: Version status is $STATUS"
               if [ "$STATUS" = "PROCESSED" ]; then
                 echo "✅ Application version is ready for deployment"
@@ -145,21 +145,21 @@ jobs:
             echo "Deploying version to environment using AWS CLI..."
             if [ "$TIMEOUT_REACHED" = true ]; then
               echo "⚠️ Using direct EB deploy due to timeout..."
-              eb deploy radio-pwa-backend-prod --timeout 20 || echo "EB deploy failed"
+              eb deploy radio-importante-backend-prod --timeout 20 || echo "EB deploy failed"
             else
               aws elasticbeanstalk update-environment \
-                --environment-name radio-pwa-backend-prod \
+                --environment-name radio-importante-backend-prod \
                 --version-label $VERSION_LABEL \
                 --region us-west-2 || echo "AWS CLI deploy failed, trying EB CLI..."
             fi
             
             echo "Waiting for deployment to complete..."
-            aws elasticbeanstalk wait environment-updated --environment-names radio-pwa-backend-prod --region us-west-2
+            aws elasticbeanstalk wait environment-updated --environment-names radio-importante-backend-prod --region us-west-2
             
             echo "✅ Deployment completed successfully!"
           else
             echo "Creating new environment..."
-            eb create radio-pwa-backend-prod --instance-type t3.micro --timeout 20 --envvars NODE_ENV=production,AWS_REGION=us-west-2,S3_BUCKET_NAME=radio-importante-storage
+            eb create radio-importante-backend-prod --instance-type t3.micro --timeout 20 --envvars NODE_ENV=production,AWS_REGION=us-west-2,S3_BUCKET_NAME=radio-importante-storage
           fi
         fi
       env:
@@ -171,16 +171,16 @@ jobs:
       run: |
         echo "Getting environment URL..."
         # Try multiple methods to get the URL
-        URL=$(eb status radio-pwa-backend-prod | grep "CNAME" | awk '{print $2}' || echo "")
+        URL=$(eb status radio-importante-backend-prod | grep "CNAME" | awk '{print $2}' || echo "")
         
         if [ -z "$URL" ]; then
           echo "EB CLI didn't return URL, trying AWS CLI..."
-          URL=$(aws elasticbeanstalk describe-environments --environment-names radio-pwa-backend-prod --region us-west-2 --query 'Environments[0].CNAME' --output text 2>/dev/null || echo "")
+          URL=$(aws elasticbeanstalk describe-environments --environment-names radio-importante-backend-prod --region us-west-2 --query 'Environments[0].CNAME' --output text 2>/dev/null || echo "")
         fi
         
         if [ -z "$URL" ] || [ "$URL" = "None" ]; then
           echo "⚠️ Could not get environment URL, using environment name..."
-          URL="radio-pwa-backend-prod.us-west-2.elasticbeanstalk.com"
+          URL="radio-importante-backend-prod.us-west-2.elasticbeanstalk.com"
         fi
         
         FULL_URL="http://$URL"
