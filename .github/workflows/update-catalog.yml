@@ -8,6 +8,11 @@ on:
       - 'public/audio/**/*.aac'
   workflow_dispatch:
 
+permissions:
+  contents: write
+  actions: read
+  pull-requests: read
+
 jobs:
   update-catalog:
     runs-on: ubuntu-latest
