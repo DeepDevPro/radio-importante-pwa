@@ -1,0 +1,86 @@
+name: 🚀 Force Deploy Backend (No Wait)
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  force-deploy:
+    name: 🏗️ Force Deploy Backend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+        
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+    
+    - name: 🟢 Setup Node.js 20
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: './backend/package-lock.json'
+        
+    - name: 📦 Install dependencies
+      run: npm ci
+      
+    - name: 🔧 Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-west-2
+
+    - name: 📋 Install EB CLI
+      run: pip install awsebcli
+        
+    - name: 🚀 Force Deploy without waiting
+      run: |
+        echo "=== Force Deploy Backend (No Wait) ==="
+        
+        # Configuração AWS
+        ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+        S3_BUCKET="elasticbeanstalk-us-west-2-$ACCOUNT_ID"
+        VERSION_LABEL="${{ github.ref_name }}-$(date +%s)"
+        
+        echo "Account ID: $ACCOUNT_ID"
+        echo "S3 Bucket: $S3_BUCKET"
+        echo "Version Label: $VERSION_LABEL"
+        
+        # Criar package super otimizado
+        echo "Criando package mínimo..."
+        rm -f deploy-package.zip
+        
+        # Incluir apenas o essencial
+        zip -r deploy-package.zip \
+          index.js \
+          package.json \
+          package-lock.json
+        
+        echo "Package criado: $(ls -lh deploy-package.zip | awk '{print $5}')"
+        
+        # Upload para S3
+        echo "Upload para S3..."
+        aws s3 cp deploy-package.zip s3://$S3_BUCKET/radio-importante-backend/deploy-package.zip
+        
+        # Criar versão SEM aguardar processamento
+        echo "Criando versão da aplicação (sem aguardar)..."
+        aws elasticbeanstalk create-application-version \
+          --application-name radio-importante-backend \
+          --version-label $VERSION_LABEL \
+          --description "Force Deploy ${{ github.ref_name }} - $(date)" \
+          --source-bundle S3Bucket="$S3_BUCKET",S3Key="radio-importante-backend/deploy-package.zip" \
+          --region us-west-2 || true
+        
+        # Deploy direto no environment
+        echo "Fazendo deploy no environment..."
+        aws elasticbeanstalk update-environment \
+          --environment-name radio-importante-backend-prod \
+          --version-label $VERSION_LABEL \
+          --region us-west-2 || true
+        
+        echo "✅ Deploy iniciado! Status pode ser verificado no console AWS"
+        echo "🔗 https://us-west-2.console.aws.amazon.com/elasticbeanstalk/home?region=us-west-2#/application/overview?applicationName=radio-importante-backend"

@@ -1,0 +1,34 @@
+# Arquivos de áudio - não incluir no deploy
+*.mp3
+*.wav
+*.ogg
+*.aac
+*.flac
+*.m4a
+*.wma
+
+# Diretórios de áudio
+audio/
+uploads/
+public/audio/
+
+# Arquivos de desenvolvimento
+.env
+*.log
+*.tmp
+.DS_Store
+*.swp
+
+# Node modules
+node_modules/
+
+# Git
+.git/
+.gitignore
+
+# Arquivos de teste
+test-api.sh
+eb-init.sh
+
+# Configuração EB local
+.elasticbeanstalk/

@@ -54,7 +54,7 @@ jobs:
         echo "Criando package..."
         rm -f deploy-package.zip
         
-        # Criar ZIP com exclusões mais específicas
+        # Criar ZIP com exclusões mais específicas (incluindo arquivos de áudio)
         zip -r deploy-package.zip . \
           -x "*.git*" \
              "node_modules/*" \
@@ -66,7 +66,16 @@ jobs:
              ".env" \
              "test-api.sh" \
              "eb-init.sh" \
-             ".elasticbeanstalk/*"
+             ".elasticbeanstalk/*" \
+             "*.mp3" \
+             "*.wav" \
+             "*.ogg" \
+             "*.aac" \
+             "*.flac" \
+             "*.m4a" \
+             "audio/*" \
+             "uploads/*" \
+             "public/audio/*"
         
         echo "Package criado: $(ls -lh deploy-package.zip | awk '{print $5}')"
         

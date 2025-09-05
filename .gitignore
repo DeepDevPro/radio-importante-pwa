@@ -24,6 +24,17 @@ build/
 # But keep HLS assets (they're critical for iOS PWA!)
 !public/audio/hls/
 
+# Large audio files (upload via admin interface)
+backend/audio/*.mp3
+backend/audio/*.wav
+backend/audio/*.ogg
+backend/audio/*.aac
+backend/uploads/
+public/audio/*.mp3
+public/audio/*.wav
+public/audio/*.ogg
+public/audio/*.aac
+
 # Backup files (created during development)
 *.backup
 *.bak

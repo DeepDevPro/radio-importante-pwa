@@ -124,8 +124,12 @@ jobs:
         # Se estamos em tag (detached HEAD), checkout para main
         if [[ "${{ github.ref }}" == refs/tags/* ]]; then
           echo "🏷️ Detected tag deployment, switching to main branch"
+          # Stash any changes before checkout
+          git stash push -m "Temporary stash before main checkout" || true
           git checkout main
           git pull origin main
+          # Apply stashed catalog if it exists
+          git stash pop || true
         fi
         
         # Regenerar catálogo na branch main

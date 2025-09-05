@@ -1,0 +1,48 @@
+name: 🚀 Deploy Backend Simple
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  deploy-backend:
+    name: 🏗️ Deploy Backend Simple
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+        
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+    
+    - name: 🟢 Setup Node.js 18
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: './backend/package-lock.json'
+        
+    - name: 📦 Install dependencies
+      run: npm ci
+      
+    - name: 🔧 Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-west-2
+
+    - name: 📋 Install EB CLI
+      run: pip install awsebcli
+        
+    - name: 🚀 Deploy via EB CLI Direct
+      run: |
+        echo "=== Deploy Direto via EB CLI ==="
+        
+        # Inicializar EB
+        eb init radio-importante-backend --region us-west-2 --platform "Node.js 18"
+        
+        # Fazer deploy direto
+        eb deploy radio-importante-backend-prod --timeout 10

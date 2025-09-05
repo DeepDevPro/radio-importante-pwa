@@ -1,0 +1,58 @@
+name: 🔍 Diagnose EB Issues
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    name: 🔍 Diagnose EB Problems
+    runs-on: ubuntu-latest
+        
+    steps:
+    - name: 🔧 Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-west-2
+        
+    - name: 🔍 Investigate EB Status
+      run: |
+        echo "=== Diagnóstico Elastic Beanstalk ==="
+        echo ""
+        
+        echo "📋 Listando aplicações:"
+        aws elasticbeanstalk describe-applications --region us-west-2
+        echo ""
+        
+        echo "🌍 Listando environments:"
+        aws elasticbeanstalk describe-environments \
+          --application-name radio-importante-backend \
+          --region us-west-2
+        echo ""
+        
+        echo "📦 Listando versões (últimas 10):"
+        aws elasticbeanstalk describe-application-versions \
+          --application-name radio-importante-backend \
+          --region us-west-2 \
+          --max-records 10
+        echo ""
+        
+        echo "⚙️ Verificando configuração do environment:"
+        aws elasticbeanstalk describe-configuration-settings \
+          --application-name radio-importante-backend \
+          --environment-name radio-importante-backend-prod \
+          --region us-west-2 || echo "Environment não encontrado"
+        echo ""
+        
+        echo "📊 Verificando eventos recentes:"
+        aws elasticbeanstalk describe-events \
+          --application-name radio-importante-backend \
+          --max-records 20 \
+          --region us-west-2 || echo "Sem eventos"
+        echo ""
+        
+        echo "🔍 Verificando plataformas disponíveis:"
+        aws elasticbeanstalk list-platform-versions \
+          --filters Type=PlatformName,Values=Node.js \
+          --region us-west-2
