@@ -589,7 +589,7 @@
                 <h2>📤 Upload de Arquivos de Áudio</h2>
                 
                 <div class="alert alert-info">
-                    ℹ️ <strong>Sistema Híbrido Ativo:</strong> Upload funcionará automaticamente com backend local (desenvolvimento) ou AWS (produção)
+                    ℹ️ <strong>Sistema de Upload Inteligente:</strong> Detecta automaticamente se está em desenvolvimento (local) ou produção (AWS)
                 </div>
                 
                 <div class="upload-area" id="upload-area">
@@ -702,7 +702,6 @@
                     if (localResponse.ok) {
                         localStatus = '✅ Online';
                         localAvailable = true;
-                        API_CONFIG.currentBackend = API_CONFIG.backendUrl;
                     }
                 } catch (e) {
                     console.log('Backend local não disponível');
@@ -719,24 +718,36 @@
                     if (prodResponse.ok) {
                         prodStatus = '✅ Online';
                         prodAvailable = true;
-                        if (!localAvailable) {
-                            API_CONFIG.currentBackend = API_CONFIG.productionUrl;
-                        }
                     }
                 } catch (e) {
                     console.log('Backend produção não disponível');
                 }
 
-                // Determinar qual backend usar
+                // Determinar qual backend usar baseado no ambiente
                 let activeBackend = 'Nenhum disponível';
-                if (localAvailable) {
+                const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+                
+                if (isProduction && prodAvailable) {
+                    // Em produção, sempre usar backend de produção se disponível
+                    API_CONFIG.currentBackend = API_CONFIG.productionUrl;
+                    activeBackend = '☁️ Produção (AWS)';
+                } else if (!isProduction && localAvailable) {
+                    // Em desenvolvimento, usar backend local se disponível
+                    API_CONFIG.currentBackend = API_CONFIG.backendUrl;
                     activeBackend = '🏠 Local (localhost:8080)';
                 } else if (prodAvailable) {
-                    activeBackend = '☁️ Produção (AWS)';
+                    // Fallback para produção se local não estiver disponível
+                    API_CONFIG.currentBackend = API_CONFIG.productionUrl;
+                    activeBackend = '☁️ Produção (AWS) - Fallback';
+                } else if (localAvailable) {
+                    // Fallback para local se produção não estiver disponível
+                    API_CONFIG.currentBackend = API_CONFIG.backendUrl;
+                    activeBackend = '🏠 Local (localhost:8080) - Fallback';
                 }
 
                 statusDiv.innerHTML = `
-                    🏠 Local: ${localStatus} | ☁️ Produção: ${prodStatus}<br>
+                    � Ambiente: ${isProduction ? 'PRODUÇÃO' : 'DESENVOLVIMENTO'}<br>
+                    �🏠 Local: ${localStatus} | ☁️ Produção: ${prodStatus}<br>
                     <strong>Backend Ativo:</strong> ${activeBackend}
                 `;
 
@@ -1288,20 +1299,26 @@
             const audio = new Audio();
             const url = URL.createObjectURL(file);
             
+            // Configurar preload para garantir que metadados sejam carregados
+            audio.preload = 'metadata';
+            audio.crossOrigin = 'anonymous';
+            
             audio.addEventListener('loadedmetadata', function() {
                 const duration = audio.duration;
                 const durationElement = document.getElementById(`duration-${index}`);
                 
                 if (durationElement) {
-                    if (isFinite(duration)) {
+                    if (isFinite(duration) && duration > 0) {
                         durationElement.textContent = `⏱️ ${formatDuration(duration)}`;
                         durationElement.style.color = '#28a745';
                         
                         // Armazenar duração no arquivo para uso no upload
-                        file.calculatedDuration = duration;
+                        file.calculatedDuration = Math.round(duration);
+                        console.log(`✅ Duração calculada para ${file.name}: ${file.calculatedDuration}s`);
                     } else {
                         durationElement.textContent = '⚠️ Duração desconhecida';
                         durationElement.style.color = '#dc3545';
+                        file.calculatedDuration = 0;
                     }
                 }
                 
@@ -1309,15 +1326,18 @@
                 URL.revokeObjectURL(url);
             });
             
-            audio.addEventListener('error', function() {
+            audio.addEventListener('error', function(error) {
+                console.error(`❌ Erro ao calcular duração de ${file.name}:`, error);
                 const durationElement = document.getElementById(`duration-${index}`);
                 if (durationElement) {
                     durationElement.textContent = '❌ Erro ao ler arquivo';
                     durationElement.style.color = '#dc3545';
                 }
+                file.calculatedDuration = 0;
                 URL.revokeObjectURL(url);
             });
             
+            // Definir src por último para disparar o carregamento
             audio.src = url;
         }
 
