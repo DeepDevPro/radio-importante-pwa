@@ -672,7 +672,6 @@
         const API_CONFIG = {
             backendUrl: 'http://localhost:8080',
             productionUrl: 'https://backend.radio.importantestudio.com',
-            productionUrlFallback: 'http://radio-importante-backend-prod.eba-heipfui9.us-west-2.elasticbeanstalk.com',
             currentBackend: null
         };
 
@@ -715,39 +714,28 @@
                     }
                 }
 
-                // Testar backend produção (HTTPS primeiro, depois HTTP)
+                // Testar backend produção (HTTPS)
                 let prodStatus = '❌ Offline';
                 let prodAvailable = false;
                 try {
-                    // Tentar HTTPS primeiro
+                    console.log('🔍 Testando backend produção:', API_CONFIG.productionUrl);
                     const prodResponse = await fetch(API_CONFIG.productionUrl + '/health', {
                         method: 'GET',
                         mode: 'cors'
                     });
                     if (prodResponse.ok) {
-                        prodStatus = '✅ Online (HTTPS)';
+                        const data = await prodResponse.json();
+                        prodStatus = `✅ Online (HTTPS) - v${data.version || 'unknown'}`;
                         prodAvailable = true;
+                        console.log('✅ Backend produção disponível:', data);
                     } else {
-                        throw new Error('HTTPS failed');
+                        throw new Error(`HTTP ${prodResponse.status}`);
                     }
                 } catch (e) {
-                    console.log('HTTPS falhou, tentando HTTP fallback:', e.message);
-                    try {
-                        // Fallback para HTTP se HTTPS falhar
-                        const fallbackResponse = await fetch(API_CONFIG.productionUrlFallback + '/health', {
-                            method: 'GET',
-                            mode: 'cors'
-                        });
-                        if (fallbackResponse.ok) {
-                            prodStatus = '✅ Online (HTTP - Mixed Content)';
-                            prodAvailable = true;
-                            API_CONFIG.productionUrl = API_CONFIG.productionUrlFallback; // Use HTTP como backup
-                        }
-                    } catch (fallbackError) {
-                        console.log('Backend produção não disponível:', fallbackError.message);
-                        if (isHttps) {
-                            prodStatus = '❌ Offline' + httpBackendWarning;
-                        }
+                    console.log('❌ Backend produção não disponível:', e.message);
+                    prodStatus = `❌ Offline (${e.message})`;
+                    if (isHttps && e.message.includes('Mixed Content')) {
+                        prodStatus += httpBackendWarning;
                     }
                 }
 
