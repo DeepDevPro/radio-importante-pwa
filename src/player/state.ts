@@ -92,7 +92,7 @@ export class StateManager {
       try {
         if (isProduction) {
           // Em produção, usar apenas backend de produção
-          response = await fetch('http://radio-importante-backend-prod.eba-heipfui9.us-west-2.elasticbeanstalk.com/api/catalog');
+          response = await fetch('https://backend.radio.importantestudio.com/api/catalog');
         } else {
           // Em desenvolvimento, usar apenas backend local
           response = await fetch('http://localhost:8080/api/catalog');
@@ -206,7 +206,7 @@ export class StateManager {
       try {
         if (isProduction) {
           // Em produção, usar apenas backend de produção
-          response = await fetch('http://radio-importante-backend-prod.eba-heipfui9.us-west-2.elasticbeanstalk.com/api/catalog');
+          response = await fetch('https://backend.radio.importantestudio.com/api/catalog');
         } else {
           // Em desenvolvimento, usar apenas backend local
           response = await fetch('http://localhost:8080/api/catalog');
