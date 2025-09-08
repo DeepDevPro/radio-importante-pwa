@@ -672,6 +672,7 @@
         const API_CONFIG = {
             backendUrl: 'http://localhost:8080',
             productionUrl: 'https://backend.radio.importantestudio.com',
+            productionUrlBackup: 'https://radio-importante-backend-prod.eba-heipfui9.us-west-2.elasticbeanstalk.com',
             currentBackend: null
         };
 
@@ -714,28 +715,59 @@
                     }
                 }
 
-                // Testar backend produção (HTTPS)
+                // Testar backend produção (HTTPS - DNS customizado primeiro, depois Load Balancer)
                 let prodStatus = '❌ Offline';
                 let prodAvailable = false;
+                
+                // Tentar DNS customizado primeiro
                 try {
-                    console.log('🔍 Testando backend produção:', API_CONFIG.productionUrl);
+                    console.log('🔍 Testando DNS customizado:', API_CONFIG.productionUrl);
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+                    
                     const prodResponse = await fetch(API_CONFIG.productionUrl + '/health', {
                         method: 'GET',
-                        mode: 'cors'
+                        mode: 'cors',
+                        signal: controller.signal
                     });
+                    clearTimeout(timeoutId);
+                    
                     if (prodResponse.ok) {
                         const data = await prodResponse.json();
-                        prodStatus = `✅ Online (HTTPS) - v${data.version || 'unknown'}`;
+                        prodStatus = `✅ Online (HTTPS DNS) - v${data.version || 'unknown'}`;
                         prodAvailable = true;
-                        console.log('✅ Backend produção disponível:', data);
+                        console.log('✅ Backend produção via DNS customizado:', data);
                     } else {
                         throw new Error(`HTTP ${prodResponse.status}`);
                     }
                 } catch (e) {
-                    console.log('❌ Backend produção não disponível:', e.message);
-                    prodStatus = `❌ Offline (${e.message})`;
-                    if (isHttps && e.message.includes('Mixed Content')) {
-                        prodStatus += httpBackendWarning;
+                    console.log('❌ DNS customizado falhou, tentando Load Balancer direto:', e.message);
+                    
+                    // Fallback para Load Balancer direto
+                    try {
+                        console.log('🔍 Testando Load Balancer direto:', API_CONFIG.productionUrlBackup);
+                        const controller2 = new AbortController();
+                        const timeoutId2 = setTimeout(() => controller2.abort(), 5000);
+                        
+                        const backupResponse = await fetch(API_CONFIG.productionUrlBackup + '/health', {
+                            method: 'GET',
+                            mode: 'cors',
+                            signal: controller2.signal
+                        });
+                        clearTimeout(timeoutId2);
+                        
+                        if (backupResponse.ok) {
+                            const data = await backupResponse.json();
+                            prodStatus = `✅ Online (HTTPS LB) - v${data.version || 'unknown'}`;
+                            prodAvailable = true;
+                            API_CONFIG.productionUrl = API_CONFIG.productionUrlBackup; // Use Load Balancer
+                            console.log('✅ Backend produção via Load Balancer:', data);
+                        } else {
+                            throw new Error(`HTTP ${backupResponse.status}`);
+                        }
+                    } catch (e2) {
+                        console.log('❌ Ambos endpoints HTTPS falharam:', e2.message);
+                        prodStatus = `❌ Offline (DNS: ${e.message}, LB: ${e2.message})`;
                     }
                 }
 
