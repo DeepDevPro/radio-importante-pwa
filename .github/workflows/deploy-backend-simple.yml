@@ -41,8 +41,18 @@ jobs:
       run: |
         echo "=== Deploy Direto via EB CLI ==="
         
-        # Inicializar EB (sem especificar plataforma, deixar AWS decidir)
+        # Verificar arquivos essenciais
+        echo "=== Verificando estrutura ==="
+        ls -la package.json app.js Procfile || echo "Arquivos não encontrados"
+        
+        # Mostrar conteúdo do Procfile
+        echo "=== Procfile ==="
+        cat Procfile || echo "Procfile não encontrado"
+        
+        # Inicializar EB
         eb init radio-importante-backend --region us-west-2
         
-        # Fazer deploy direto
-        eb deploy radio-importante-backend-prod --timeout 10
+        # Fazer deploy com label único
+        LABEL="https-fix-$(date +%s)"
+        echo "Deploy com label: $LABEL"
+        eb deploy radio-importante-backend-prod --label $LABEL --timeout 20
