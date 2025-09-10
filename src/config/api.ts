@@ -16,7 +16,7 @@ const isProduction = window.location.hostname !== 'localhost' &&
 // URLs da API
 const API_CONFIG: ApiConfig = {
   baseUrl: isProduction 
-    ? 'http://radio-importante-backend-prod.eba-heipfui9.us-west-2.elasticbeanstalk.com'
+    ? 'https://backend.radio.importantestudio.com'
     : 'http://localhost:8080', // Backend local na porta 8080
   endpoints: {
     health: '/health',
