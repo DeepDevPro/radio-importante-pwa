@@ -167,7 +167,7 @@ jobs:
         aws elasticbeanstalk wait environment-updated \
           --environment-names radio-importante-backend-prod \
           --region us-west-2 \
-          --waiter-config maxAttempts=60,delay=30
+          --waiter-config maxAttempts=20,delay=15 # Max 5 minutos
         
         echo "✅ Deploy concluído com sucesso!"
       env:
