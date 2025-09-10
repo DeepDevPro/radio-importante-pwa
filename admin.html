@@ -669,8 +669,10 @@
 
     <script>
         // Configuração da API
+        const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+        
         const API_CONFIG = {
-            backendUrl: 'http://localhost:8080',
+            backendUrl: isProduction ? 'https://backend.radio.importantestudio.com' : 'http://localhost:8080',
             productionUrl: 'https://backend.radio.importantestudio.com',
             productionUrlBackup: 'https://backend.radio.importantestudio.com',
             currentBackend: null
@@ -696,23 +698,28 @@
                 const isHttps = window.location.protocol === 'https:';
                 const httpBackendWarning = isHttps ? ' ⚠️ (Mixed Content bloqueado)' : '';
 
-                // Testar backend local
+                // Testar backend local (apenas em desenvolvimento)
                 let localStatus = '❌ Offline';
                 let localAvailable = false;
-                try {
-                    const localResponse = await fetch(API_CONFIG.backendUrl + '/health', { 
-                        method: 'GET',
-                        mode: 'cors'
-                    });
-                    if (localResponse.ok) {
-                        localStatus = '✅ Online';
-                        localAvailable = true;
+                
+                if (!isProduction) {
+                    try {
+                        const localResponse = await fetch(API_CONFIG.backendUrl + '/health', { 
+                            method: 'GET',
+                            mode: 'cors'
+                        });
+                        if (localResponse.ok) {
+                            localStatus = '✅ Online';
+                            localAvailable = true;
+                        }
+                    } catch (e) {
+                        console.log('Backend local não disponível:', e.message);
+                        if (isHttps && API_CONFIG.backendUrl.startsWith('http:')) {
+                            localStatus = '❌ Offline' + httpBackendWarning;
+                        }
                     }
-                } catch (e) {
-                    console.log('Backend local não disponível:', e.message);
-                    if (isHttps && API_CONFIG.backendUrl.startsWith('http:')) {
-                        localStatus = '❌ Offline' + httpBackendWarning;
-                    }
+                } else {
+                    localStatus = '⏭️ Produção (localhost ignorado)';
                 }
 
                 // Testar backend produção (HTTPS - DNS customizado primeiro, depois Load Balancer)

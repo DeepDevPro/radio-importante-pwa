@@ -132,4 +132,4 @@ self.addEventListener('message', (event) => {
 });
 
 // Log de debug
-console.log('🎵 Service Worker do Radio Importante carregado (v3 - Admin sempre atualizado)');
+console.log('🎵 Service Worker do Radio Importante carregado (v4 - HTTPS backend configurado)');

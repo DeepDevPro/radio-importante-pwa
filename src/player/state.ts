@@ -105,8 +105,14 @@ export class StateManager {
         } else {
           throw new Error('API não disponível');
         }
-      } catch {
-        console.log('⚠️ API backend não disponível, usando arquivo local');
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+        if (isProduction) {
+          console.error('❌ ERRO: Backend de produção indisponível:', errorMessage);
+          console.log('⚠️ Em produção - usando arquivo local como fallback');
+        } else {
+          console.log('⚠️ API backend local não disponível, usando arquivo local');
+        }
         const timestamp = Date.now();
         response = await fetch(`/data/catalog.json?t=${timestamp}`, {
           cache: 'no-cache',
@@ -219,8 +225,14 @@ export class StateManager {
         } else {
           throw new Error('API não disponível');
         }
-      } catch {
-        console.log('⚠️ API backend não disponível, usando arquivo local');
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+        if (isProduction) {
+          console.error('❌ ERRO: Backend de produção indisponível:', errorMessage);
+          console.log('⚠️ Em produção - usando arquivo local como fallback');
+        } else {
+          console.log('⚠️ API backend local não disponível, usando arquivo local');
+        }
         response = await fetch('/data/catalog.json');
         if (!response.ok) {
           throw new Error(`Erro ao carregar catálogo: ${response.status}`);
