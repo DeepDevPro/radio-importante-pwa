@@ -44,12 +44,14 @@ app.get('/health', (req, res) => {
 // Configuração do multer para upload
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const audioPath = path.join(__dirname, '../public/audio');
+    // Usar caminho baseado no ambiente
+    const baseDir = process.env.UPLOAD_DIR || path.join(__dirname, '../public/audio');
+    
     // Criar diretório se não existir
-    if (!fs.existsSync(audioPath)) {
-      fs.mkdirSync(audioPath, { recursive: true });
+    if (!fs.existsSync(baseDir)) {
+      fs.mkdirSync(baseDir, { recursive: true });
     }
-    cb(null, audioPath);
+    cb(null, baseDir);
   },
   filename: function (req, file, cb) {
     // Manter nome original do arquivo
