@@ -1,5 +1,7 @@
 // src/player/state.ts - Gerenciamento de estado do player
 
+import { API_CONFIG } from '../config/api';
+
 export interface Track {
   id: string;
   title: string;
@@ -87,16 +89,10 @@ export class StateManager {
       // Detectar ambiente
       const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
       
-      // Tentar API do backend apropriado para o ambiente
+      // Tentar API do backend usando configuração centralizada
       let response;
       try {
-        if (isProduction) {
-          // Em produção, usar apenas backend de produção
-          response = await fetch('https://backend.radio.importantestudio.com/api/catalog');
-        } else {
-          // Em desenvolvimento, usar apenas backend local
-          response = await fetch('http://localhost:8080/api/catalog');
-        }
+        response = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.catalog}`);
         
         if (response.ok) {
           const apiResult = await response.json();
@@ -207,16 +203,10 @@ export class StateManager {
       // Detectar ambiente
       const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
       
-      // Tentar API do backend apropriado para o ambiente
+      // Tentar API do backend usando configuração centralizada
       let response;
       try {
-        if (isProduction) {
-          // Em produção, usar apenas backend de produção
-          response = await fetch('https://backend.radio.importantestudio.com/api/catalog');
-        } else {
-          // Em desenvolvimento, usar apenas backend local
-          response = await fetch('http://localhost:8080/api/catalog');
-        }
+        response = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.catalog}`);
         
         if (response.ok) {
           const apiResult = await response.json();

@@ -1,6 +1,11 @@
+/* eslint-env serviceworker */
+/* global self, caches, fetch, console, URL, Response */
+
 // Service Worker para Radio Importante PWA
 // Estratégia: Cache-first para UI, Network-only para áudio
-// Otimizado para iOS PWA Back  console.log('🎵 Service Worker do Radio Importante carregado (v4 - HTTPS backend configurado)');round Audio
+// Otimizado para iOS PWA Background Audio
+
+console.log('🎵 Service Worker do Radio Importante carregado (v4 - HTTPS backend configurado)');
 
 const CACHE_NAME = 'radio-importante-v4'; // Incrementar versão para forçar atualização
 const STATIC_CACHE_URLS = [
