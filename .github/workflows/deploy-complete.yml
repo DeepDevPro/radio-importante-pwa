@@ -180,29 +180,32 @@ jobs:
       run: |
         echo "Obtendo URL do environment..."
         
-        # Usar AWS CLI diretamente para obter a URL
-        URL=$(aws elasticbeanstalk describe-environments 
-          --environment-names radio-importante-backend-prod 
-          --region us-west-2 
-          --query 'Environments[0].CNAME' 
+        # 1) Pega só o CNAME em TEXTO (ou 'None' se não existir)
+        URL=$(aws elasticbeanstalk describe-environments \
+          --environment-names radio-importante-backend-prod \
+          --region us-west-2 \
+          --query 'Environments[0].CNAME' \
           --output text 2>/dev/null || echo "")
         
+        # 2) Se vazio ou "None", aborta de forma amigável
         if [ -z "$URL" ] || [ "$URL" = "None" ]; then
           echo "❌ Não foi possível obter a URL do environment"
-          echo "Tentando obter informações do environment..."
-          aws elasticbeanstalk describe-environments 
-            --environment-names radio-importante-backend-prod 
+          aws elasticbeanstalk describe-environments \
+            --environment-names radio-importante-backend-prod \
             --region us-west-2
           exit 1
         fi
         
-        # Adicionar protocolo se não tiver
-        if [[ ! "$URL" =~ ^https?:// ]]; then
-          URL="http://$URL"
-        fi
+        # 3) Garante protocolo
+        case "$URL" in
+          http://*|https://*) ;;                # já tem
+          *) URL="http://$URL" ;;
+        esac
         
         echo "✅ Backend URL: $URL"
-        echo "backend_url=$URL" >> $GITHUB_OUTPUT
+        
+        # 4) Só agora escreve no GITHUB_OUTPUT (sem JSON, só texto simples)
+        echo "backend_url=$URL" >> "$GITHUB_OUTPUT"
 
   deploy-frontend:
     name: 🎨 Deploy Frontend
