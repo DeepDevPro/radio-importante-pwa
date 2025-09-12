@@ -44,8 +44,10 @@ app.get('/health', (req, res) => {
 // Configuração do multer para upload
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    // Usar caminho baseado no ambiente
-    const baseDir = process.env.UPLOAD_DIR || path.join(__dirname, '../public/audio');
+    // No Elastic Beanstalk, usar /tmp que é writable
+    const baseDir = process.env.NODE_ENV === 'production' 
+      ? '/tmp/audio'
+      : './public/audio';
     
     // Criar diretório se não existir
     if (!fs.existsSync(baseDir)) {
