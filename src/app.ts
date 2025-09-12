@@ -88,8 +88,11 @@ class RadioImportanteApp {
   private async registerServiceWorker(): Promise<void> {
     if ('serviceWorker' in navigator) {
       try {
-        const registration = await navigator.serviceWorker.register('/sw.js');
+        // Adicionar timestamp para forçar cache bust
+        const timestamp = Date.now();
+        const registration = await navigator.serviceWorker.register(`/sw.js?v=${timestamp}`);
         console.log('✅ Service Worker registrado:', registration.scope);
+        console.log('🔄 SW Cache bust timestamp:', timestamp);
         
         // Verificar se há atualizações
         registration.addEventListener('updatefound', () => {
