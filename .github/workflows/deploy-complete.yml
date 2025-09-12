@@ -205,7 +205,7 @@ jobs:
         echo "✅ Backend URL: $URL"
         
         # 4) Só agora escreve no GITHUB_OUTPUT (sem JSON, só texto simples)
-        echo "backend_url=$URL" >> "$GITHUB_OUTPUT"
+        echo "url=$URL" >> "$GITHUB_OUTPUT"
 
   deploy-frontend:
     name: 🎨 Deploy Frontend

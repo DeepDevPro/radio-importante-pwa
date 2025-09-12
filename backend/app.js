@@ -109,7 +109,43 @@ app.get('/api/catalog', (req, res) => {
   res.json(catalog);
 });
 
-app.post('/api/upload', upload.array('audioFiles'), (req, res) => {
+// Middleware flexível para upload que aceita múltiplos nomes de campo
+const flexibleUpload = (req, res, next) => {
+  // Tenta primeiro 'audioFiles'
+  upload.array('audioFiles')(req, res, (err) => {
+    if (err && err.code === 'LIMIT_UNEXPECTED_FILE') {
+      // Se falhou com 'audioFiles', tenta 'file'
+      upload.array('file')(req, res, (err2) => {
+        if (err2 && err2.code === 'LIMIT_UNEXPECTED_FILE') {
+          // Se ambos falharam, tenta upload single 'file'
+          upload.single('file')(req, res, (err3) => {
+            if (err3) {
+              return res.status(400).json({
+                success: false,
+                message: 'Campo de arquivo não reconhecido. Use "audioFiles" ou "file"',
+                expectedFields: ['audioFiles', 'file'],
+                error: err3.message
+              });
+            }
+            // Converte single file para array para compatibilidade
+            if (req.file) req.files = [req.file];
+            next();
+          });
+        } else if (err2) {
+          return res.status(400).json({ success: false, message: err2.message });
+        } else {
+          next();
+        }
+      });
+    } else if (err) {
+      return res.status(400).json({ success: false, message: err.message });
+    } else {
+      next();
+    }
+  });
+};
+
+app.post('/api/upload', flexibleUpload, (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({
