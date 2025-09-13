@@ -1,3 +1,4 @@
+/* eslint-env node */
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
@@ -44,10 +45,8 @@ app.get('/health', (req, res) => {
 // Configuração do multer para upload
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    // Use /tmp in production, otherwise write into the project's public/audio using process.cwd()
-    const baseDir = process.env.NODE_ENV === 'production'
-      ? '/tmp/audio'
-      : path.join(process.cwd(), 'public', 'audio');
+    // Prefer configurable UPLOAD_PATH so platform can mount persistent storage there.
+    const baseDir = process.env.UPLOAD_PATH || path.join(process.cwd(), 'public', 'audio');
 
     // Criar diretório se não existir
     if (!fs.existsSync(baseDir)) {
@@ -249,7 +248,8 @@ app.delete('/api/delete/:id', (req, res) => {
     
     // Remover arquivo físico
     if (deletedTrack.filename) {
-      const filePath = path.join(__dirname, '../public/audio', deletedTrack.filename);
+      const uploadsDir = process.env.UPLOAD_PATH || path.join(process.cwd(), 'public', 'audio');
+      const filePath = path.join(uploadsDir, deletedTrack.filename);
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
         console.log(`🗑️ Arquivo removido: ${deletedTrack.filename}`);
@@ -344,6 +344,7 @@ app.listen(PORT, () => {
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
   console.log(`📁 Catalog tracks: ${catalog.tracks.length}`);
+  console.log(`📁 Upload path: ${process.env.UPLOAD_PATH || path.join(process.cwd(), 'public', 'audio')}`);
 });
 
 // Graceful shutdown
