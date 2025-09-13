@@ -2,51 +2,201 @@
 
 > **Projeto**: PWA Music Player "Radio Importante"  
 > **Data de criação**: 29/08/2025  
-> **Última atualização**: 04/01/2025  
-> **Status**: 🎉 **SISTEMA COMPLETO FUNCIONAL - CRISE RESOLVIDA - v2.2.4 OPERACIONAL**
+> **Última atualização**: 12/09/2025  
+> **Status**: 🚨 **PROBLEMAS CRÍTICOS ATIVO - MÚLTIPLAS FALHAS DE DEPLOY**
 
 ---
 
-## 🚨 **ATUALIZAÇÃO CRÍTICA - CRISE RESOLVIDA (04/01/2025)**
+## 🚨 **SITUAÇÃO CRÍTICA ATUAL (12/09/2025)**
 
-### ✅ **SITUAÇÃO CRÍTICA RESOLVIDA COM SUCESSO**
+### ❌ **PROBLEMAS MÚLTIPLOS NÃO RESOLVIDOS**
 
-**Problema crítico identificado e resolvido:**
-- ❌ **Crisis original**: GitHub Actions deployments falhando com status UNPROCESSED
-- ❌ **Root cause**: Arquivo `backend/app.js` completamente vazio (0 bytes)
-- ❌ **Impact**: Backend AWS não conseguia inicializar, aplicação inoperante
-- ❌ **Workflows**: Múltiplos workflows duplicados causando conflitos
+**⚠️ ATENÇÃO DESENVOLVEDORES**: O status indicado como "tudo funcionando" está **DESATUALIZADO E INCORRETO**. 
 
-**Soluções implementadas:**
-- ✅ **app.js restaurado**: Código Express completo implementado com health endpoint
-- ✅ **v2.2.4 deployed**: Backend funcional em produção AWS Elastic Beanstalk
-- ✅ **Workflows limpos**: Duplicatas removidas, apenas deploy-backend-simple.yml ativo
-- ✅ **GitHub Actions**: Funcionando corretamente com status SUCCESS
-- ✅ **Metadata editor**: Feature confirmada integrada no main branch
+#### 🔥 **PROBLEMAS CRÍTICOS ATIVOS:**
 
-**Status atual do sistema:**
+### **1. GitHub Actions - Deploy Falhando Sistematicamente**
 ```bash
-✅ Backend Health Check: {"status":"ok","timestamp":"2025-01-04..."}
-✅ AWS Environment: radio-importante-backend-prod RUNNING
-✅ GitHub Workflows: Clean, no duplicates, functioning
-✅ Editor de Metadados: Integrated and working in admin.html
-✅ Deploy v2.2.4: Successful and operational
+❌ Status: FAILING - Integration Tests
+❌ Erro: "BACKEND_URL="" - curl: (3) URL rejected: No host part in the URL"
+❌ Cause: Mismatch entre output.backend_url vs output.url no workflow
+❌ Impact: Deploy pipeline completamente quebrado
 ```
 
-### 📋 **LIÇÕES APRENDIDAS DA CRISE**
+**Detalhes técnicos:**
+- **Arquivo**: `.github/workflows/deploy-complete.yml`
+- **Problema**: Step `get-url` seta `backend_url` mas job espera `url`
+- **Linha 51**: `backend_url: ${{ steps.get-url.outputs.url }}`
+- **Linha 208**: `echo "backend_url=$URL" >> "$GITHUB_OUTPUT"`
+- **Conflito**: Inconsistência entre nome setado vs esperado
 
-**Critical debugging methodology:**
-1. **Workflow analysis**: Started with GitHub Actions logs investigation
-2. **Backend diagnosis**: Discovered empty app.js file (0 bytes)
-3. **File restoration**: Rebuilt Express server with proper health endpoints  
-4. **Workflow cleanup**: Removed duplicate workflows causing conflicts
-5. **Successful deployment**: v2.2.4 fully functional
+### **2. AWS Elastic Beanstalk - Status "Severe" Recorrente**
+```bash
+❌ Environment: radio-importante-backend-prod 
+❌ Health: Severe (Nginx configuration failures)
+❌ Deploy: #11+ falhas consecutivas desde 12/09
+```
 
-**Prevention measures for future:**
-- Regular file size validation in CI/CD
-- Automated health checks post-deployment
-- Workflow duplication monitoring
-- Feature branch integration verification
+**Problemas identificados nos logs:**
+```bash
+# Nginx Errors:
+2025/09/12 14:47:25 [emerg] "client_body_timeout" directive is duplicate in /var/proxy/staging/nginx/conf.d/upload.conf:5
+2025/09/12 14:07:54 [emerg] "client_header_timeout" directive is not allowed here in /var/proxy/staging/nginx/conf.d/elasticbeanstalk/01_upload.conf:22
+
+# Upload Errors:
+Sep 12 13:55:33 Error: EACCES: permission denied, mkdir '/var/app/public/audio'
+Sep 12 13:42:34 Error: MulterError: Unexpected field
+
+# Proxy Errors:
+recv() failed (104: Connection reset by peer) while reading response header from upstream
+```
+
+### **3. Service Worker v5 - Mixed Content Não Resolvido**
+```bash
+❌ Issue: Mixed Content warnings persistem
+❌ Cause: Service Worker cache busting não eliminou todas as referências HTTP
+❌ Impact: PWA não funciona corretamente em produção HTTPS
+```
+
+### **4. Upload System - MulterError Crítico**
+```bash
+❌ Error: MulterError: Unexpected field
+❌ Field Expected: 'audioFiles' 
+❌ Field Received: 'file'
+❌ Code: 'LIMIT_UNEXPECTED_FILE'
+❌ Impact: Sistema de upload completamente inoperante
+```
+
+---
+
+## 🔧 **CORREÇÕES APLICADAS (SEM SUCESSO)**
+
+### **Tentativas Recentes (commits 318f542 → afe9dac):**
+
+1. **Fix GitHub Actions output mismatch**
+   - ✅ Tentativa: Corrigir `backend_url` → `url` no GITHUB_OUTPUT
+   - ❌ Status: Ainda falhando (logs mostram BACKEND_URL="")
+
+2. **Fix Nginx duplicate directives**
+   - ✅ Tentativa: Remover diretivas duplicadas de `upload.conf`
+   - ❌ Status: Environment ainda "Severe"
+
+3. **Fix upload paths and permissions**
+   - ✅ Tentativa: Mudar `/var/app/public/audio` → `/tmp/audio`
+   - ❌ Status: MulterError persistindo
+
+4. **Add flexible upload middleware**
+   - ✅ Tentativa: Aceitar 'audioFiles' ou 'file' fields
+   - ❌ Status: Não testado devido a deploy falhas
+
+---
+
+## 🚨 **STATUS REAL DO SISTEMA (NÃO O DOCUMENTADO)**
+
+### **❌ INFRAESTRUTURA QUEBRADA**
+```bash
+❌ Frontend: https://radio.importantestudio.com (pode estar desatualizado)
+❌ Backend: radio-importante-backend-prod.eba-heipfui9.us-west-2.elasticbeanstalk.com (SEVERE)
+❌ GitHub Actions: deploy-complete.yml (FAILING - 10+ consecutive failures)
+❌ Upload System: Inoperante (MulterError + path issues)
+❌ Service Worker: Mixed Content warnings (v5 não resolve)
+```
+
+### **❌ FUNCIONALIDADES QUEBRADAS**
+- ❌ **Upload de arquivos**: MulterError + permission denied
+- ❌ **Deploy automático**: GitHub Actions falha sistematicamente
+- ❌ **Backend health**: Environment status "Severe"
+- ❌ **PWA em produção**: Mixed Content bloqueia funcionalidades
+- ❌ **Integration tests**: BACKEND_URL vazio causa falhas
+
+---
+
+## 📋 **PLANO DE RECUPERAÇÃO URGENTE**
+
+### **Prioridade 1: GitHub Actions**
+```bash
+1. Debugar mismatch output.backend_url vs output.url
+2. Verificar se aws elasticbeanstalk describe-environments retorna dados
+3. Testar URL extraction e protocol handling
+4. Validar integration tests com URL correta
+```
+
+### **Prioridade 2: AWS EB Environment**
+```bash
+1. Resolver Nginx configuration conflicts
+2. Separar diretivas por contexto (http vs server vs location)
+3. Corrigir upload directory permissions (/tmp vs /var/app)
+4. Testar deploy manual via console AWS
+```
+
+### **Prioridade 3: Upload System**
+```bash
+1. Debugar field name mismatch (audioFiles vs file)
+2. Testar middleware flexível em produção
+3. Verificar frontend consistency nos form fields
+4. Validar file upload paths e permissions
+```
+
+### **Prioridade 4: Service Worker**
+```bash
+1. Audit completo de URLs HTTP residuais
+2. Verificar cache invalidation force refresh
+3. Testar em dispositivo real iOS Safari
+4. Confirmar PWA functionality post-fix
+```
+
+---
+
+## 🔍 **DEBUGGING INFORMATION PARA DEVS**
+
+### **Key Files to Check:**
+```bash
+/.github/workflows/deploy-complete.yml  # Line 51 vs 208 mismatch
+/backend/.platform/nginx/conf.d/       # Multiple config conflicts
+/backend/app.js                        # Multer configuration
+/public/sw.js                          # Service Worker v5 
+/src/config/api.ts                     # API URL configuration
+```
+
+### **Critical Log Locations:**
+```bash
+/var/log/nginx/error.log               # Nginx directive conflicts
+/var/log/web.stdout.log                # Node.js/Express errors
+/var/log/eb-engine.log                 # EB deployment failures
+GitHub Actions logs                     # Integration test failures
+```
+
+### **Testing Commands:**
+```bash
+# Local backend test:
+curl http://localhost:8080/health
+
+# Production backend test (se environment não estiver severe):
+curl https://radio-importante-backend-prod.eba-heipfui9.us-west-2.elasticbeanstalk.com/health
+
+# Upload test:
+curl -X POST -F "audioFiles=@test.mp3" http://localhost:8080/api/upload
+
+# AWS EB status:
+aws elasticbeanstalk describe-environments --environment-names radio-importante-backend-prod
+```
+
+---
+
+## ⚠️ **IMPORTANTE PARA PRÓXIMOS DESENVOLVEDORES**
+
+1. **NÃO confiar no status "tudo funcionando"** - está desatualizado
+2. **Sempre verificar GitHub Actions** antes de assumir deploy success
+3. **Checar AWS EB environment health** - status "Severe" é crítico
+4. **Testar upload functionality** - sistema atualmente quebrado
+5. **Validar Service Worker** em device real - Mixed Content persiste
+
+### **Última Verificação Real:**
+- **Data**: 12/09/2025
+- **Deploy Status**: FAILING (10+ consecutive failures)
+- **EB Health**: SEVERE
+- **Upload**: BROKEN (MulterError)
+- **GitHub Actions**: BROKEN (BACKEND_URL empty)
 
 ---
 
@@ -367,6 +517,11 @@ option_settings:
     NODE_ENV: production
     PORT: 8080
     AWS_REGION: us-west-2
+  aws:autoscaling:launchconfig:
+    InstanceType: t3.micro
+    IamInstanceProfile: aws-elasticbeanstalk-ec2-role
+  aws:elasticbeanstalk:environment:
+    ServiceRole: aws-elasticbeanstalk-service-role
 ```
 
 ##### **3.3 Opções de Deploy Disponíveis ✅**
@@ -988,3 +1143,189 @@ Esta crise demonstrou a importância de:
 **Este case study serve como template para resolver futuras crises técnicas no projeto e em projetos similares.**
 
 ---
+
+## 🔬 **ANÁLISE TÉCNICA DETALHADA DOS PROBLEMAS ATUAIS**
+
+### **1. GitHub Actions Pipeline Breakdown**
+
+#### **Workflow Structure Issues:**
+```yaml
+# File: .github/workflows/deploy-complete.yml
+# PROBLEMA: Inconsistência entre output names
+
+deploy-backend:
+  outputs:
+    backend_url: ${{ steps.get-url.outputs.url }}  # ← Espera 'url'
+
+# Mas o step seta 'backend_url':
+- name: 🔍 Get backend URL
+  id: get-url
+  run: |
+    echo "backend_url=$URL" >> "$GITHUB_OUTPUT"  # ← Seta 'backend_url'
+```
+
+**Root Cause:** Variable name mismatch causes empty BACKEND_URL in integration tests.
+
+#### **Failed Integration Test Pattern:**
+```bash
+test-integration:
+  run: |
+    BACKEND_URL="${{ needs.deploy-backend.outputs.backend_url }}"  # ← Gets empty
+    echo "Testing backend at: $BACKEND_URL"                       # ← Shows empty
+    curl -f "$BACKEND_URL/health"                                 # ← Fails with URL error
+```
+
+### **2. AWS Elastic Beanstalk Configuration Conflicts**
+
+#### **Nginx Directive Context Violations:**
+```nginx
+# PROBLEMA 1: /backend/.platform/nginx/conf.d/upload.conf
+client_body_timeout 300s;    # ← DUPLICATE: também em 00_server_timeouts.conf
+
+# PROBLEMA 2: /backend/.platform/nginx/conf.d/elasticbeanstalk/01_upload.conf  
+client_header_timeout 60s;  # ← INVALID: não permitido em context location{}
+```
+
+**Nginx Context Rules:**
+- `client_body_timeout`: Permitido apenas em `http{}` ou `server{}`
+- `client_header_timeout`: Permitido apenas em `http{}` ou `server{}`
+- **Location context**: Não aceita client timeout directives
+
+#### **Directory Permission Architecture:**
+```bash
+# AWS EB File System Layout:
+/var/app/current/          # Application code (read-only)
+/var/app/public/           # Public assets (read-only) 
+/tmp/                      # Writable directory (correct for uploads)
+
+# CURRENT ISSUE:
+mkdirSync('/var/app/public/audio')  # ❌ Permission denied
+# SOLUTION:
+mkdirSync('/tmp/audio')             # ✅ Should work
+```
+
+### **3. Multer Upload Field Mismatch Debugging**
+
+#### **Frontend-Backend Contract:**
+```javascript
+// Frontend (src/admin-simple.ts):
+formData.append('audioFiles', cleanFile);  // ✅ Correct
+
+// Backend (backend/app.js):
+upload.array('audioFiles')                  // ✅ Expects 'audioFiles'
+
+// ERROR LOGS:
+MulterError: Unexpected field 'file'        // ❌ Someone sending 'file'
+```
+
+**Possible Sources of 'file' field:**
+1. External API testing tools (Postman, curl)
+2. Different admin interfaces (admin.html vs admin-simple.ts)
+3. Legacy code or test files
+4. Health check probes
+
+#### **Flexible Middleware Solution Implemented:**
+```javascript
+const flexibleUpload = (req, res, next) => {
+  // Try 'audioFiles' first
+  upload.array('audioFiles')(req, res, (err) => {
+    if (err && err.code === 'LIMIT_UNEXPECTED_FILE') {
+      // Fallback to 'file'
+      upload.array('file')(req, res, (err2) => {
+        // Handle both cases
+      });
+    }
+  });
+};
+```
+
+### **4. Service Worker Mixed Content Persistence**
+
+#### **Cache Invalidation Issues:**
+```javascript
+// Current SW version:
+const CACHE_NAME = 'radio-importante-v5';
+
+// PROBLEM: Previous HTTP URLs may still be cached
+// Even with force refresh mechanism
+```
+
+**Potential HTTP References:**
+```bash
+# Check for remaining HTTP calls:
+grep -r "http://" src/ public/ --exclude-dir=node_modules
+grep -r "localhost" src/ public/ --exclude-dir=node_modules  
+grep -r "127.0.0.1" src/ public/ --exclude-dir=node_modules
+```
+
+---
+
+## 🛠️ **RECOVERY CHECKLIST PARA DESENVOLVEDORES**
+
+### **Step 1: Fix GitHub Actions (CRITICAL)**
+```bash
+# Edit .github/workflows/deploy-complete.yml
+# Line 208: Change from
+echo "backend_url=$URL" >> "$GITHUB_OUTPUT"
+# TO:
+echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+# Verify job output reference (line 51):
+backend_url: ${{ steps.get-url.outputs.url }}  # Should match 'url'
+```
+
+### **Step 2: Fix Nginx Configuration**
+```bash
+# Remove from upload.conf:
+client_body_timeout 300s;
+client_header_timeout 300s;
+
+# Keep only in 00_server_timeouts.conf:
+client_header_timeout 60s;
+client_body_timeout 600s;
+
+# Remove from elasticbeanstalk/01_upload.conf:
+# All client_* timeout directives (invalid in location context)
+```
+
+### **Step 3: Fix Upload Directory**
+```javascript
+// In backend/app.js, ensure:
+const baseDir = process.env.NODE_ENV === 'production' 
+  ? '/tmp/audio'           // ✅ Writable in EB
+  : './public/audio';      // ✅ Local development
+```
+
+### **Step 4: Test and Deploy**
+```bash
+# Local testing:
+npm run build
+cd backend && node app.js
+curl http://localhost:8080/health
+
+# Commit and push:
+git add .
+git commit -m "Fix: GitHub Actions output + Nginx + upload paths"
+git push origin main
+
+# Monitor GitHub Actions:
+# https://github.com/DeepDevPro/radio-importante-pwa/actions
+```
+
+---
+
+## 📞 **CONTATO PARA EMERGÊNCIAS**
+
+Se estes problemas persistirem após as correções acima:
+
+1. **Verificar logs em tempo real:**
+   ```bash
+   aws logs tail /aws/elasticbeanstalk/radio-importante-backend-prod/var/log/eb-engine.log --follow
+   ```
+
+2. **Deploy manual via console AWS** se GitHub Actions continuar falhando
+
+3. **Rollback para versão funcional anterior** se necessário
+
+**Status Report:** Updated 12/09/2025 by AI Assistant durante debugging session
+**Next Review:** Após aplicação das correções listadas acima
