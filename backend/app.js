@@ -22,6 +22,10 @@ app.use((req, res, next) => {
   next();
 });
 
+// Servir arquivos estáticos de audio
+const audioPath = process.env.UPLOAD_PATH || path.join(process.cwd(), 'public', 'audio');
+app.use('/audio', express.static(audioPath));
+
 // Health check endpoints
 app.get('/', (req, res) => {
   res.json({ 
