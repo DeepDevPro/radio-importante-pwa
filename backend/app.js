@@ -44,11 +44,11 @@ app.get('/health', (req, res) => {
 // Configuração do multer para upload
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    // No Elastic Beanstalk, usar /tmp que é writable
-    const baseDir = process.env.NODE_ENV === 'production' 
+    // Use /tmp in production, otherwise write into the project's public/audio using process.cwd()
+    const baseDir = process.env.NODE_ENV === 'production'
       ? '/tmp/audio'
-      : './public/audio';
-    
+      : path.join(process.cwd(), 'public', 'audio');
+
     // Criar diretório se não existir
     if (!fs.existsSync(baseDir)) {
       fs.mkdirSync(baseDir, { recursive: true });
@@ -80,7 +80,7 @@ let catalog = {
 
 // Tentar carregar catálogo existente
 try {
-  const catalogPath = path.join(__dirname, '../public/data/catalog.json');
+  const catalogPath = process.env.CATALOG_PATH || path.join(process.cwd(), 'public', 'data', 'catalog.json');
   if (fs.existsSync(catalogPath)) {
     const catalogData = fs.readFileSync(catalogPath, 'utf8');
     const loadedCatalog = JSON.parse(catalogData);
@@ -306,7 +306,7 @@ app.post('/api/clear-catalog', (req, res) => {
 // Função para salvar catálogo
 function saveCatalog() {
   try {
-    const catalogPath = path.join(__dirname, '../public/data/catalog.json');
+    const catalogPath = process.env.CATALOG_PATH || path.join(process.cwd(), 'public', 'data', 'catalog.json');
     const catalogDir = path.dirname(catalogPath);
     
     // Criar diretório se não existir
