@@ -1,0 +1,45 @@
+alerts:
+- rule: DEPLOYMENT_FAILED
+- rule: DOMAIN_FAILED
+envs:
+- key: UPLOAD_PATH
+  scope: RUN_AND_BUILD_TIME
+  value: /app/public/audio
+- key: CATALOG_PATH
+  scope: RUN_AND_BUILD_TIME
+  value: /app/public/data/catalog.json
+features:
+- buildpack-stack=ubuntu-22
+ingress:
+  rules:
+  - component:
+      name: radio-importante-pwa-backend
+    match:
+      path:
+        prefix: /
+name: radio-importante-pwa-backend
+region: atl
+services:
+- dockerfile_path: backend/Dockerfile
+  envs:
+  - key: PORT
+    scope: RUN_AND_BUILD_TIME
+    value: "8080"
+  - key: NODE_ENV
+    scope: RUN_AND_BUILD_TIME
+    value: production
+  - key: CATALOG_PATH
+    scope: RUN_AND_BUILD_TIME
+    value: /app/public/data/catalog.json
+  - key: FRONTEND_URL
+    scope: RUN_AND_BUILD_TIME
+    value: https://radio.importantestudio.com
+  github:
+    branch: main
+    deploy_on_push: true
+    repo: DeepDevPro/radio-importante-pwa
+  http_port: 8080
+  instance_count: 1
+  instance_size_slug: apps-s-1vcpu-1gb
+  name: radio-importante-pwa-backend
+  source_dir: backend
