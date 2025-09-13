@@ -16,7 +16,7 @@ const isProduction = window.location.hostname !== 'localhost' &&
 // URLs da API
 const API_CONFIG: ApiConfig = {
   baseUrl: isProduction 
-    ? 'https://backend.radio.importantestudio.com'
+    ? 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app'
     : 'http://localhost:8080', // Backend local na porta 8080
   endpoints: {
     health: '/health',

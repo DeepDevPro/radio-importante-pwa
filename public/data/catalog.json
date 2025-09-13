@@ -24,10 +24,18 @@
       "filename": "01 Intro (A Jazz Experiment).mp3",
       "duration": 0,
       "format": ".mp3"
+    },
+    {
+      "id": "track_1757728114493_0",
+      "title": "MrakReserva",
+      "artist": "Artista não definido",
+      "filename": "MrakReserva.mp4",
+      "duration": 0,
+      "format": ".mp4"
     }
   ],
   "metadata": {
-    "totalTracks": 3,
+    "totalTracks": 4,
     "totalDuration": 0,
     "artwork": "/icons/icon-192x192.png",
     "radioName": "Radio Importante"
