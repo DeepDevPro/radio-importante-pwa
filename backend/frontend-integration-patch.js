@@ -10,7 +10,7 @@ private checkEnvironmentAndSetup(): void {
   
   // Detectar backend URL
   this.backendUrl = isProduction 
-    ? 'https://radio-backend-prod.us-west-2.elasticbeanstalk.com'
+    ? 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app'
     : 'http://localhost:8080';
   
   if (isProduction) {

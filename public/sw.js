@@ -5,10 +5,10 @@
 // Estratégia: Cache-first para UI, Network-only para áudio
 // Otimizado para iOS PWA Background Audio
 
-console.log('🎵 Service Worker do Radio Importante carregado (v5 - HTTPS backend configurado - FORCE REFRESH)');
+console.log('🎵 Service Worker do Radio Importante carregado (v6 - DIGITAL OCEAN BACKEND - FORCE CACHE CLEAR)');
 console.log('⏰ SW Timestamp:', new Date().toISOString());
 
-const CACHE_NAME = 'radio-importante-v5'; // Incrementar versão para forçar atualização COMPLETA
+const CACHE_NAME = 'radio-importante-v6-digitalocean'; // NOVA versão para limpar cache completamente
 const STATIC_CACHE_URLS = [
   '/',
   '/index.html',
