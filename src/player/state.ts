@@ -290,7 +290,7 @@ export class StateManager {
     const filenameForUrl = track.safeFilename || track.filename;
     
     // Aplicar encoding básico apenas para espaços e caracteres especiais restantes
-    const sanitizedUrl = `/audio/${filenameForUrl.replace(/ /g, '%20').replace(/&/g, '%26').replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/,/g, '%2C')}`;
+    const sanitizedUrl = `${API_CONFIG.baseUrl}/audio/${filenameForUrl.replace(/ /g, '%20').replace(/&/g, '%26').replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/,/g, '%2C')}`;
     
     console.log('🔗 Filename original (exibição):', track.filename);
     console.log('🔗 Filename sanitizado (URL):', filenameForUrl);
@@ -310,16 +310,16 @@ export class StateManager {
     
     // 1. Tentar nome sanitizado se disponível
     if (track.safeFilename && track.safeFilename !== track.filename) {
-      const sanitizedUrl = `/audio/${track.safeFilename.replace(/ /g, '%20').replace(/&/g, '%26').replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/,/g, '%2C')}`;
+      const sanitizedUrl = `${API_CONFIG.baseUrl}/audio/${track.safeFilename.replace(/ /g, '%20').replace(/&/g, '%26').replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/,/g, '%2C')}`;
       urls.push(sanitizedUrl);
     }
     
     // 2. Tentar nome original com encoding básico
-    const originalUrl = `/audio/${track.filename.replace(/ /g, '%20').replace(/&/g, '%26').replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/,/g, '%2C')}`;
+    const originalUrl = `${API_CONFIG.baseUrl}/audio/${track.filename.replace(/ /g, '%20').replace(/&/g, '%26').replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/,/g, '%2C')}`;
     urls.push(originalUrl);
     
-    // 3. Tentar nome original sem encoding (últico recurso)
-    urls.push(`/audio/${track.filename}`);
+    // 3. Tentar nome original sem encoding (último recurso)
+    urls.push(`${API_CONFIG.baseUrl}/audio/${track.filename}`);
     
     console.log('🔗 URLs para tentar:', urls);
     return urls;
