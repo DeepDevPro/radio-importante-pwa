@@ -68,21 +68,25 @@ jobs:
           chmod +x scripts/s3-update-metadata.sh
           ./scripts/s3-update-metadata.sh -b "$S3_BUCKET" --all
 
-      - name: Invalidate critical paths on CloudFront
+      # TEMPORÁRIO: CloudFront invalidation desabilitado enquanto aguarda propagação IAM
+      - name: Invalidate critical paths on CloudFront (DISABLED)
         env:
           CF_DIST_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
         run: |
-          if [ -n "$CF_DIST_ID" ]; then
-            aws cloudfront create-invalidation \
-              --distribution-id "$CF_DIST_ID" \
-              --paths \
-                "/index.html" \
-                "/admin.html" \
-                "/manifest.webmanifest" \
-                "/sw.js" \
-                "/scripts/*" \
-                "/styles/*" \
-                "/data/*"
-          else
-            echo "CLOUDFRONT_DISTRIBUTION_ID not set; skipping invalidation"
-          fi
+          echo "CloudFront invalidation temporariamente desabilitado"
+          echo "Aguardando propagação das permissões IAM (5-15 min)"
+          echo "Distribution ID: $CF_DIST_ID"
+          # if [ -n "$CF_DIST_ID" ]; then
+          #   aws cloudfront create-invalidation \
+          #     --distribution-id "$CF_DIST_ID" \
+          #     --paths \
+          #       "/index.html" \
+          #       "/admin.html" \
+          #       "/manifest.webmanifest" \
+          #       "/sw.js" \
+          #       "/scripts/*" \
+          #       "/styles/*" \
+          #       "/data/*"
+          # else
+          #   echo "CLOUDFRONT_DISTRIBUTION_ID not set; skipping invalidation"
+          # fi
