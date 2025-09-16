@@ -1,9 +1,29 @@
 # 🔧 Guia Técnico - Radio Importante PWA
 
-> **Complemento**: PLANO_EXECUCAO_ATUALIZADO.md  
+> **Complemento**: PLANO_EXECUCAO.md  
 > **Foco**: Detalhes técnicos, troubleshooting e manutenção  
-> **Data**: 13/09/2025  
+> **Atualizado em**: 16/09/2025 21:15 UTC  
 > **Para**: Programador Junior/Amador
+
+---
+
+## 🆕 Atualizações Recentes (16/09/2025)
+
+### ✅ CloudFront + Deploy Pipeline
+```bash
+PROBLEMA: AccessDenied ao criar invalidations
+CAUSA: IAM Policy com Resource amarrado ao ARN específico
+SOLUÇÃO: Alterado para "Resource": "*"
+RESULTADO: Invalidation funcionando em ~2-3 min por deploy
+```
+
+### ✅ Vite Build / Admin Panel
+```bash
+PROBLEMA: admin.html antigo (2.195 bytes) servindo versão quebrada
+CAUSA: Vite não configurado para múltiplos entrypoints
+SOLUÇÃO: rollupOptions.input adicionou admin.html + novo src/admin.ts
+RESULTADO: Admin funcional (upload, health check, tabs, drag & drop)
+```
 
 ---
 
@@ -366,225 +386,82 @@ docker exec <container-id> env | grep UPLOAD_PATH
 
 ---
 
-## 📝 **CONFIGURAÇÕES IMPORTANTES**
-
-### **app-spec.yaml (Configuração do DigitalOcean)**
-```yaml
-# Configuração atual (funcional):
-name: radio-importante-pwa-backend
-region: atl
-services:
-- dockerfile_path: backend/Dockerfile
-  envs:
-  - key: PORT
-    scope: RUN_AND_BUILD_TIME
-    value: "8080"
-  - key: NODE_ENV
-    scope: RUN_AND_BUILD_TIME
-    value: production
-  - key: CATALOG_PATH
-    scope: RUN_AND_BUILD_TIME
-    value: /app/public/data/catalog.json
-  - key: FRONTEND_URL
-    scope: RUN_AND_BUILD_TIME
-    value: https://radio.importantestudio.com
-  github:
-    branch: main
-    deploy_on_push: true
-    repo: DeepDevPro/radio-importante-pwa
-  http_port: 8080
-  instance_count: 1          # IMPORTANTE: 1 para compatibilidade com storage local
-  instance_size_slug: apps-s-1vcpu-1gb
-  name: radio-importante-pwa-backend
-  source_dir: backend
+## 🎛️ Admin Panel (Implementação Técnica)
+```ts
+// src/admin.ts (resumo das responsabilidades)
+- Detecta backend disponível (produção ou local)
+- Health check automático com feedback visual
+- Drag & drop + input file tradicional
+- Validação de tipo de arquivo
+- Barra de progresso por upload
+- Tabs (Upload / Gerenciar) com toggling simples
+- Tratamento de erros centralizado
 ```
 
-### **Environment Variables (Produção)**
+### Estrutura de Seletores Importantes
+```html
+<div id="backend-status-indicator"></div>
+<div id="upload-container"></div>
+<input id="file-input" type="file" multiple />
+<div id="progress-area"></div>
+<div id="tabs">
+  <button data-tab="upload">Upload</button>
+  <button data-tab="manage">Gerenciar</button>
+</div>
+<div id="tab-upload"></div>
+<div id="tab-manage"></div>
+```
+
+### Fluxo de Upload no Admin (Frontend → Backend)
+```mermaid
+sequenceDiagram
+  participant U as Usuário
+  participant A as Admin UI
+  participant B as Backend
+  U->>A: Seleciona arrasta arquivos
+  A->>A: Valida extensão / tamanho
+  A->>B: POST /api/upload (FormData)
+  B-->>A: 200 { success, tracks }
+  A->>A: Atualiza UI (sucesso/erros)
+```
+
+### Melhoria Planejada (Gerenciamento de Arquivos)
 ```bash
-# CRÍTICAS para funcionamento:
-UPLOAD_PATH=/app/public/audio
-CATALOG_PATH=/app/public/data/catalog.json
-
-# IMPORTANTES para operação:
-PORT=8080
-NODE_ENV=production
-FRONTEND_URL=https://radio.importantestudio.com
-
-# Como configurar:
-1. DigitalOcean Dashboard
-2. Apps → radio-importante-pwa-backend  
-3. Settings → Environment Variables
-4. Add Variable ou Edit existente
-5. Save → Redeploy automático
-```
-
-### **CORS Configuration**
-```javascript
-// No backend/app.js:
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');           // Permite todos os origins
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);                              // Responde preflight requests
-  }
-  next();
-});
-
-// Para production específica, trocar '*' por:
-// res.header('Access-Control-Allow-Origin', process.env.FRONTEND_URL);
+FUTURO:
+- Listagem de arquivos via /api/catalog
+- Botão remover (DELETE /api/file/:id ou filename)
+- Preview inline de áudio/vídeo
+- Paginação simples (se > 50 arquivos)
 ```
 
 ---
 
-## 🚀 **MELHORIAS FUTURAS DETALHADAS**
-
-### **1. Implementar DigitalOcean Spaces (Storage Externo)**
-
-#### **Quando Implementar**
-```bash
-CENÁRIO: Quando precisar de múltiplas instâncias (scaling)
-PROBLEMA ATUAL: Com instance_count > 1, arquivos se perdem
-SOLUÇÃO: Storage centralizado via Spaces (S3-compatible)
-```
-
-#### **Passos de Implementação**
-```bash
-PASSO 1: Criar DigitalOcean Space
-- Dashboard → Spaces → Create Space
-- Nome: radio-importante-files  
-- Region: same as app (ATL1)
-- CDN: Enable para performance
-
-PASSO 2: Configurar Credentials
-- Generate API Key com Spaces permissions
-- Environment Variables:
-  SPACES_KEY=<access_key>
-  SPACES_SECRET=<secret_key>
-  SPACES_ENDPOINT=https://atl1.digitaloceanspaces.com
-  SPACES_BUCKET=radio-importante-files
-
-PASSO 3: Instalar SDK
-npm install aws-sdk
-
-PASSO 4: Modificar Upload
-// Substituir multer.diskStorage por:
-const multerS3 = require('multer-s3');
-const spacesEndpoint = new aws.Endpoint(process.env.SPACES_ENDPOINT);
-const s3 = new aws.S3({ endpoint: spacesEndpoint });
-
-const upload = multer({
-  storage: multerS3({
-    s3: s3,
-    bucket: process.env.SPACES_BUCKET,
-    key: function (req, file, cb) {
-      cb(null, 'audio/' + file.originalname)
+## 🔐 IAM / CloudFront (Referência Rápida)
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "CloudFrontInvalidation",
+      "Effect": "Allow",
+      "Action": [
+        "cloudfront:CreateInvalidation",
+        "cloudfront:GetInvalidation",
+        "cloudfront:ListInvalidations"
+      ],
+      "Resource": "*"
     }
-  })
-});
-
-PASSO 5: Modificar Serving  
-// Em vez de express.static, redirect para Spaces URL:
-app.get('/audio/:filename', (req, res) => {
-  const url = `${process.env.SPACES_ENDPOINT}/${process.env.SPACES_BUCKET}/audio/${req.params.filename}`;
-  res.redirect(url);
-});
-
-PASSO 6: Aumentar instance_count
-instance_count: 2  # ou mais
-```
-
-### **2. Database para Catálogo**
-
-#### **Quando Implementar**
-```bash
-CENÁRIO: 
-- Catálogo com > 1000 tracks
-- Necessidade de search/filter avançado
-- Multiple users/playlists
-- Backup automático importante
-```
-
-#### **Implementação PostgreSQL**
-```bash
-PASSO 1: Criar Managed Database
-- DigitalOcean Dashboard → Databases
-- Create → PostgreSQL  
-- Size: Basic ($15/mês)
-- Region: same as app
-
-PASSO 2: Instalar Dependencies
-npm install sequelize pg pg-hstore
-
-PASSO 3: Configurar Connection
-// config/database.js
-const { Sequelize } = require('sequelize');
-const sequelize = new Sequelize(process.env.DATABASE_URL);
-
-PASSO 4: Criar Models
-// models/Track.js
-const Track = sequelize.define('Track', {
-  title: DataTypes.STRING,
-  artist: DataTypes.STRING,
-  filename: DataTypes.STRING,
-  duration: DataTypes.INTEGER,
-  format: DataTypes.STRING
-});
-
-PASSO 5: Migrar Dados
-// Script para migrar de JSON para DB
-const catalog = JSON.parse(fs.readFileSync('catalog.json'));
-for (const track of catalog.tracks) {
-  await Track.create(track);
-}
-
-PASSO 6: Atualizar APIs
-// Em vez de catalog array:
-app.get('/api/catalog', async (req, res) => {
-  const tracks = await Track.findAll();
-  res.json({ tracks, metadata: {...} });
-});
-```
-
-### **3. Monitoring Avançado**
-
-#### **Implementar Application Performance Monitoring**
-```bash
-FERRAMENTA: New Relic ou DataDog
-BENEFÍCIOS:
-- Response time detalhado por endpoint
-- Error tracking automático  
-- Performance bottlenecks
-- User experience monitoring
-
-IMPLEMENTAÇÃO:
-npm install newrelic
-// Adicionar no início do app.js:
-require('newrelic');
-```
-
-#### **Implementar Structured Logging**
-```bash
-FERRAMENTA: Winston
-BENEFÍCIOS:
-- Logs estruturados (JSON)
-- Diferentes níveis (error, warn, info, debug)
-- Rotation automática
-- Searchable logs
-
-IMPLEMENTAÇÃO:
-npm install winston
-// logger.js
-const winston = require('winston');
-const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.json(),
-  transports: [
-    new winston.transports.File({ filename: 'error.log', level: 'error' }),
-    new winston.transports.File({ filename: 'combined.log' })
   ]
-});
+}
+```
+
+---
+
+## 📌 Notas de Organização
+```bash
+PLANO_EXECUCAO_ATUALIZADO.md → Depreciado (usar PLANO_EXECUCAO.md)
+PLANO_EXECUCAO.md → Fonte única de status + roadmap
+GUIA_TECNICO_DETALHADO.md → Este arquivo (how-to + manutenção)
 ```
 
 ---
@@ -623,6 +500,5 @@ const logger = winston.createLogger({
 
 ---
 
-*📅 Guia técnico criado em: 13/09/2025 22:30 UTC*  
-*🎯 Foco: Troubleshooting e manutenção para programador junior*  
-*📚 Referência: PLANO_EXECUCAO_ATUALIZADO.md*
+*📅 Guia técnico revisado em: 16/09/2025 21:15 UTC*  
+*📚 Referência principal: PLANO_EXECUCAO.md*

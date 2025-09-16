@@ -114,15 +114,37 @@ app.get('/api/catalog', (req, res) => {
 
 // Middleware flexível para upload que aceita múltiplos nomes de campo
 const flexibleUpload = (req, res, next) => {
+  console.log('🛰️ [flexibleUpload] Iniciando middleware');
+  console.log('🛰️ [flexibleUpload] Headers:', req.headers['content-type']);
+  console.log('🛰️ [flexibleUpload] Query:', req.query);
+
+  // Snapshot inicial de body (pode estar vazio antes do multer)
+  if (Object.keys(req.body || {}).length > 0) {
+    console.log('🛰️ [flexibleUpload] Body inicial (antes do parse):', req.body);
+  }
+
   // Tenta primeiro 'audioFiles'
   upload.array('audioFiles')(req, res, (err) => {
+    if (err) {
+      console.log('⚠️ [flexibleUpload] Tentativa com campo "audioFiles" falhou:', err.code, err.message);
+    } else if (req.files && req.files.length > 0) {
+      console.log(`✅ [flexibleUpload] Sucesso com campo "audioFiles" (${req.files.length} arquivo[s])`);
+    }
+
     if (err && err.code === 'LIMIT_UNEXPECTED_FILE') {
       // Se falhou com 'audioFiles', tenta 'file'
       upload.array('file')(req, res, (err2) => {
+        if (err2) {
+          console.log('⚠️ [flexibleUpload] Tentativa com campo "file" (array) falhou:', err2.code, err2.message);
+        } else if (req.files && req.files.length > 0) {
+          console.log(`✅ [flexibleUpload] Sucesso com campo "file" (array) (${req.files.length} arquivo[s])`);
+        }
+
         if (err2 && err2.code === 'LIMIT_UNEXPECTED_FILE') {
           // Se ambos falharam, tenta upload single 'file'
           upload.single('file')(req, res, (err3) => {
             if (err3) {
+              console.log('❌ [flexibleUpload] Tentativa com campo "file" (single) falhou:', err3.code, err3.message);
               return res.status(400).json({
                 success: false,
                 message: 'Campo de arquivo não reconhecido. Use "audioFiles" ou "file"',
@@ -130,8 +152,10 @@ const flexibleUpload = (req, res, next) => {
                 error: err3.message
               });
             }
-            // Converte single file para array para compatibilidade
-            if (req.file) req.files = [req.file];
+            if (req.file) {
+              console.log('✅ [flexibleUpload] Sucesso com campo "file" (single) 1 arquivo');
+              req.files = [req.file];
+            }
             next();
           });
         } else if (err2) {
@@ -149,8 +173,19 @@ const flexibleUpload = (req, res, next) => {
 };
 
 app.post('/api/upload', flexibleUpload, (req, res) => {
+  console.log('📥 [upload] Rota /api/upload chamada');
+  console.log('📥 [upload] Campos do body após multer:', Object.keys(req.body || {}));
+  if (req.files) {
+    console.log(`📥 [upload] Arquivos recebidos: ${req.files.length}`);
+    req.files.forEach((f, i) => {
+      console.log(`   • [${i}] originalname=${f.originalname} size=${f.size} mimetype=${f.mimetype}`);
+    });
+  } else {
+    console.log('📥 [upload] Nenhum arquivo em req.files');
+  }
   try {
     if (!req.files || req.files.length === 0) {
+      console.log('⚠️ [upload] Nenhum arquivo após middleware');
       return res.status(400).json({
         success: false,
         message: 'Nenhum arquivo enviado'
@@ -160,9 +195,7 @@ app.post('/api/upload', flexibleUpload, (req, res) => {
     const newTracks = [];
     
     req.files.forEach((file, index) => {
-      // Pegar duração enviada pelo frontend
       const duration = req.body[`duration_${index}`];
-      
       const track = {
         id: `track_${Date.now()}_${index}`,
         title: path.parse(file.originalname).name,
@@ -171,17 +204,15 @@ app.post('/api/upload', flexibleUpload, (req, res) => {
         duration: duration ? parseFloat(duration) : 0,
         format: path.extname(file.originalname).toLowerCase()
       };
-      
       newTracks.push(track);
       catalog.tracks.push(track);
     });
 
-    // Atualizar metadados
     catalog.metadata.totalTracks = catalog.tracks.length;
     catalog.metadata.totalDuration = catalog.tracks.reduce((sum, track) => sum + (track.duration || 0), 0);
-
-    // Salvar catálogo atualizado
     saveCatalog();
+
+    console.log(`✅ [upload] ${newTracks.length} arquivo(s) processado(s) com sucesso`);
 
     res.json({
       success: true,
@@ -191,7 +222,7 @@ app.post('/api/upload', flexibleUpload, (req, res) => {
     });
 
   } catch (error) {
-    console.error('Erro no upload:', error);
+    console.error('❌ [upload] Erro no upload:', error);
     res.status(500).json({
       success: false,
       message: 'Erro interno no upload',
