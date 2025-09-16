@@ -15,10 +15,6 @@ on:
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/deploy-frontend.yml"
-    paths-ignore:
-      - "backend/**"
-      - "**/*.md"
-      - "**/*.rtf"
   workflow_dispatch:
 
 concurrency:
