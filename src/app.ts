@@ -268,7 +268,7 @@ class RadioImportanteApp {
     // Atualizar Media Session com a faixa atual
     const currentTrack = this.stateManager.getCurrentTrack();
     if (currentTrack) {
-      this.mediaSession.updateMetadata(currentTrack.title, currentTrack.artist, '/icons/artwork.png');
+      this.mediaSession.updateMetadata(currentTrack.title, currentTrack.artist, '/img/Leo_R_161_small.webp');
     }
   }
 
@@ -370,7 +370,7 @@ class RadioImportanteApp {
       console.log(`🎵 Nova faixa: ${newTrack.title} - ${newTrack.artist}`);
       
       this.controls.updateTrackInfo(newTrack.title, newTrack.artist);
-      this.mediaSession.updateMetadata(newTrack.title, newTrack.artist, '/icons/artwork.png');
+      this.mediaSession.updateMetadata(newTrack.title, newTrack.artist, '/img/Leo_R_161_small.webp');
       
       // Se estava tocando, carregar e tocar automaticamente a nova faixa
       if (wasPlaying) {
@@ -443,7 +443,7 @@ class RadioImportanteApp {
     
     if (newTrack) {
       this.controls.updateTrackInfo(newTrack.title, newTrack.artist);
-      this.mediaSession.updateMetadata(newTrack.title, newTrack.artist, '/icons/artwork.png');
+      this.mediaSession.updateMetadata(newTrack.title, newTrack.artist, '/img/Leo_R_161_small.webp');
       
       // Se estiver tocando, carregar e reproduzir a nova faixa
       if (this.stateManager.getState().isPlaying) {
@@ -474,7 +474,7 @@ class RadioImportanteApp {
       
       // Atualizar UI e Media Session
       this.controls.updateTrackInfo(newTrack.title, newTrack.artist);
-      this.mediaSession.updateMetadata(newTrack.title, newTrack.artist, '/icons/artwork.png');
+      this.mediaSession.updateMetadata(newTrack.title, newTrack.artist, '/img/Leo_R_161_small.webp');
       
       // Carregar e tocar automaticamente a próxima faixa
       await this.loadAndPlayCurrentTrack();
