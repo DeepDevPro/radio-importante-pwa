@@ -11,7 +11,21 @@ declare global {
         switchTab: (tabName: string) => void;
         uploadFiles: () => Promise<void>;
         clearFiles: () => void;
+        loadMusicList: () => Promise<void>;
+        playPreview: (filename: string) => void;
+        deleteTrack: (trackId: string, filename: string) => Promise<void>;
+        editTrack: (trackId: string) => void;
     }
+}
+
+// Interface para track
+interface Track {
+    id: string;
+    title: string;
+    artist: string;
+    filename: string;
+    duration: number;
+    format: string;
 }
 
 // Configuração do backend
@@ -221,6 +235,171 @@ function clearFiles() {
 }
 
 /**
+ * Carrega e exibe a lista de músicas
+ */
+async function loadMusicList() {
+    if (!currentBackend) {
+        console.error('❌ Backend não disponível para carregar lista de músicas');
+        return;
+    }
+
+    const musicList = document.getElementById('music-list');
+    const musicTotals = document.getElementById('music-totals');
+    
+    if (!musicList) return;
+
+    try {
+        musicList.innerHTML = '🔄 Carregando músicas...';
+        
+        const response = await fetch(`${currentBackend}/api/catalog`);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const catalog = await response.json();
+        const tracks = catalog.tracks || [];
+        
+        if (musicTotals) {
+            musicTotals.innerHTML = `
+                📊 <strong>Total:</strong> ${tracks.length} música(s) • 
+                ⏱️ <strong>Duração:</strong> ${Math.round(catalog.metadata?.totalDuration || 0)}s
+            `;
+        }
+        
+        if (tracks.length === 0) {
+            musicList.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #666;">
+                    🎵 <strong>Nenhuma música encontrada</strong><br>
+                    <span style="font-size: 14px;">Faça upload de arquivos na aba "Upload"</span>
+                </div>
+            `;
+            return;
+        }
+        
+        musicList.innerHTML = tracks.map((track: Track) => `
+            <div class="music-item" style="border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin: 10px 0; background: #f9f9f9;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div style="flex: 1; min-width: 250px;">
+                        <div style="font-weight: bold; font-size: 16px; margin-bottom: 5px;">
+                            🎵 ${track.title || 'Título não definido'}
+                        </div>
+                        <div style="color: #666; font-size: 14px; margin-bottom: 5px;">
+                            👤 ${track.artist || 'Artista não definido'}
+                        </div>
+                        <div style="color: #888; font-size: 12px;">
+                            📁 ${track.filename} • 
+                            ⏱️ ${track.duration || 0}s • 
+                            🎼 ${track.format || 'N/A'}
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button onclick="playPreview('${track.filename}')" 
+                                style="padding: 8px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            ▶️ Preview
+                        </button>
+                        <button onclick="editTrack('${track.id}')" 
+                                style="padding: 8px 12px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            ✏️ Editar
+                        </button>
+                        <button onclick="deleteTrack('${track.id}', '${track.filename}')" 
+                                style="padding: 8px 12px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            🗑️ Deletar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+        
+    } catch (error) {
+        console.error('Erro ao carregar lista de músicas:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+        if (musicList) {
+            musicList.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #dc3545;">
+                    ❌ <strong>Erro ao carregar músicas:</strong> ${errorMessage}<br>
+                    <button onclick="loadMusicList()" style="margin-top: 10px; padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        🔄 Tentar Novamente
+                    </button>
+                </div>
+            `;
+        }
+    }
+}
+
+/**
+ * Preview de áudio
+ */
+function playPreview(filename: string) {
+    if (!currentBackend) return;
+    
+    const audioUrl = `${currentBackend}/audio/${encodeURIComponent(filename)}`;
+    
+    // Remove preview anterior se existir
+    const existingAudio = document.getElementById('preview-audio') as HTMLAudioElement;
+    if (existingAudio) {
+        existingAudio.pause();
+        existingAudio.remove();
+    }
+    
+    // Cria novo elemento de áudio
+    const audio = document.createElement('audio');
+    audio.id = 'preview-audio';
+    audio.controls = true;
+    audio.style.cssText = 'position: fixed; top: 10px; right: 10px; z-index: 1000; background: white; border: 2px solid #007bff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);';
+    audio.src = audioUrl;
+    
+    document.body.appendChild(audio);
+    
+    // Auto-remove após 30 segundos
+    setTimeout(() => {
+        if (audio.parentNode) {
+            audio.remove();
+        }
+    }, 30000);
+    
+    audio.play().catch(err => {
+        console.error('Erro ao reproduzir preview:', err);
+        alert('❌ Erro ao reproduzir áudio. Verifique se o arquivo existe.');
+    });
+}
+
+/**
+ * Deletar track
+ */
+async function deleteTrack(trackId: string, filename: string) {
+    if (!currentBackend) return;
+    
+    if (!confirm(`⚠️ Tem certeza que deseja deletar "${filename}"?\n\nEsta ação não pode ser desfeita.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${currentBackend}/api/delete/${trackId}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            alert('✅ Música deletada com sucesso!');
+            loadMusicList(); // Recarregar lista
+        } else {
+            const error = await response.json().catch(() => ({ message: `HTTP ${response.status}` }));
+            throw new Error(error.message || `HTTP ${response.status}`);
+        }
+    } catch (error) {
+        console.error('Erro ao deletar música:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+        alert(`❌ Erro ao deletar música: ${errorMessage}`);
+    }
+}
+
+/**
+ * Editar track (placeholder)
+ */
+function editTrack(trackId: string) {
+    alert(`🚧 Funcionalidade de edição em desenvolvimento.\n\nTrack ID: ${trackId}`);
+}
+
+/**
  * Funções globais para o HTML
  */
 window.switchTab = function(tabName: string) {
@@ -230,11 +409,24 @@ window.switchTab = function(tabName: string) {
     // Ativa a tab selecionada
     const activeTab = document.querySelector(`[onclick="switchTab('${tabName}')"]`);
     const activeContent = document.getElementById(`${tabName}-tab`);
-    if (activeTab && activeContent) { activeTab.classList.add('active'); activeTab.setAttribute('aria-selected', 'true'); activeContent.classList.add('active'); }
+    if (activeTab && activeContent) { 
+        activeTab.classList.add('active'); 
+        activeTab.setAttribute('aria-selected', 'true'); 
+        activeContent.classList.add('active');
+        
+        // Se mudou para a tab de gerenciar, carrega lista de músicas
+        if (tabName === 'manage') {
+            loadMusicList();
+        }
+    }
 };
 
 window.uploadFiles = uploadFiles;
 window.clearFiles = clearFiles;
+window.loadMusicList = loadMusicList;
+window.playPreview = playPreview;
+window.deleteTrack = deleteTrack;
+window.editTrack = editTrack;
 
 // Inicializa quando o DOM estiver pronto
 if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initAdmin); } else { initAdmin(); }
