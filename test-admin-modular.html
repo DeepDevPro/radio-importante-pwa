@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 TESTE Admin Modular - Radio Importante</title>
+    
+    <!-- CSS Modularizado -->
+    <link rel="stylesheet" href="dist/styles/reset.css">
+    <link rel="stylesheet" href="dist/styles/base.css">
+    <link rel="stylesheet" href="dist/styles/components.css">
+    <link rel="stylesheet" href="dist/styles/layout.css">
+    <link rel="stylesheet" href="dist/styles/admin.css">
+    
+    <!-- Força reload sem cache -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <style>
+        .test-banner {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .status-debug {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="test-banner">
+            🧪 TESTE - ADMIN MODULAR (SEM CACHE)
+        </div>
+        
+        <h1>🎵 Radio Importante - Admin</h1>
+
+        <div class="status-debug">
+            <h3>🔍 Debug do Sistema Modular:</h3>
+            <div id="module-status">Carregando módulos...</div>
+            <div id="config-status">Verificando configurações...</div>
+            <div id="backend-status">Testando backends...</div>
+        </div>
+
+        <!-- Status do Backend -->
+        <section class="status-panel" role="status" aria-live="polite">
+            <h3>🔧 Status do Sistema</h3>
+            <div id="backend-status-display" aria-label="Status atual do backend">
+                🔍 Verificando backends disponíveis...
+            </div>
+        </section>
+
+        <!-- Navegação por Tabs -->
+        <nav class="tabs" role="tablist" aria-label="Seções do admin">
+            <button class="tab active" role="tab" aria-selected="true" aria-controls="upload-tab" onclick="switchTab('upload')">
+                📤 Upload Rápido
+            </button>
+            <button class="tab" role="tab" aria-selected="false" aria-controls="manage-tab" onclick="switchTab('manage')">
+                🎵 Gerenciar Músicas
+            </button>
+        </nav>
+
+        <!-- Tab: Upload -->
+        <section id="upload-tab" class="tab-content active" role="tabpanel" aria-labelledby="upload-tab">
+            <div class="section">
+                <h2>📤 Upload de Arquivos de Áudio</h2>
+                
+                <div class="alert alert-info">
+                    ℹ️ <strong>TESTE:</strong> Este é o sistema modular funcionando!
+                </div>
+                
+                <!-- Status do upload -->
+                <div id="upload-status" aria-live="polite" aria-atomic="true"></div>
+            </div>
+        </section>
+
+        <!-- Tab: Gerenciar -->
+        <section id="manage-tab" class="tab-content" role="tabpanel" aria-labelledby="manage-tab">
+            <div class="section">
+                <h2>🎵 Gerenciar Biblioteca Musical</h2>
+                
+                <div class="alert alert-info">
+                    ✏️ <strong>TESTE:</strong> Sistema modular de gerenciamento
+                </div>
+                
+                <!-- Status do gerenciamento -->
+                <div id="manage-status" aria-live="polite" aria-atomic="true"></div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Scripts Modularizados -->
+    <script type="module">
+        import { API_CONFIG, isProduction } from './dist/scripts/config.js';
+        
+        // Debug do sistema modular
+        document.getElementById('module-status').innerHTML = '✅ Módulos ES6 carregados com sucesso!';
+        
+        document.getElementById('config-status').innerHTML = `
+            📍 Ambiente: ${isProduction ? 'PRODUÇÃO' : 'DESENVOLVIMENTO'}<br>
+            🌐 Backend URL: ${API_CONFIG.backendUrl}<br>
+            🔒 Protocolo: ${window.location.protocol}<br>
+            🏠 Hostname: ${window.location.hostname}
+        `;
+        
+        // Teste de backends
+        async function testBackends() {
+            const status = document.getElementById('backend-status');
+            
+            try {
+                // Teste do backend configurado
+                const response = await fetch(API_CONFIG.backendUrl + '/health');
+                if (response.ok) {
+                    status.innerHTML = `✅ Backend principal OK: ${API_CONFIG.backendUrl}`;
+                } else {
+                    status.innerHTML = `⚠️ Backend principal com problemas: ${response.status}`;
+                }
+            } catch (error) {
+                status.innerHTML = `❌ Erro no backend: ${error.message}`;
+                
+                // Se o backend principal falhar, tenta o backup
+                try {
+                    const backupResponse = await fetch(API_CONFIG.productionUrlBackup + '/health');
+                    if (backupResponse.ok) {
+                        status.innerHTML += `<br>✅ Backend backup OK: ${API_CONFIG.productionUrlBackup}`;
+                    }
+                } catch (backupError) {
+                    status.innerHTML += `<br>❌ Backend backup também falhou: ${backupError.message}`;
+                }
+            }
+        }
+        
+        // Inicia os testes
+        testBackends();
+        
+        // Função global para as tabs
+        window.switchTab = function(tabName) {
+            console.log('🔄 Mudando para tab:', tabName);
+            
+            // Remove active de todas as tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+                tab.setAttribute('aria-selected', 'false');
+            });
+            
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Ativa a tab selecionada
+            const selectedTab = document.querySelector(`[onclick="switchTab('${tabName}')"]`);
+            const selectedContent = document.getElementById(`${tabName}-tab`);
+            
+            if (selectedTab && selectedContent) {
+                selectedTab.classList.add('active');
+                selectedTab.setAttribute('aria-selected', 'true');
+                selectedContent.classList.add('active');
+            }
+        };
+        
+        console.log('🎯 TESTE MODULAR: Admin carregado com sucesso!');
+        console.log('📋 Configurações:', API_CONFIG);
+    </script>
+
+    <!-- Fallback para browsers sem suporte a módulos -->
+    <script nomodule>
+        alert('Seu navegador não suporta módulos ES6. Por favor, use um navegador mais recente.');
+    </script>
+</body>
+</html>

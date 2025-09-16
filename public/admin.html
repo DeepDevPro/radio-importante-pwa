@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Radio Importante</title>
+    
+    <!-- CSS Modularizado -->
+    <link rel="stylesheet" href="/styles/reset.css">
+    <link rel="stylesheet" href="/styles/base.css">
+    <link rel="stylesheet" href="/styles/components.css">
+    <link rel="stylesheet" href="/styles/layout.css">
+    <link rel="stylesheet" href="/styles/admin.css">
+    
+    <!-- Meta tags para PWA -->
+    <meta name="description" content="Interface de administração do Radio Importante">
+    <meta name="theme-color" content="#667eea">
+    
+    <!-- Preload de scripts críticos -->
+    <link rel="modulepreload" href="/scripts/config.js">
+    <link rel="modulepreload" href="/scripts/admin.js">
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 Radio Importante - Admin</h1>
+        
+        <!-- Navegação mínima (o JS monta o resto) -->
+        <nav class="nav-menu" role="navigation" aria-label="Menu principal"></nav>
+
+        <section class="status-panel" role="status" aria-live="polite"></section>
+
+        <nav class="tabs" role="tablist" aria-label="Seções do admin"></nav>
+
+        <section id="upload-tab" class="tab-content active" role="tabpanel" aria-labelledby="upload-tab"></section>
+        <section id="manage-tab" class="tab-content" role="tabpanel" aria-labelledby="manage-tab"></section>
+    </div>
+
+    <!-- Scripts Modularizados -->
+    <script type="module" src="/scripts/admin.js"></script>
+
+    <!-- Fallback para browsers sem suporte a módulos -->
+    <script nomodule>
+        alert('Seu navegador não suporta módulos ES6. Por favor, use um navegador mais recente.');
+    </script>
+
+    <!-- Service Worker para cache (opcional) -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => console.log('SW registrado:', registration))
+                    .catch(error => console.log('Erro no SW:', error));
+            });
+        }
+    </script>
+</body>
+</html>
