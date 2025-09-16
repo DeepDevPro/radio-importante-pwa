@@ -1,0 +1,570 @@
+2025-09-16T19:48:20.7552648Z Current runner version: '2.328.0'
+2025-09-16T19:48:20.7581952Z ##[group]Runner Image Provisioner
+2025-09-16T19:48:20.7582871Z Hosted Compute Agent
+2025-09-16T19:48:20.7583440Z Version: 20250829.383
+2025-09-16T19:48:20.7584163Z Commit: 27cb235aab5b0e52e153a26cd86b4742e89dac5d
+2025-09-16T19:48:20.7584898Z Build Date: 2025-08-29T13:48:48Z
+2025-09-16T19:48:20.7585554Z ##[endgroup]
+2025-09-16T19:48:20.7586157Z ##[group]Operating System
+2025-09-16T19:48:20.7586998Z Ubuntu
+2025-09-16T19:48:20.7587603Z 24.04.3
+2025-09-16T19:48:20.7588079Z LTS
+2025-09-16T19:48:20.7588578Z ##[endgroup]
+2025-09-16T19:48:20.7589192Z ##[group]Runner Image
+2025-09-16T19:48:20.7589781Z Image: ubuntu-24.04
+2025-09-16T19:48:20.7590323Z Version: 20250907.24.1
+2025-09-16T19:48:20.7591467Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20250907.24/images/ubuntu/Ubuntu2404-Readme.md
+2025-09-16T19:48:20.7593163Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20250907.24
+2025-09-16T19:48:20.7594315Z ##[endgroup]
+2025-09-16T19:48:20.7595484Z ##[group]GITHUB_TOKEN Permissions
+2025-09-16T19:48:20.7597954Z Contents: read
+2025-09-16T19:48:20.7598563Z Metadata: read
+2025-09-16T19:48:20.7599185Z ##[endgroup]
+2025-09-16T19:48:20.7601673Z Secret source: Actions
+2025-09-16T19:48:20.7602463Z Prepare workflow directory
+2025-09-16T19:48:20.8325683Z Prepare all required actions
+2025-09-16T19:48:20.8383326Z Getting action download info
+2025-09-16T19:48:21.1740352Z Download action repository 'actions/checkout@v4' (SHA:08eba0b27e820071cde6df949e0beb9ba4906955)
+2025-09-16T19:48:21.3605901Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2025-09-16T19:48:21.5250499Z Download action repository 'aws-actions/configure-aws-credentials@v4' (SHA:7474bc4690e29a8392af63c5b98e7449536d5c3a)
+2025-09-16T19:48:22.0982509Z Complete job name: build-and-deploy
+2025-09-16T19:48:22.1677888Z ##[group]Run actions/checkout@v4
+2025-09-16T19:48:22.1678929Z with:
+2025-09-16T19:48:22.1679481Z   repository: DeepDevPro/radio-importante-pwa
+2025-09-16T19:48:22.1680372Z   token: ***
+2025-09-16T19:48:22.1680806Z   ssh-strict: true
+2025-09-16T19:48:22.1681257Z   ssh-user: git
+2025-09-16T19:48:22.1681720Z   persist-credentials: true
+2025-09-16T19:48:22.1682226Z   clean: true
+2025-09-16T19:48:22.1682707Z   sparse-checkout-cone-mode: true
+2025-09-16T19:48:22.1683259Z   fetch-depth: 1
+2025-09-16T19:48:22.1683726Z   fetch-tags: false
+2025-09-16T19:48:22.1684199Z   show-progress: true
+2025-09-16T19:48:22.1684665Z   lfs: false
+2025-09-16T19:48:22.1685099Z   submodules: false
+2025-09-16T19:48:22.1685566Z   set-safe-directory: true
+2025-09-16T19:48:22.1686288Z env:
+2025-09-16T19:48:22.1687000Z   S3_BUCKET: ***
+2025-09-16T19:48:22.1687447Z ##[endgroup]
+2025-09-16T19:48:22.2795766Z Syncing repository: DeepDevPro/radio-importante-pwa
+2025-09-16T19:48:22.2798514Z ##[group]Getting Git version info
+2025-09-16T19:48:22.2799474Z Working directory is '/home/runner/work/radio-importante-pwa/radio-importante-pwa'
+2025-09-16T19:48:22.2800740Z [command]/usr/bin/git version
+2025-09-16T19:48:22.2872900Z git version 2.51.0
+2025-09-16T19:48:22.2899959Z ##[endgroup]
+2025-09-16T19:48:22.2917891Z Temporarily overriding HOME='/home/runner/work/_temp/9a91dd45-7957-488a-8075-b0c119de4552' before making global git config changes
+2025-09-16T19:48:22.2920678Z Adding repository directory to the temporary git global config as a safe directory
+2025-09-16T19:48:22.2933215Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/radio-importante-pwa/radio-importante-pwa
+2025-09-16T19:48:22.2972025Z Deleting the contents of '/home/runner/work/radio-importante-pwa/radio-importante-pwa'
+2025-09-16T19:48:22.2975618Z ##[group]Initializing the repository
+2025-09-16T19:48:22.2981472Z [command]/usr/bin/git init /home/runner/work/radio-importante-pwa/radio-importante-pwa
+2025-09-16T19:48:22.3101910Z hint: Using 'master' as the name for the initial branch. This default branch name
+2025-09-16T19:48:22.3103736Z hint: is subject to change. To configure the initial branch name to use in all
+2025-09-16T19:48:22.3105993Z hint: of your new repositories, which will suppress this warning, call:
+2025-09-16T19:48:22.3107993Z hint:
+2025-09-16T19:48:22.3109126Z hint: 	git config --global init.defaultBranch <name>
+2025-09-16T19:48:22.3110356Z hint:
+2025-09-16T19:48:22.3111532Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2025-09-16T19:48:22.3113341Z hint: 'development'. The just-created branch can be renamed via this command:
+2025-09-16T19:48:22.3114741Z hint:
+2025-09-16T19:48:22.3115516Z hint: 	git branch -m <name>
+2025-09-16T19:48:22.3116376Z hint:
+2025-09-16T19:48:22.3117833Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2025-09-16T19:48:22.3120285Z Initialized empty Git repository in /home/runner/work/radio-importante-pwa/radio-importante-pwa/.git/
+2025-09-16T19:48:22.3124141Z [command]/usr/bin/git remote add origin https://github.com/DeepDevPro/radio-importante-pwa
+2025-09-16T19:48:22.3164288Z ##[endgroup]
+2025-09-16T19:48:22.3165756Z ##[group]Disabling automatic garbage collection
+2025-09-16T19:48:22.3169640Z [command]/usr/bin/git config --local gc.auto 0
+2025-09-16T19:48:22.3202261Z ##[endgroup]
+2025-09-16T19:48:22.3203759Z ##[group]Setting up auth
+2025-09-16T19:48:22.3210576Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2025-09-16T19:48:22.3243822Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2025-09-16T19:48:22.3579612Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2025-09-16T19:48:22.3612333Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2025-09-16T19:48:22.3845812Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2025-09-16T19:48:22.3882113Z ##[endgroup]
+2025-09-16T19:48:22.3882970Z ##[group]Fetching the repository
+2025-09-16T19:48:22.3899410Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +5e59fe8ef9816023860482b543e1963b026a2ba0:refs/remotes/origin/main
+2025-09-16T19:48:23.8107031Z From https://github.com/DeepDevPro/radio-importante-pwa
+2025-09-16T19:48:23.8112120Z  * [new ref]         5e59fe8ef9816023860482b543e1963b026a2ba0 -> origin/main
+2025-09-16T19:48:23.8142497Z ##[endgroup]
+2025-09-16T19:48:23.8144435Z ##[group]Determining the checkout info
+2025-09-16T19:48:23.8146439Z ##[endgroup]
+2025-09-16T19:48:23.8149363Z [command]/usr/bin/git sparse-checkout disable
+2025-09-16T19:48:23.8193254Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2025-09-16T19:48:23.8222166Z ##[group]Checking out the ref
+2025-09-16T19:48:23.8225574Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2025-09-16T19:48:24.0651564Z Switched to a new branch 'main'
+2025-09-16T19:48:24.0653516Z branch 'main' set up to track 'origin/main'.
+2025-09-16T19:48:24.0679218Z ##[endgroup]
+2025-09-16T19:48:24.0720283Z [command]/usr/bin/git log -1 --format=%H
+2025-09-16T19:48:24.0744901Z 5e59fe8ef9816023860482b543e1963b026a2ba0
+2025-09-16T19:48:24.1071209Z ##[group]Run actions/setup-node@v4
+2025-09-16T19:48:24.1072471Z with:
+2025-09-16T19:48:24.1073363Z   node-version: 22
+2025-09-16T19:48:24.1074324Z   cache: npm
+2025-09-16T19:48:24.1075245Z   always-auth: false
+2025-09-16T19:48:24.1076288Z   check-latest: false
+2025-09-16T19:48:24.1077820Z   token: ***
+2025-09-16T19:48:24.1078733Z env:
+2025-09-16T19:48:24.1079705Z   S3_BUCKET: ***
+2025-09-16T19:48:24.1080636Z ##[endgroup]
+2025-09-16T19:48:24.2966863Z Found in cache @ /opt/hostedtoolcache/node/22.19.0/x64
+2025-09-16T19:48:24.2971296Z ##[group]Environment details
+2025-09-16T19:48:28.6572699Z node: v22.19.0
+2025-09-16T19:48:28.6573889Z npm: 10.9.3
+2025-09-16T19:48:28.6574131Z yarn: 1.22.22
+2025-09-16T19:48:28.6574851Z ##[endgroup]
+2025-09-16T19:48:28.6598164Z [command]/opt/hostedtoolcache/node/22.19.0/x64/bin/npm config get cache
+2025-09-16T19:48:29.1388517Z /home/runner/.npm
+2025-09-16T19:48:29.3283802Z Cache hit for: node-cache-Linux-x64-npm-1c9b01c0f9e67d57338bd3bb88ef94c77cf45d9db9fc6f8f090b56652f860546
+2025-09-16T19:48:30.0812559Z Received 17675402 of 17675402 (100.0%), 25.6 MBs/sec
+2025-09-16T19:48:30.0813607Z Cache Size: ~17 MB (17675402 B)
+2025-09-16T19:48:30.0845889Z [command]/usr/bin/tar -xf /home/runner/work/_temp/0b4b18c7-0ee5-42a7-83a9-3e0ccbae35df/cache.tzst -P -C /home/runner/work/radio-importante-pwa/radio-importante-pwa --use-compress-program unzstd
+2025-09-16T19:48:30.1425298Z Cache restored successfully
+2025-09-16T19:48:30.1469522Z Cache restored from key: node-cache-Linux-x64-npm-1c9b01c0f9e67d57338bd3bb88ef94c77cf45d9db9fc6f8f090b56652f860546
+2025-09-16T19:48:30.1676337Z ##[group]Run npm ci
+2025-09-16T19:48:30.1676974Z [36;1mnpm ci[0m
+2025-09-16T19:48:30.1905476Z shell: /usr/bin/bash -e {0}
+2025-09-16T19:48:30.1905868Z env:
+2025-09-16T19:48:30.1906343Z   S3_BUCKET: ***
+2025-09-16T19:48:30.1906891Z ##[endgroup]
+2025-09-16T19:48:38.8759278Z 
+2025-09-16T19:48:38.8766564Z added 142 packages, and audited 143 packages in 9s
+2025-09-16T19:48:38.8767315Z 
+2025-09-16T19:48:38.8767536Z 43 packages are looking for funding
+2025-09-16T19:48:38.8767916Z   run `npm fund` for details
+2025-09-16T19:48:38.8879926Z 
+2025-09-16T19:48:38.8880650Z 1 low severity vulnerability
+2025-09-16T19:48:38.8881177Z 
+2025-09-16T19:48:38.8881627Z To address all issues, run:
+2025-09-16T19:48:38.8882248Z   npm audit fix
+2025-09-16T19:48:38.8882497Z 
+2025-09-16T19:48:38.8882728Z Run `npm audit` for details.
+2025-09-16T19:48:38.9438923Z ##[group]Run npm run build
+2025-09-16T19:48:38.9439259Z [36;1mnpm run build[0m
+2025-09-16T19:48:38.9470659Z shell: /usr/bin/bash -e {0}
+2025-09-16T19:48:38.9470930Z env:
+2025-09-16T19:48:38.9471460Z   S3_BUCKET: ***
+2025-09-16T19:48:38.9471714Z ##[endgroup]
+2025-09-16T19:48:39.0471844Z 
+2025-09-16T19:48:39.0472593Z > radio-importante@2.2.8 build
+2025-09-16T19:48:39.0473233Z > tsc && vite build
+2025-09-16T19:48:39.0473495Z 
+2025-09-16T19:48:41.5239575Z [36mvite v7.1.3 [32mbuilding for production...[36m[39m
+2025-09-16T19:48:41.6039360Z transforming...
+2025-09-16T19:48:41.7432073Z [32m✓[39m 11 modules transformed.
+2025-09-16T19:48:41.8339596Z rendering chunks...
+2025-09-16T19:48:41.8387087Z computing gzip size...
+2025-09-16T19:48:41.8848634Z [2mdist/[22m[32mindex.html               [39m[1m[2m12.61 kB[22m[1m[22m[2m │ gzip:  2.81 kB[22m
+2025-09-16T19:48:41.8850896Z [2mdist/[22m[2massets/[22m[36mmain-n5G8PvTS.js  [39m[1m[2m47.97 kB[22m[1m[22m[2m │ gzip: 12.73 kB[22m
+2025-09-16T19:48:41.8852429Z [32m✓ built in 336ms[39m
+2025-09-16T19:48:41.9181505Z ##[group]Run aws-actions/configure-aws-credentials@v4
+2025-09-16T19:48:41.9182040Z with:
+2025-09-16T19:48:41.9182529Z   aws-access-key-id: ***
+2025-09-16T19:48:41.9183137Z   aws-secret-access-key: ***
+2025-09-16T19:48:41.9183576Z   aws-region: ***
+2025-09-16T19:48:41.9183947Z   audience: sts.amazonaws.com
+2025-09-16T19:48:41.9184397Z   output-env-credentials: true
+2025-09-16T19:48:41.9184811Z env:
+2025-09-16T19:48:41.9185188Z   S3_BUCKET: ***
+2025-09-16T19:48:41.9185538Z ##[endgroup]
+2025-09-16T19:48:42.3367988Z Proceeding with IAM user credentials
+2025-09-16T19:48:42.3459217Z ##[group]Run aws --version
+2025-09-16T19:48:42.3459534Z [36;1maws --version[0m
+2025-09-16T19:48:42.3488745Z shell: /usr/bin/bash -e {0}
+2025-09-16T19:48:42.3489000Z env:
+2025-09-16T19:48:42.3489293Z   S3_BUCKET: ***
+2025-09-16T19:48:42.3489529Z   AWS_DEFAULT_REGION: ***
+2025-09-16T19:48:42.3489772Z   AWS_REGION: ***
+2025-09-16T19:48:42.3490010Z   AWS_ACCESS_KEY_ID: ***
+2025-09-16T19:48:42.3490333Z   AWS_SECRET_ACCESS_KEY: ***
+2025-09-16T19:48:42.3490569Z ##[endgroup]
+2025-09-16T19:48:52.0529586Z aws-cli/2.28.25 Python/3.13.7 Linux/6.11.0-1018-azure exe/x86_64.ubuntu.24
+2025-09-16T19:48:52.1395581Z ##[group]Run aws s3 sync dist/ s3://$S3_BUCKET \
+2025-09-16T19:48:52.1396233Z [36;1maws s3 sync dist/ s3://$S3_BUCKET \[0m
+2025-09-16T19:48:52.1396967Z [36;1m  --delete \[0m
+2025-09-16T19:48:52.1397371Z [36;1m  --exclude ".DS_Store" \[0m
+2025-09-16T19:48:52.1397829Z [36;1m  --exclude ".*" \[0m
+2025-09-16T19:48:52.1398252Z [36;1m  --exclude "*.map"[0m
+2025-09-16T19:48:52.1441281Z shell: /usr/bin/bash -e {0}
+2025-09-16T19:48:52.1441697Z env:
+2025-09-16T19:48:52.1442195Z   S3_BUCKET: ***
+2025-09-16T19:48:52.1442614Z   AWS_DEFAULT_REGION: ***
+2025-09-16T19:48:52.1443062Z   AWS_REGION: ***
+2025-09-16T19:48:52.1443472Z   AWS_ACCESS_KEY_ID: ***
+2025-09-16T19:48:52.1444033Z   AWS_SECRET_ACCESS_KEY: ***
+2025-09-16T19:48:52.1444439Z ##[endgroup]
+2025-09-16T19:48:53.2084129Z Completed 2.1 KiB/54.1 MiB (22.2 KiB/s) with 48 file(s) remaining
+2025-09-16T19:48:53.2085573Z upload: dist/admin.html to s3://***/admin.html
+2025-09-16T19:48:53.2877604Z Completed 2.1 KiB/54.1 MiB (22.2 KiB/s) with 47 file(s) remaining
+2025-09-16T19:48:53.2878580Z Completed 4.0 KiB/54.1 MiB (22.4 KiB/s) with 47 file(s) remaining
+2025-09-16T19:48:53.2879626Z upload: dist/audio/hls/filelist.txt to s3://***/audio/hls/filelist.txt
+2025-09-16T19:48:53.3705926Z Completed 4.0 KiB/54.1 MiB (22.4 KiB/s) with 46 file(s) remaining
+2025-09-16T19:48:53.3725480Z Completed 1.0 MiB/54.1 MiB (3.9 MiB/s) with 46 file(s) remaining 
+2025-09-16T19:48:53.3726519Z Completed 1.0 MiB/54.1 MiB (3.8 MiB/s) with 46 file(s) remaining 
+2025-09-16T19:48:53.3727808Z upload: dist/audio/hls-smart/track-cues-smart.json to s3://***/audio/hls-smart/track-cues-smart.json
+2025-09-16T19:48:53.3882666Z Completed 1.0 MiB/54.1 MiB (3.8 MiB/s) with 45 file(s) remaining
+2025-09-16T19:48:53.3883301Z Completed 1.0 MiB/54.1 MiB (3.7 MiB/s) with 45 file(s) remaining
+2025-09-16T19:48:53.3884267Z upload: dist/audio/.DS_Store to s3://***/audio/.DS_Store
+2025-09-16T19:48:53.3938917Z Completed 1.0 MiB/54.1 MiB (3.7 MiB/s) with 44 file(s) remaining
+2025-09-16T19:48:53.3954406Z Completed 2.0 MiB/54.1 MiB (7.1 MiB/s) with 44 file(s) remaining
+2025-09-16T19:48:53.3970576Z Completed 2.0 MiB/54.1 MiB (7.1 MiB/s) with 44 file(s) remaining
+2025-09-16T19:48:53.3971791Z upload: dist/audio/hls-smart/filelist.txt to s3://***/audio/hls-smart/filelist.txt
+2025-09-16T19:48:53.4327010Z Completed 2.0 MiB/54.1 MiB (7.1 MiB/s) with 43 file(s) remaining
+2025-09-16T19:48:53.4328216Z Completed 2.1 MiB/54.1 MiB (6.4 MiB/s) with 43 file(s) remaining
+2025-09-16T19:48:53.4329796Z upload: dist/assets/main-n5G8PvTS.js to s3://***/assets/main-n5G8PvTS.js
+2025-09-16T19:48:53.4488602Z Completed 2.1 MiB/54.1 MiB (6.4 MiB/s) with 42 file(s) remaining
+2025-09-16T19:48:53.4489509Z Completed 2.1 MiB/54.1 MiB (6.1 MiB/s) with 42 file(s) remaining
+2025-09-16T19:48:53.4490891Z upload: dist/audio/hls/playlist-continuous.m3u8 to s3://***/audio/hls/playlist-continuous.m3u8
+2025-09-16T19:48:53.4745582Z Completed 2.1 MiB/54.1 MiB (6.1 MiB/s) with 41 file(s) remaining
+2025-09-16T19:48:53.4746498Z Completed 2.1 MiB/54.1 MiB (5.7 MiB/s) with 41 file(s) remaining
+2025-09-16T19:48:53.4748065Z upload: dist/audio/hls/playlist-simple.m3u8 to s3://***/audio/hls/playlist-simple.m3u8
+2025-09-16T19:48:53.4895541Z Completed 2.1 MiB/54.1 MiB (5.7 MiB/s) with 40 file(s) remaining
+2025-09-16T19:48:53.4909222Z Completed 3.1 MiB/54.1 MiB (8.1 MiB/s) with 40 file(s) remaining
+2025-09-16T19:48:53.4922839Z Completed 4.1 MiB/54.1 MiB (10.7 MiB/s) with 40 file(s) remaining
+2025-09-16T19:48:53.4951247Z Completed 5.1 MiB/54.1 MiB (13.2 MiB/s) with 40 file(s) remaining
+2025-09-16T19:48:53.5295994Z Completed 6.1 MiB/54.1 MiB (15.7 MiB/s) with 40 file(s) remaining
+2025-09-16T19:48:53.5587459Z Completed 7.1 MiB/54.1 MiB (16.8 MiB/s) with 40 file(s) remaining
+2025-09-16T19:48:53.5605409Z Completed 7.1 MiB/54.1 MiB (15.7 MiB/s) with 40 file(s) remaining
+2025-09-16T19:48:53.5606858Z upload: dist/data/catalog.json to s3://***/data/catalog.json
+2025-09-16T19:48:53.5612919Z Completed 7.1 MiB/54.1 MiB (15.7 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.6199026Z Completed 8.1 MiB/54.1 MiB (17.9 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.6532496Z Completed 9.1 MiB/54.1 MiB (17.8 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.6723908Z Completed 10.1 MiB/54.1 MiB (18.5 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.7091457Z Completed 11.1 MiB/54.1 MiB (19.7 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.7146527Z Completed 12.1 MiB/54.1 MiB (20.1 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.7194720Z Completed 13.1 MiB/54.1 MiB (21.6 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.7207641Z Completed 14.1 MiB/54.1 MiB (23.1 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.7256372Z Completed 15.1 MiB/54.1 MiB (24.7 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.7651736Z Completed 16.1 MiB/54.1 MiB (26.1 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.7715392Z Completed 17.1 MiB/54.1 MiB (26.0 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.7749314Z Completed 18.1 MiB/54.1 MiB (27.3 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.7781344Z Completed 19.1 MiB/54.1 MiB (28.7 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.7794390Z Completed 20.1 MiB/54.1 MiB (30.0 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.7804545Z Completed 21.1 MiB/54.1 MiB (31.5 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.7869696Z Completed 22.1 MiB/54.1 MiB (32.9 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.8215430Z Completed 23.1 MiB/54.1 MiB (34.1 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.8273493Z Completed 24.1 MiB/54.1 MiB (33.8 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.8287600Z Completed 25.1 MiB/54.1 MiB (34.9 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.8297477Z Completed 26.1 MiB/54.1 MiB (36.3 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.8304587Z Completed 27.1 MiB/54.1 MiB (37.6 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.8324677Z Completed 28.1 MiB/54.1 MiB (39.0 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.8341892Z Completed 29.1 MiB/54.1 MiB (40.2 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.8358221Z Completed 30.1 MiB/54.1 MiB (41.5 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.8366516Z Completed 31.1 MiB/54.1 MiB (42.8 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.8432234Z Completed 32.1 MiB/54.1 MiB (44.1 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.8452017Z Completed 33.1 MiB/54.1 MiB (45.1 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.8574693Z Completed 34.1 MiB/54.1 MiB (46.3 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.8683699Z Completed 35.1 MiB/54.1 MiB (46.9 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.8780685Z Completed 36.1 MiB/54.1 MiB (47.6 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.8798419Z Completed 37.1 MiB/54.1 MiB (48.3 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.8846465Z Completed 38.1 MiB/54.1 MiB (49.4 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.8849747Z Completed 39.1 MiB/54.1 MiB (50.4 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.8924987Z Completed 40.1 MiB/54.1 MiB (51.7 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.8926276Z Completed 41.1 MiB/54.1 MiB (52.5 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.8995743Z Completed 41.4 MiB/54.1 MiB (52.9 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.9250851Z Completed 42.4 MiB/54.1 MiB (53.7 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.9377117Z Completed 43.1 MiB/54.1 MiB (52.9 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.9399397Z Completed 44.1 MiB/54.1 MiB (53.3 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.9418863Z Completed 45.1 MiB/54.1 MiB (54.4 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.9505732Z Completed 46.1 MiB/54.1 MiB (55.4 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.9585476Z Completed 47.1 MiB/54.1 MiB (56.1 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.9974307Z Completed 48.1 MiB/54.1 MiB (56.7 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:53.9996896Z Completed 49.1 MiB/54.1 MiB (55.4 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:54.0154123Z Completed 50.0 MiB/54.1 MiB (56.2 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:54.0210404Z Completed 51.0 MiB/54.1 MiB (56.3 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:54.0237979Z Completed 52.0 MiB/54.1 MiB (57.1 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:54.0256044Z Completed 53.0 MiB/54.1 MiB (58.0 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:54.1503714Z Completed 53.9 MiB/54.1 MiB (58.9 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:54.1504610Z Completed 53.9 MiB/54.1 MiB (51.9 MiB/s) with 39 file(s) remaining
+2025-09-16T19:48:54.1505652Z upload: dist/audio/hls/track-cues.json to s3://***/audio/hls/track-cues.json
+2025-09-16T19:48:54.1685235Z Completed 53.9 MiB/54.1 MiB (51.9 MiB/s) with 38 file(s) remaining
+2025-09-16T19:48:54.1721501Z Completed 53.9 MiB/54.1 MiB (51.0 MiB/s) with 38 file(s) remaining
+2025-09-16T19:48:54.1723218Z upload: dist/debug.html to s3://***/debug.html
+2025-09-16T19:48:54.2291874Z Completed 53.9 MiB/54.1 MiB (51.0 MiB/s) with 37 file(s) remaining
+2025-09-16T19:48:54.2293072Z Completed 53.9 MiB/54.1 MiB (48.3 MiB/s) with 37 file(s) remaining
+2025-09-16T19:48:54.2294129Z upload: dist/icons/favicon.svg to s3://***/icons/favicon.svg
+2025-09-16T19:48:54.2605020Z Completed 53.9 MiB/54.1 MiB (48.3 MiB/s) with 36 file(s) remaining
+2025-09-16T19:48:54.2605989Z Completed 53.9 MiB/54.1 MiB (47.0 MiB/s) with 36 file(s) remaining
+2025-09-16T19:48:54.2607332Z upload: dist/icons/icon-152x152.svg to s3://***/icons/icon-152x152.svg
+2025-09-16T19:48:54.2708231Z Completed 53.9 MiB/54.1 MiB (47.0 MiB/s) with 35 file(s) remaining
+2025-09-16T19:48:54.2709177Z Completed 53.9 MiB/54.1 MiB (46.5 MiB/s) with 35 file(s) remaining
+2025-09-16T19:48:54.2710421Z upload: dist/icons/icon-144x144.svg to s3://***/icons/icon-144x144.svg
+2025-09-16T19:48:54.2715036Z Completed 53.9 MiB/54.1 MiB (46.5 MiB/s) with 34 file(s) remaining
+2025-09-16T19:48:54.2737403Z Completed 53.9 MiB/54.1 MiB (46.4 MiB/s) with 34 file(s) remaining
+2025-09-16T19:48:54.2738433Z upload: dist/audio/MrakReserva.mp4 to s3://***/audio/MrakReserva.mp4
+2025-09-16T19:48:54.2754353Z Completed 53.9 MiB/54.1 MiB (46.4 MiB/s) with 33 file(s) remaining
+2025-09-16T19:48:54.2755461Z upload: dist/icons/icon-128x128.svg to s3://***/icons/icon-128x128.svg
+2025-09-16T19:48:54.2920157Z Completed 53.9 MiB/54.1 MiB (46.4 MiB/s) with 32 file(s) remaining
+2025-09-16T19:48:54.2921424Z Completed 53.9 MiB/54.1 MiB (45.7 MiB/s) with 32 file(s) remaining
+2025-09-16T19:48:54.2922858Z upload: dist/icons/icon-32x32.svg to s3://***/icons/icon-32x32.svg
+2025-09-16T19:48:54.3253583Z Completed 53.9 MiB/54.1 MiB (45.7 MiB/s) with 31 file(s) remaining
+2025-09-16T19:48:54.3254573Z Completed 53.9 MiB/54.1 MiB (44.5 MiB/s) with 31 file(s) remaining
+2025-09-16T19:48:54.3255554Z upload: dist/icons/icon-192x192.svg to s3://***/icons/icon-192x192.svg
+2025-09-16T19:48:54.3300739Z Completed 53.9 MiB/54.1 MiB (44.5 MiB/s) with 30 file(s) remaining
+2025-09-16T19:48:54.3302366Z upload: dist/audio/hls-smart/radio-importante-continuous.aac to s3://***/audio/hls-smart/radio-importante-continuous.aac
+2025-09-16T19:48:54.3420758Z Completed 53.9 MiB/54.1 MiB (44.5 MiB/s) with 29 file(s) remaining
+2025-09-16T19:48:54.3421690Z Completed 53.9 MiB/54.1 MiB (43.8 MiB/s) with 29 file(s) remaining
+2025-09-16T19:48:54.3422977Z upload: dist/icons/icon-384x384.svg to s3://***/icons/icon-384x384.svg
+2025-09-16T19:48:54.3529508Z Completed 53.9 MiB/54.1 MiB (43.8 MiB/s) with 28 file(s) remaining
+2025-09-16T19:48:54.3530209Z Completed 53.9 MiB/54.1 MiB (43.5 MiB/s) with 28 file(s) remaining
+2025-09-16T19:48:54.3531428Z upload: dist/icons/icon-512x512-maskable.svg to s3://***/icons/icon-512x512-maskable.svg
+2025-09-16T19:48:54.3581892Z Completed 53.9 MiB/54.1 MiB (43.5 MiB/s) with 27 file(s) remaining
+2025-09-16T19:48:54.3582773Z Completed 53.9 MiB/54.1 MiB (43.3 MiB/s) with 27 file(s) remaining
+2025-09-16T19:48:54.3583948Z upload: dist/icons/icon-512x512.svg to s3://***/icons/icon-512x512.svg
+2025-09-16T19:48:54.3605936Z Completed 53.9 MiB/54.1 MiB (43.3 MiB/s) with 26 file(s) remaining
+2025-09-16T19:48:54.3607294Z Completed 53.9 MiB/54.1 MiB (43.2 MiB/s) with 26 file(s) remaining
+2025-09-16T19:48:54.3608624Z upload: dist/icons/icon-192x192-maskable.svg to s3://***/icons/icon-192x192-maskable.svg
+2025-09-16T19:48:54.3625488Z Completed 53.9 MiB/54.1 MiB (43.2 MiB/s) with 25 file(s) remaining
+2025-09-16T19:48:54.3626857Z upload: dist/audio/hls/segment-000.ts to s3://***/audio/hls/segment-000.ts
+2025-09-16T19:48:54.3649794Z Completed 53.9 MiB/54.1 MiB (43.2 MiB/s) with 24 file(s) remaining
+2025-09-16T19:48:54.3650688Z Completed 53.9 MiB/54.1 MiB (43.0 MiB/s) with 24 file(s) remaining
+2025-09-16T19:48:54.3651690Z upload: dist/icons/icon-96x96.svg to s3://***/icons/icon-96x96.svg
+2025-09-16T19:48:54.3759909Z Completed 53.9 MiB/54.1 MiB (43.0 MiB/s) with 23 file(s) remaining
+2025-09-16T19:48:54.3760886Z Completed 53.9 MiB/54.1 MiB (42.7 MiB/s) with 23 file(s) remaining
+2025-09-16T19:48:54.3761796Z upload: dist/icons/icon-base.svg to s3://***/icons/icon-base.svg
+2025-09-16T19:48:54.4072450Z Completed 53.9 MiB/54.1 MiB (42.7 MiB/s) with 22 file(s) remaining
+2025-09-16T19:48:54.4096887Z Completed 53.9 MiB/54.1 MiB (41.7 MiB/s) with 22 file(s) remaining
+2025-09-16T19:48:54.4098011Z upload: dist/icons/info.svg to s3://***/icons/info.svg
+2025-09-16T19:48:54.4098887Z Completed 53.9 MiB/54.1 MiB (41.7 MiB/s) with 21 file(s) remaining
+2025-09-16T19:48:54.4099475Z Completed 54.0 MiB/54.1 MiB (41.6 MiB/s) with 21 file(s) remaining
+2025-09-16T19:48:54.4100382Z upload: dist/icons/logo-black.svg to s3://***/icons/logo-black.svg
+2025-09-16T19:48:54.4220894Z Completed 54.0 MiB/54.1 MiB (41.6 MiB/s) with 20 file(s) remaining
+2025-09-16T19:48:54.4222341Z Completed 54.0 MiB/54.1 MiB (41.2 MiB/s) with 20 file(s) remaining
+2025-09-16T19:48:54.4223464Z upload: dist/icons/icon-72x72.svg to s3://***/icons/icon-72x72.svg
+2025-09-16T19:48:54.4333229Z Completed 54.0 MiB/54.1 MiB (41.2 MiB/s) with 19 file(s) remaining
+2025-09-16T19:48:54.4352668Z Completed 54.0 MiB/54.1 MiB (40.8 MiB/s) with 19 file(s) remaining
+2025-09-16T19:48:54.4353837Z upload: dist/icons/pause.svg to s3://***/icons/pause.svg
+2025-09-16T19:48:54.4360704Z Completed 54.0 MiB/54.1 MiB (40.8 MiB/s) with 18 file(s) remaining
+2025-09-16T19:48:54.4378821Z Completed 54.0 MiB/54.1 MiB (40.7 MiB/s) with 18 file(s) remaining
+2025-09-16T19:48:54.4379938Z upload: dist/icons/next.svg to s3://***/icons/next.svg
+2025-09-16T19:48:54.4428549Z Completed 54.0 MiB/54.1 MiB (40.7 MiB/s) with 17 file(s) remaining
+2025-09-16T19:48:54.4429446Z Completed 54.0 MiB/54.1 MiB (40.5 MiB/s) with 17 file(s) remaining
+2025-09-16T19:48:54.4430106Z upload: dist/icons/play.svg to s3://***/icons/play.svg
+2025-09-16T19:48:54.4454065Z Completed 54.0 MiB/54.1 MiB (40.5 MiB/s) with 16 file(s) remaining
+2025-09-16T19:48:54.4454999Z Completed 54.0 MiB/54.1 MiB (40.5 MiB/s) with 16 file(s) remaining
+2025-09-16T19:48:54.4456397Z upload: dist/index.html to s3://***/index.html
+2025-09-16T19:48:54.4605957Z Completed 54.0 MiB/54.1 MiB (40.5 MiB/s) with 15 file(s) remaining
+2025-09-16T19:48:54.4607209Z Completed 54.0 MiB/54.1 MiB (40.0 MiB/s) with 15 file(s) remaining
+2025-09-16T19:48:54.4608309Z upload: dist/manifest.webmanifest to s3://***/manifest.webmanifest
+2025-09-16T19:48:54.4883048Z Completed 54.0 MiB/54.1 MiB (40.0 MiB/s) with 14 file(s) remaining
+2025-09-16T19:48:54.4883925Z Completed 54.0 MiB/54.1 MiB (39.2 MiB/s) with 14 file(s) remaining
+2025-09-16T19:48:54.4884789Z upload: dist/scripts/admin.js to s3://***/scripts/admin.js
+2025-09-16T19:48:54.4991849Z Completed 54.0 MiB/54.1 MiB (39.2 MiB/s) with 13 file(s) remaining
+2025-09-16T19:48:54.4992606Z Completed 54.0 MiB/54.1 MiB (38.9 MiB/s) with 13 file(s) remaining
+2025-09-16T19:48:54.4993594Z upload: dist/scripts/api.js to s3://***/scripts/api.js
+2025-09-16T19:48:54.5022099Z Completed 54.0 MiB/54.1 MiB (38.9 MiB/s) with 12 file(s) remaining
+2025-09-16T19:48:54.5041717Z Completed 54.0 MiB/54.1 MiB (38.8 MiB/s) with 12 file(s) remaining
+2025-09-16T19:48:54.5043324Z upload: dist/scripts/config.js to s3://***/scripts/config.js
+2025-09-16T19:48:54.5066880Z Completed 54.0 MiB/54.1 MiB (38.8 MiB/s) with 11 file(s) remaining
+2025-09-16T19:48:54.5068103Z upload: dist/audio/hls/segment-%03d.ts to s3://***/audio/hls/segment-%03d.ts
+2025-09-16T19:48:54.5158337Z Completed 54.0 MiB/54.1 MiB (38.8 MiB/s) with 10 file(s) remaining
+2025-09-16T19:48:54.5159591Z Completed 54.0 MiB/54.1 MiB (38.4 MiB/s) with 10 file(s) remaining
+2025-09-16T19:48:54.5160861Z upload: dist/scripts/ui-helpers.js to s3://***/scripts/ui-helpers.js
+2025-09-16T19:48:54.5185033Z Completed 54.0 MiB/54.1 MiB (38.4 MiB/s) with 9 file(s) remaining
+2025-09-16T19:48:54.5205134Z Completed 54.0 MiB/54.1 MiB (38.3 MiB/s) with 9 file(s) remaining
+2025-09-16T19:48:54.5206286Z upload: dist/scripts/upload.js to s3://***/scripts/upload.js
+2025-09-16T19:48:54.5220413Z Completed 54.0 MiB/54.1 MiB (38.3 MiB/s) with 8 file(s) remaining
+2025-09-16T19:48:54.5221583Z Completed 54.0 MiB/54.1 MiB (38.2 MiB/s) with 8 file(s) remaining
+2025-09-16T19:48:54.5222525Z upload: dist/scripts/music-manager.js to s3://***/scripts/music-manager.js
+2025-09-16T19:48:54.5388224Z Completed 54.0 MiB/54.1 MiB (38.2 MiB/s) with 7 file(s) remaining
+2025-09-16T19:48:54.5389746Z Completed 54.0 MiB/54.1 MiB (37.8 MiB/s) with 7 file(s) remaining
+2025-09-16T19:48:54.5390866Z upload: dist/styles/admin.css to s3://***/styles/admin.css
+2025-09-16T19:48:54.5424840Z Completed 54.0 MiB/54.1 MiB (37.8 MiB/s) with 6 file(s) remaining
+2025-09-16T19:48:54.5425569Z Completed 54.0 MiB/54.1 MiB (37.7 MiB/s) with 6 file(s) remaining
+2025-09-16T19:48:54.5426812Z upload: dist/styles/base.css to s3://***/styles/base.css
+2025-09-16T19:48:54.5672141Z Completed 54.0 MiB/54.1 MiB (37.7 MiB/s) with 5 file(s) remaining
+2025-09-16T19:48:54.5673005Z Completed 54.0 MiB/54.1 MiB (37.1 MiB/s) with 5 file(s) remaining
+2025-09-16T19:48:54.5673913Z upload: dist/styles/components.css to s3://***/styles/components.css
+2025-09-16T19:48:54.5804884Z Completed 54.0 MiB/54.1 MiB (37.1 MiB/s) with 4 file(s) remaining
+2025-09-16T19:48:54.5805672Z Completed 54.0 MiB/54.1 MiB (36.7 MiB/s) with 4 file(s) remaining
+2025-09-16T19:48:54.5806572Z upload: dist/styles/layout.css to s3://***/styles/layout.css
+2025-09-16T19:48:54.5850460Z Completed 54.0 MiB/54.1 MiB (36.7 MiB/s) with 3 file(s) remaining
+2025-09-16T19:48:54.5851189Z Completed 54.0 MiB/54.1 MiB (36.6 MiB/s) with 3 file(s) remaining
+2025-09-16T19:48:54.5851910Z upload: dist/sw.js to s3://***/sw.js       
+2025-09-16T19:48:54.5934030Z Completed 54.0 MiB/54.1 MiB (36.6 MiB/s) with 2 file(s) remaining
+2025-09-16T19:48:54.5936147Z Completed 54.0 MiB/54.1 MiB (36.4 MiB/s) with 2 file(s) remaining
+2025-09-16T19:48:54.5937437Z upload: dist/styles/reset.css to s3://***/styles/reset.css
+2025-09-16T19:48:54.5987423Z Completed 54.0 MiB/54.1 MiB (36.4 MiB/s) with 1 file(s) remaining
+2025-09-16T19:48:54.5990332Z Completed 54.1 MiB/54.1 MiB (36.4 MiB/s) with 1 file(s) remaining
+2025-09-16T19:48:54.5991743Z upload: dist/img/Leo_R_161_small.webp to s3://***/img/Leo_R_161_small.webp
+2025-09-16T19:48:54.7202905Z ##[group]Run chmod +x scripts/s3-update-metadata.sh
+2025-09-16T19:48:54.7203706Z [36;1mchmod +x scripts/s3-update-metadata.sh[0m
+2025-09-16T19:48:54.7204399Z [36;1m./scripts/s3-update-metadata.sh -b "$S3_BUCKET" --all[0m
+2025-09-16T19:48:54.7248619Z shell: /usr/bin/bash -e {0}
+2025-09-16T19:48:54.7249060Z env:
+2025-09-16T19:48:54.7249496Z   S3_BUCKET: ***
+2025-09-16T19:48:54.7249919Z   AWS_DEFAULT_REGION: ***
+2025-09-16T19:48:54.7250355Z   AWS_REGION: ***
+2025-09-16T19:48:54.7250759Z   AWS_ACCESS_KEY_ID: ***
+2025-09-16T19:48:54.7251308Z   AWS_SECRET_ACCESS_KEY: ***
+2025-09-16T19:48:54.7251707Z ##[endgroup]
+2025-09-16T19:48:55.6751648Z [INFO] Bucket: ***
+2025-09-16T19:48:55.6769103Z [INFO] Aplicando: HTML
+2025-09-16T19:48:56.4363473Z Completed 2.1 KiB/33.1 KiB (10.2 KiB/s) with 3 file(s) remaining
+2025-09-16T19:48:56.4364477Z upload: dist/admin.html to s3://***/admin.html
+2025-09-16T19:48:56.4884861Z Completed 2.1 KiB/33.1 KiB (10.2 KiB/s) with 2 file(s) remaining
+2025-09-16T19:48:56.4885889Z Completed 20.8 KiB/33.1 KiB (78.8 KiB/s) with 2 file(s) remaining
+2025-09-16T19:48:56.4887603Z upload: dist/debug.html to s3://***/debug.html
+2025-09-16T19:48:56.4922257Z Completed 20.8 KiB/33.1 KiB (78.8 KiB/s) with 1 file(s) remaining
+2025-09-16T19:48:56.4923469Z Completed 33.1 KiB/33.1 KiB (123.8 KiB/s) with 1 file(s) remaining
+2025-09-16T19:48:56.4924739Z upload: dist/index.html to s3://***/index.html
+2025-09-16T19:48:56.5968573Z [INFO] Aplicando: Service Worker
+2025-09-16T19:48:57.3561548Z Completed 4.3 KiB/4.3 KiB (19.9 KiB/s) with 1 file(s) remaining
+2025-09-16T19:48:57.3562500Z upload: dist/sw.js to s3://***/sw.js     
+2025-09-16T19:48:57.4597672Z [INFO] Aplicando: Scripts & CSS curtos
+2025-09-16T19:48:58.3107414Z Completed 2.1 KiB/23.9 KiB (6.7 KiB/s) with 11 file(s) remaining
+2025-09-16T19:48:58.3108727Z upload: dist/scripts/music-manager.js to s3://***/scripts/music-manager.js
+2025-09-16T19:48:58.3115798Z Completed 2.1 KiB/23.9 KiB (6.7 KiB/s) with 10 file(s) remaining
+2025-09-16T19:48:58.3116897Z Completed 5.2 KiB/23.9 KiB (16.7 KiB/s) with 10 file(s) remaining
+2025-09-16T19:48:58.3118146Z upload: dist/styles/components.css to s3://***/styles/components.css
+2025-09-16T19:48:58.3122705Z Completed 5.2 KiB/23.9 KiB (16.7 KiB/s) with 9 file(s) remaining
+2025-09-16T19:48:58.3123571Z Completed 8.3 KiB/23.9 KiB (26.3 KiB/s) with 9 file(s) remaining
+2025-09-16T19:48:58.3124217Z upload: dist/scripts/ui-helpers.js to s3://***/scripts/ui-helpers.js
+2025-09-16T19:48:58.3133851Z Completed 8.3 KiB/23.9 KiB (26.3 KiB/s) with 8 file(s) remaining
+2025-09-16T19:48:58.3134637Z Completed 9.0 KiB/23.9 KiB (28.4 KiB/s) with 8 file(s) remaining
+2025-09-16T19:48:58.3135229Z upload: dist/scripts/admin.js to s3://***/scripts/admin.js
+2025-09-16T19:48:58.3141178Z Completed 9.0 KiB/23.9 KiB (28.4 KiB/s) with 7 file(s) remaining
+2025-09-16T19:48:58.3141780Z Completed 12.8 KiB/23.9 KiB (40.6 KiB/s) with 7 file(s) remaining
+2025-09-16T19:48:58.3142373Z upload: dist/scripts/upload.js to s3://***/scripts/upload.js
+2025-09-16T19:48:58.3161510Z Completed 12.8 KiB/23.9 KiB (40.6 KiB/s) with 6 file(s) remaining
+2025-09-16T19:48:58.3162454Z Completed 16.7 KiB/23.9 KiB (52.5 KiB/s) with 6 file(s) remaining
+2025-09-16T19:48:58.3163336Z upload: dist/styles/admin.css to s3://***/styles/admin.css
+2025-09-16T19:48:58.3164051Z Completed 16.7 KiB/23.9 KiB (52.5 KiB/s) with 5 file(s) remaining
+2025-09-16T19:48:58.3164541Z Completed 17.0 KiB/23.9 KiB (53.3 KiB/s) with 5 file(s) remaining
+2025-09-16T19:48:58.3165119Z upload: dist/styles/reset.css to s3://***/styles/reset.css
+2025-09-16T19:48:58.3169573Z Completed 17.0 KiB/23.9 KiB (53.3 KiB/s) with 4 file(s) remaining
+2025-09-16T19:48:58.3170438Z Completed 18.2 KiB/23.9 KiB (56.9 KiB/s) with 4 file(s) remaining
+2025-09-16T19:48:58.3171237Z upload: dist/scripts/config.js to s3://***/scripts/config.js
+2025-09-16T19:48:58.3175480Z Completed 18.2 KiB/23.9 KiB (56.9 KiB/s) with 3 file(s) remaining
+2025-09-16T19:48:58.3176306Z Completed 18.8 KiB/23.9 KiB (58.9 KiB/s) with 3 file(s) remaining
+2025-09-16T19:48:58.3177580Z upload: dist/styles/base.css to s3://***/styles/base.css
+2025-09-16T19:48:58.3228987Z Completed 18.8 KiB/23.9 KiB (58.9 KiB/s) with 2 file(s) remaining
+2025-09-16T19:48:58.3229985Z Completed 21.8 KiB/23.9 KiB (67.1 KiB/s) with 2 file(s) remaining
+2025-09-16T19:48:58.3230734Z upload: dist/scripts/api.js to s3://***/scripts/api.js
+2025-09-16T19:48:58.3838815Z Completed 21.8 KiB/23.9 KiB (67.1 KiB/s) with 1 file(s) remaining
+2025-09-16T19:48:58.3839745Z Completed 23.9 KiB/23.9 KiB (62.0 KiB/s) with 1 file(s) remaining
+2025-09-16T19:48:58.3840868Z upload: dist/styles/layout.css to s3://***/styles/layout.css
+2025-09-16T19:48:59.2782177Z Completed 297 Bytes/10.1 KiB (1.2 KiB/s) with 5 file(s) remaining
+2025-09-16T19:48:59.2783131Z upload: dist/styles/reset.css to s3://***/styles/reset.css
+2025-09-16T19:48:59.2783850Z Completed 297 Bytes/10.1 KiB (1.2 KiB/s) with 4 file(s) remaining
+2025-09-16T19:48:59.2784545Z Completed 4.1 KiB/10.1 KiB (17.1 KiB/s) with 4 file(s) remaining 
+2025-09-16T19:48:59.2785375Z upload: dist/styles/admin.css to s3://***/styles/admin.css
+2025-09-16T19:48:59.2866048Z Completed 4.1 KiB/10.1 KiB (17.1 KiB/s) with 3 file(s) remaining
+2025-09-16T19:48:59.2868096Z Completed 6.2 KiB/10.1 KiB (25.0 KiB/s) with 3 file(s) remaining
+2025-09-16T19:48:59.2869216Z upload: dist/styles/layout.css to s3://***/styles/layout.css
+2025-09-16T19:48:59.2886892Z Completed 6.2 KiB/10.1 KiB (25.0 KiB/s) with 2 file(s) remaining
+2025-09-16T19:48:59.2887630Z Completed 9.4 KiB/10.1 KiB (37.4 KiB/s) with 2 file(s) remaining
+2025-09-16T19:48:59.2888535Z upload: dist/styles/components.css to s3://***/styles/components.css
+2025-09-16T19:48:59.2964512Z Completed 9.4 KiB/10.1 KiB (37.4 KiB/s) with 1 file(s) remaining
+2025-09-16T19:48:59.2965639Z Completed 10.1 KiB/10.1 KiB (38.9 KiB/s) with 1 file(s) remaining
+2025-09-16T19:48:59.2967124Z upload: dist/styles/base.css to s3://***/styles/base.css
+2025-09-16T19:48:59.3979488Z [INFO] Aplicando: Assets JS (hash)
+2025-09-16T19:49:00.2474982Z Completed 46.8 KiB/46.8 KiB (149.0 KiB/s) with 1 file(s) remaining
+2025-09-16T19:49:00.2476390Z upload: dist/assets/main-n5G8PvTS.js to s3://***/assets/main-n5G8PvTS.js
+2025-09-16T19:49:00.3431198Z [INFO] Aplicando: JSON
+2025-09-16T19:49:01.1102315Z Completed 1.1 KiB/1.1 KiB (5.1 KiB/s) with 1 file(s) remaining
+2025-09-16T19:49:01.1103600Z upload: dist/data/catalog.json to s3://***/data/catalog.json
+2025-09-16T19:49:01.2106816Z [INFO] Aplicando: Manifest
+2025-09-16T19:49:01.9779217Z Completed 1.7 KiB/1.7 KiB (7.5 KiB/s) with 1 file(s) remaining
+2025-09-16T19:49:01.9780404Z upload: dist/manifest.webmanifest to s3://***/manifest.webmanifest
+2025-09-16T19:49:02.0896198Z [INFO] Aplicando: SVG
+2025-09-16T19:49:02.8423506Z Completed 617 Bytes/24.7 KiB (2.7 KiB/s) with 18 file(s) remaining
+2025-09-16T19:49:02.8424673Z upload: dist/icons/icon-128x128.svg to s3://***/icons/icon-128x128.svg
+2025-09-16T19:49:02.8484036Z Completed 617 Bytes/24.7 KiB (2.7 KiB/s) with 17 file(s) remaining
+2025-09-16T19:49:02.8502518Z Completed 1.2 KiB/24.7 KiB (5.2 KiB/s) with 17 file(s) remaining  
+2025-09-16T19:49:02.8503584Z upload: dist/icons/favicon.svg to s3://***/icons/favicon.svg
+2025-09-16T19:49:02.8737358Z Completed 1.2 KiB/24.7 KiB (5.2 KiB/s) with 16 file(s) remaining
+2025-09-16T19:49:02.8738440Z Completed 1.8 KiB/24.7 KiB (7.2 KiB/s) with 16 file(s) remaining
+2025-09-16T19:49:02.8739769Z upload: dist/icons/icon-144x144.svg to s3://***/icons/icon-144x144.svg
+2025-09-16T19:49:02.8888829Z Completed 1.8 KiB/24.7 KiB (7.2 KiB/s) with 15 file(s) remaining
+2025-09-16T19:49:02.8889826Z Completed 2.5 KiB/24.7 KiB (9.4 KiB/s) with 15 file(s) remaining
+2025-09-16T19:49:02.8890840Z upload: dist/icons/icon-192x192-maskable.svg to s3://***/icons/icon-192x192-maskable.svg
+2025-09-16T19:49:02.8913105Z Completed 2.5 KiB/24.7 KiB (9.4 KiB/s) with 14 file(s) remaining
+2025-09-16T19:49:02.8931099Z Completed 3.1 KiB/24.7 KiB (11.6 KiB/s) with 14 file(s) remaining
+2025-09-16T19:49:02.8932618Z upload: dist/icons/icon-384x384.svg to s3://***/icons/icon-384x384.svg
+2025-09-16T19:49:02.8953958Z Completed 3.1 KiB/24.7 KiB (11.6 KiB/s) with 13 file(s) remaining
+2025-09-16T19:49:02.8954955Z Completed 3.4 KiB/24.7 KiB (12.5 KiB/s) with 13 file(s) remaining
+2025-09-16T19:49:02.8955982Z upload: dist/icons/icon-32x32.svg to s3://***/icons/icon-32x32.svg
+2025-09-16T19:49:02.8984345Z Completed 3.4 KiB/24.7 KiB (12.5 KiB/s) with 12 file(s) remaining
+2025-09-16T19:49:02.8984893Z Completed 4.0 KiB/24.7 KiB (14.6 KiB/s) with 12 file(s) remaining
+2025-09-16T19:49:02.8985548Z upload: dist/icons/icon-192x192.svg to s3://***/icons/icon-192x192.svg
+2025-09-16T19:49:02.8990309Z Completed 4.0 KiB/24.7 KiB (14.6 KiB/s) with 11 file(s) remaining
+2025-09-16T19:49:02.9011356Z Completed 4.7 KiB/24.7 KiB (16.8 KiB/s) with 11 file(s) remaining
+2025-09-16T19:49:02.9012591Z upload: dist/icons/icon-152x152.svg to s3://***/icons/icon-152x152.svg
+2025-09-16T19:49:02.9013368Z Completed 4.7 KiB/24.7 KiB (16.8 KiB/s) with 10 file(s) remaining
+2025-09-16T19:49:02.9014245Z Completed 5.3 KiB/24.7 KiB (19.0 KiB/s) with 10 file(s) remaining
+2025-09-16T19:49:02.9015856Z upload: dist/icons/icon-512x512-maskable.svg to s3://***/icons/icon-512x512-maskable.svg
+2025-09-16T19:49:02.9123197Z Completed 5.3 KiB/24.7 KiB (19.0 KiB/s) with 9 file(s) remaining
+2025-09-16T19:49:02.9124191Z Completed 6.0 KiB/24.7 KiB (20.4 KiB/s) with 9 file(s) remaining
+2025-09-16T19:49:02.9124972Z upload: dist/icons/icon-512x512.svg to s3://***/icons/icon-512x512.svg
+2025-09-16T19:49:02.9164313Z Completed 6.0 KiB/24.7 KiB (20.4 KiB/s) with 8 file(s) remaining
+2025-09-16T19:49:02.9165756Z Completed 6.6 KiB/24.7 KiB (22.2 KiB/s) with 8 file(s) remaining
+2025-09-16T19:49:02.9166836Z upload: dist/icons/icon-72x72.svg to s3://***/icons/icon-72x72.svg
+2025-09-16T19:49:02.9277150Z Completed 6.6 KiB/24.7 KiB (22.2 KiB/s) with 7 file(s) remaining
+2025-09-16T19:49:02.9278456Z Completed 7.2 KiB/24.7 KiB (23.4 KiB/s) with 7 file(s) remaining
+2025-09-16T19:49:02.9279797Z upload: dist/icons/icon-96x96.svg to s3://***/icons/icon-96x96.svg
+2025-09-16T19:49:02.9558824Z Completed 7.2 KiB/24.7 KiB (23.4 KiB/s) with 6 file(s) remaining
+2025-09-16T19:49:02.9560258Z Completed 7.7 KiB/24.7 KiB (23.0 KiB/s) with 6 file(s) remaining
+2025-09-16T19:49:02.9561213Z upload: dist/icons/icon-base.svg to s3://***/icons/icon-base.svg
+2025-09-16T19:49:02.9696154Z Completed 7.7 KiB/24.7 KiB (23.0 KiB/s) with 5 file(s) remaining
+2025-09-16T19:49:02.9697150Z Completed 9.4 KiB/24.7 KiB (26.8 KiB/s) with 5 file(s) remaining
+2025-09-16T19:49:02.9698029Z upload: dist/icons/info.svg to s3://***/icons/info.svg
+2025-09-16T19:49:02.9702537Z Completed 9.4 KiB/24.7 KiB (26.8 KiB/s) with 4 file(s) remaining
+2025-09-16T19:49:02.9703157Z Completed 20.3 KiB/24.7 KiB (58.0 KiB/s) with 4 file(s) remaining
+2025-09-16T19:49:02.9703912Z upload: dist/icons/logo-black.svg to s3://***/icons/logo-black.svg
+2025-09-16T19:49:02.9811682Z Completed 20.3 KiB/24.7 KiB (58.0 KiB/s) with 3 file(s) remaining
+2025-09-16T19:49:02.9812419Z Completed 22.7 KiB/24.7 KiB (63.0 KiB/s) with 3 file(s) remaining
+2025-09-16T19:49:02.9848492Z upload: dist/icons/pause.svg to s3://***/icons/pause.svg
+2025-09-16T19:49:02.9849202Z Completed 22.7 KiB/24.7 KiB (63.0 KiB/s) with 2 file(s) remaining
+2025-09-16T19:49:02.9849893Z Completed 23.7 KiB/24.7 KiB (65.0 KiB/s) with 2 file(s) remaining
+2025-09-16T19:49:02.9850732Z upload: dist/icons/play.svg to s3://***/icons/play.svg
+2025-09-16T19:49:03.0120663Z Completed 23.7 KiB/24.7 KiB (65.0 KiB/s) with 1 file(s) remaining
+2025-09-16T19:49:03.0123400Z Completed 24.7 KiB/24.7 KiB (63.0 KiB/s) with 1 file(s) remaining
+2025-09-16T19:49:03.0124759Z upload: dist/icons/next.svg to s3://***/icons/next.svg
+2025-09-16T19:49:03.1125763Z [INFO] Concluído.
+2025-09-16T19:49:03.1156014Z ##[group]Run if [ -n "$CF_DIST_ID" ]; then
+2025-09-16T19:49:03.1156402Z [36;1mif [ -n "$CF_DIST_ID" ]; then[0m
+2025-09-16T19:49:03.1156967Z [36;1m  echo "🚀 Criando CloudFront invalidation..."[0m
+2025-09-16T19:49:03.1157318Z [36;1m  aws cloudfront create-invalidation \[0m
+2025-09-16T19:49:03.1157633Z [36;1m    --distribution-id "$CF_DIST_ID" \[0m
+2025-09-16T19:49:03.1157937Z [36;1m    --paths \[0m
+2025-09-16T19:49:03.1158171Z [36;1m      "/index.html" \[0m
+2025-09-16T19:49:03.1158416Z [36;1m      "/admin.html" \[0m
+2025-09-16T19:49:03.1158671Z [36;1m      "/manifest.webmanifest" \[0m
+2025-09-16T19:49:03.1158941Z [36;1m      "/sw.js" \[0m
+2025-09-16T19:49:03.1159170Z [36;1m      "/scripts/*" \[0m
+2025-09-16T19:49:03.1159403Z [36;1m      "/styles/*" \[0m
+2025-09-16T19:49:03.1159636Z [36;1m      "/data/*"[0m
+2025-09-16T19:49:03.1159932Z [36;1m  echo "✅ CloudFront invalidation criada com sucesso!"[0m
+2025-09-16T19:49:03.1160247Z [36;1melse[0m
+2025-09-16T19:49:03.1160589Z [36;1m  echo "CLOUDFRONT_DISTRIBUTION_ID not set; skipping invalidation"[0m
+2025-09-16T19:49:03.1160952Z [36;1mfi[0m
+2025-09-16T19:49:03.1190557Z shell: /usr/bin/bash -e {0}
+2025-09-16T19:49:03.1190808Z env:
+2025-09-16T19:49:03.1191073Z   S3_BUCKET: ***
+2025-09-16T19:49:03.1191309Z   AWS_DEFAULT_REGION: ***
+2025-09-16T19:49:03.1191569Z   AWS_REGION: ***
+2025-09-16T19:49:03.1192016Z   AWS_ACCESS_KEY_ID: ***
+2025-09-16T19:49:03.1192341Z   AWS_SECRET_ACCESS_KEY: ***
+2025-09-16T19:49:03.1192591Z   CF_DIST_ID: ***
+2025-09-16T19:49:03.1192797Z ##[endgroup]
+2025-09-16T19:49:03.1244875Z 🚀 Criando CloudFront invalidation...
+2025-09-16T19:49:03.8529670Z 
+2025-09-16T19:49:03.8531623Z An error occurred (AccessDenied) when calling the CreateInvalidation operation: User: arn:aws:iam::692687498801:user/radio-importante-deploy is not authorized to perform: cloudfront:CreateInvalidation on resource: arn:aws:cloudfront::692687498801:distribution/*** because no identity-based policy allows the cloudfront:CreateInvalidation action
+2025-09-16T19:49:03.9579069Z ##[error]Process completed with exit code 254.
+2025-09-16T19:49:03.9649847Z Post job cleanup.
+2025-09-16T19:49:04.1063080Z Post job cleanup.
+2025-09-16T19:49:04.2048944Z [command]/usr/bin/git version
+2025-09-16T19:49:04.2088086Z git version 2.51.0
+2025-09-16T19:49:04.2135467Z Temporarily overriding HOME='/home/runner/work/_temp/0d24c2b6-9364-4a54-a39e-5490b9a73da6' before making global git config changes
+2025-09-16T19:49:04.2137237Z Adding repository directory to the temporary git global config as a safe directory
+2025-09-16T19:49:04.2143013Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/radio-importante-pwa/radio-importante-pwa
+2025-09-16T19:49:04.2184266Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2025-09-16T19:49:04.2218223Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2025-09-16T19:49:04.2449998Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2025-09-16T19:49:04.2472170Z http.https://github.com/.extraheader
+2025-09-16T19:49:04.2484888Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2025-09-16T19:49:04.2516786Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2025-09-16T19:49:04.2855796Z Cleaning up orphan processes
