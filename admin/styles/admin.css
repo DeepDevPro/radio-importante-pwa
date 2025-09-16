@@ -1,0 +1,230 @@
+/* ===== ESTILOS ESPECÍFICOS DO ADMIN ===== */
+
+/* Upload Area */
+.upload-area {
+    border: 2px dashed #667eea;
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: #f8f9ff;
+    margin-bottom: 30px;
+}
+
+.upload-area:hover,
+.upload-area.drag-over {
+    border-color: #271F30;
+    background: #ede8f5;
+    transform: translateY(-2px);
+}
+
+.upload-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+    display: block;
+}
+
+/* Preview de arquivos */
+.file-preview {
+    background: #f0f8ff;
+    margin: var(--spacing-md) 0;
+}
+
+.file-item {
+    display: flex;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.file-item:last-child {
+    border-bottom: none;
+}
+
+.file-icon {
+    font-size: 24px;
+}
+
+.file-info {
+    flex: 1;
+}
+
+.file-name {
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.file-size {
+    font-size: 12px;
+    color: var(--gray-600);
+}
+
+/* Lista de Músicas */
+.music-list {
+    display: grid;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.music-item {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    transition: transform 0.2s ease;
+    gap: 15px;
+}
+
+.music-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.music-info {
+    flex: 1;
+    min-width: 0;
+    max-width: calc(100% - 200px);
+}
+
+.music-title {
+    font-weight: 600;
+    font-size: 18px;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.music-meta {
+    color: #666;
+    font-size: 14px;
+}
+
+.music-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* Editor Inline de Metadados */
+.music-title-container, .artist-container, .duration-container {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+}
+
+.music-title-container {
+    width: 100%;
+    margin-bottom: 5px;
+}
+
+.display-mode {
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+    border: 1px solid transparent;
+    word-break: break-word;
+    max-width: 100%;
+    display: inline-block;
+}
+
+.display-mode:hover {
+    background: #f0f8ff;
+    border-color: #667eea;
+}
+
+.edit-mode {
+    border: 2px solid #667eea;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: inherit;
+    font-family: inherit;
+    background: #fff;
+    color: #333;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.edit-mode:focus {
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+.music-title .edit-mode {
+    width: 100%;
+    min-width: 300px;
+    max-width: 100%;
+    font-weight: 600;
+    font-size: 18px;
+}
+
+.artist-container .edit-mode {
+    min-width: 200px;
+    max-width: 300px;
+}
+
+.duration-display {
+    color: #666;
+    font-style: italic;
+}
+
+.editing {
+    background: #f8f9ff !important;
+    border-color: #667eea !important;
+}
+
+/* Bulk Actions */
+#bulk-actions {
+    background: #fff3e0;
+    border-left: 4px solid var(--warning-color);
+}
+
+#music-totals {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+/* Mobile Responsivo */
+@media (max-width: 768px) {
+    .container {
+        padding: 20px;
+        margin: 10px;
+    }
+    .nav-menu {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .tabs {
+        flex-wrap: wrap;
+    }
+    .tab {
+        flex: 1;
+        min-width: 120px;
+    }
+    .music-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    .music-info {
+        max-width: 100%;
+        width: 100%;
+    }
+    .music-title .edit-mode {
+        min-width: 250px;
+        max-width: 100%;
+    }
+    .artist-container .edit-mode {
+        min-width: 150px;
+        max-width: 250px;
+    }
+    .music-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}
+
+#file-input {
+    display: none;
+}

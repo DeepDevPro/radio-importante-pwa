@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Teste - Digital Ocean</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+        
+        .status-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #ddd;
+        }
+        
+        .status-section.success {
+            border-color: #4CAF50;
+            background-color: #f8fff8;
+        }
+        
+        .status-section.error {
+            border-color: #f44336;
+            background-color: #fff8f8;
+        }
+        
+        .status-section.testing {
+            border-color: #ff9800;
+            background-color: #fff8f0;
+        }
+        
+        .upload-section {
+            margin-top: 30px;
+            padding: 20px;
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        input[type="file"] {
+            margin: 20px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            width: 100%;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .log {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+            white-space: pre-wrap;
+        }
+        
+        .url-display {
+            background: #e3f2fd;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste Digital Ocean</h1>
+        
+        <div class="status-section" id="statusSection">
+            <h3>📊 Status da Conexão</h3>
+            <p id="statusText">Aguardando teste...</p>
+            <div class="url-display" id="backendUrl">
+                URL Backend: <span id="urlText">Carregando...</span>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin: 20px 0;">
+            <button onclick="testarConexao()">🔍 Testar Conexão Backend</button>
+            <button onclick="testarCatalogo()">📚 Testar Catálogo</button>
+            <button onclick="limparLog()">🧹 Limpar Log</button>
+        </div>
+        
+        <div class="upload-section">
+            <h3>📤 Teste de Upload</h3>
+            <input type="file" id="fileInput" accept="audio/*" />
+            <br>
+            <button onclick="testarUpload()" id="uploadBtn">🚀 Testar Upload</button>
+        </div>
+        
+        <div class="log" id="logArea">Pronto para testar...\n</div>
+    </div>
+
+    <script>
+        // 🎯 CONFIGURAÇÃO SUPER SIMPLES - APENAS DIGITAL OCEAN
+        const BACKEND_URL = 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app';
+        
+        // Log function
+        function log(message) {
+            const logArea = document.getElementById('logArea');
+            const timestamp = new Date().toLocaleTimeString();
+            logArea.textContent += `[${timestamp}] ${message}\n`;
+            logArea.scrollTop = logArea.scrollHeight;
+            console.log(message);
+        }
+        
+        function limparLog() {
+            document.getElementById('logArea').textContent = 'Log limpo...\n';
+        }
+        
+        function atualizarStatus(status, className) {
+            const statusSection = document.getElementById('statusSection');
+            const statusText = document.getElementById('statusText');
+            
+            statusSection.className = `status-section ${className}`;
+            statusText.textContent = status;
+        }
+        
+        // Mostrar URL na tela
+        document.getElementById('urlText').textContent = BACKEND_URL;
+        
+        // 🔍 TESTE 1: Conexão básica
+        async function testarConexao() {
+            log('🔍 TESTE 1: Testando conexão básica...');
+            atualizarStatus('Testando conexão...', 'testing');
+            
+            try {
+                const url = `${BACKEND_URL}/health`;
+                log(`📡 Fazendo requisição para: ${url}`);
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                log(`📊 Status da resposta: ${response.status}`);
+                log(`📊 Headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2)}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ SUCESSO! Resposta: ${JSON.stringify(data, null, 2)}`);
+                    atualizarStatus('✅ Conexão OK - Backend funcionando!', 'success');
+                } else {
+                    log(`❌ ERRO HTTP: ${response.status} - ${response.statusText}`);
+                    const text = await response.text();
+                    log(`❌ Resposta: ${text}`);
+                    atualizarStatus(`❌ Erro HTTP: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ ERRO DE REDE: ${error.message}`);
+                log(`❌ Stack: ${error.stack}`);
+                atualizarStatus(`❌ Erro de rede: ${error.message}`, 'error');
+            }
+        }
+        
+        // 🔍 TESTE 2: Catálogo
+        async function testarCatalogo() {
+            log('🔍 TESTE 2: Testando API do catálogo...');
+            
+            try {
+                const url = `${BACKEND_URL}/api/catalog`;
+                log(`📡 Fazendo requisição para: ${url}`);
+                
+                const response = await fetch(url);
+                log(`📊 Status: ${response.status}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ CATÁLOGO OK: ${JSON.stringify(data, null, 2)}`);
+                    log(`📊 Total de faixas: ${data.metadata?.totalTracks || 0}`);
+                } else {
+                    log(`❌ ERRO no catálogo: ${response.status}`);
+                }
+            } catch (error) {
+                log(`❌ ERRO no catálogo: ${error.message}`);
+            }
+        }
+        
+        // 🔍 TESTE 3: Upload
+        async function testarUpload() {
+            const fileInput = document.getElementById('fileInput');
+            const uploadBtn = document.getElementById('uploadBtn');
+            
+            if (!fileInput.files[0]) {
+                log('❌ ERRO: Selecione um arquivo primeiro!');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            log(`🔍 TESTE 3: Testando upload do arquivo: ${file.name} (${file.size} bytes)`);
+            
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = '⏳ Uploading...';
+            
+            try {
+                // Criar FormData
+                const formData = new FormData();
+                formData.append('audioFiles', file);
+                formData.append('duration_0', '120'); // 2 minutos como teste
+                
+                log(`📤 Enviando arquivo para: ${BACKEND_URL}/api/upload`);
+                log(`📁 Arquivo: ${file.name}, Tipo: ${file.type}, Tamanho: ${file.size}`);
+                
+                const response = await fetch(`${BACKEND_URL}/api/upload`, {
+                    method: 'POST',
+                    body: formData
+                    // NÃO adicionar Content-Type, deixar o browser definir com boundary
+                });
+                
+                log(`📊 Status do upload: ${response.status}`);
+                log(`📊 Headers da resposta: ${JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2)}`);
+                
+                const responseText = await response.text();
+                log(`📥 Resposta completa: ${responseText}`);
+                
+                if (response.ok) {
+                    try {
+                        const data = JSON.parse(responseText);
+                        log(`✅ UPLOAD SUCESSO!`);
+                        log(`📊 Dados: ${JSON.stringify(data, null, 2)}`);
+                        atualizarStatus('✅ Upload funcionando!', 'success');
+                    } catch (parseError) {
+                        log(`⚠️ Resposta não é JSON válido: ${parseError.message}`);
+                        log(`✅ Mas o upload teve status 200!`);
+                    }
+                } else {
+                    log(`❌ ERRO no upload: ${response.status} - ${response.statusText}`);
+                    atualizarStatus(`❌ Erro no upload: ${response.status}`, 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ ERRO DE REDE no upload: ${error.message}`);
+                log(`❌ Stack: ${error.stack}`);
+                atualizarStatus(`❌ Erro de rede no upload: ${error.message}`, 'error');
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = '🚀 Testar Upload';
+            }
+        }
+        
+        // Auto-test na inicialização
+        window.addEventListener('load', () => {
+            log('🚀 Página carregada! Testando conexão automaticamente...');
+            setTimeout(testarConexao, 1000);
+        });
+    </script>
+</body>
+</html>

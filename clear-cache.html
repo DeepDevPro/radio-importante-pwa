@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧹 Limpeza de Cache - Radio Importante</title>
+    
+    <!-- Força reload sem cache -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            background: #ff5252;
+            transform: translateY(-2px);
+        }
+        
+        .btn-success {
+            background: #4ecdc4;
+        }
+        
+        .btn-success:hover {
+            background: #26a69a;
+        }
+        
+        .status {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-family: monospace;
+        }
+        
+        .highlight {
+            background: #ffd54f;
+            color: #333;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Limpeza de Cache do Radio Importante</h1>
+        
+        <div class="status" id="cache-status">
+            🔍 Verificando status do cache...
+        </div>
+        
+        <h2>🚀 Ações de Limpeza:</h2>
+        
+        <button class="btn" onclick="clearServiceWorker()">
+            🗑️ Limpar Service Worker
+        </button>
+        
+        <button class="btn" onclick="clearAllStorage()">
+            🧹 Limpar Todos os Dados
+        </button>
+        
+        <button class="btn" onclick="forceReload()">
+            🔄 Reload Forçado
+        </button>
+        
+        <button class="btn btn-success" onclick="testModularAdmin()">
+            🧪 Testar Admin Modular
+        </button>
+        
+        <button class="btn btn-success" onclick="goToAdmin()">
+            ✅ Ir para Admin Limpo
+        </button>
+        
+        <div class="status" id="actions-log">
+            📋 Log de ações aparecerá aqui...
+        </div>
+        
+        <h3>📖 Instruções:</h3>
+        <ol>
+            <li>Clique em <span class="highlight">"Limpar Service Worker"</span></li>
+            <li>Clique em <span class="highlight">"Limpar Todos os Dados"</span></li>
+            <li>Clique em <span class="highlight">"Reload Forçado"</span></li>
+            <li>Teste o <span class="highlight">"Admin Modular"</span></li>
+            <li>Se funcionou, vá para o <span class="highlight">"Admin Limpo"</span></li>
+        </ol>
+    </div>
+
+    <script>
+        const log = document.getElementById('actions-log');
+        const status = document.getElementById('cache-status');
+        
+        function addLog(message) {
+            log.innerHTML += `<div>${new Date().toLocaleTimeString()}: ${message}</div>`;
+        }
+        
+        // Verifica status inicial
+        function checkStatus() {
+            const swStatus = 'serviceWorker' in navigator ? '✅ SW suportado' : '❌ SW não suportado';
+            const cacheStatus = 'caches' in window ? '✅ Cache API disponível' : '❌ Cache API não disponível';
+            const storageUsed = navigator.storage && navigator.storage.estimate ? 'Calculando...' : 'N/A';
+            
+            status.innerHTML = `
+                ${swStatus}<br>
+                ${cacheStatus}<br>
+                📊 Armazenamento usado: ${storageUsed}<br>
+                🌐 URL atual: ${window.location.href}<br>
+                🔒 Protocolo: ${window.location.protocol}
+            `;
+            
+            if (navigator.storage && navigator.storage.estimate) {
+                navigator.storage.estimate().then(estimate => {
+                    const used = (estimate.usage / 1024 / 1024).toFixed(2);
+                    status.innerHTML = status.innerHTML.replace('Calculando...', `${used} MB`);
+                });
+            }
+        }
+        
+        async function clearServiceWorker() {
+            try {
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    
+                    for (const registration of registrations) {
+                        await registration.unregister();
+                        addLog(`🗑️ Service Worker removido: ${registration.scope}`);
+                    }
+                    
+                    if (registrations.length === 0) {
+                        addLog('ℹ️ Nenhum Service Worker encontrado');
+                    }
+                } else {
+                    addLog('❌ Service Worker não suportado');
+                }
+            } catch (error) {
+                addLog(`❌ Erro ao limpar SW: ${error.message}`);
+            }
+        }
+        
+        async function clearAllStorage() {
+            try {
+                // Limpar localStorage
+                localStorage.clear();
+                addLog('🗑️ localStorage limpo');
+                
+                // Limpar sessionStorage
+                sessionStorage.clear();
+                addLog('🗑️ sessionStorage limpo');
+                
+                // Limpar cache API
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    await Promise.all(
+                        cacheNames.map(cacheName => caches.delete(cacheName))
+                    );
+                    addLog(`🗑️ ${cacheNames.length} caches removidos`);
+                }
+                
+                // Limpar IndexedDB (se disponível)
+                if ('indexedDB' in window) {
+                    addLog('🗑️ IndexedDB será limpo no próximo reload');
+                }
+                
+                addLog('✅ Todos os dados locais foram limpos!');
+            } catch (error) {
+                addLog(`❌ Erro na limpeza: ${error.message}`);
+            }
+        }
+        
+        function forceReload() {
+            addLog('🔄 Forçando reload sem cache...');
+            setTimeout(() => {
+                window.location.reload(true);
+            }, 1000);
+        }
+        
+        function testModularAdmin() {
+            addLog('🧪 Abrindo teste do admin modular...');
+            window.open('/test-admin-modular.html?nocache=' + Date.now(), '_blank');
+        }
+        
+        function goToAdmin() {
+            addLog('✅ Redirecionando para admin limpo...');
+            setTimeout(() => {
+                window.location.href = '/admin.html?nocache=' + Date.now();
+            }, 1000);
+        }
+        
+        // Inicialização
+        checkStatus();
+        addLog('🚀 Sistema de limpeza iniciado');
+        
+        // Detecta se veio de cache
+        if (performance.navigation.type === 1) {
+            addLog('🔄 Página recarregada - cache pode ter sido usado');
+        } else {
+            addLog('🆕 Página carregada pela primeira vez');
+        }
+    </script>
+</body>
+</html>

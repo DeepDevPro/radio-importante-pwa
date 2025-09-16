@@ -368,11 +368,10 @@ export default defineConfig({
     target: 'ES2020',
     outDir: 'dist',
     assetsDir: 'assets',
-    sourcemap: true,
+    sourcemap: false,
     rollupOptions: {
       input: {
-        main: path.resolve(__dirname, 'index.html'),
-        admin: path.resolve(__dirname, 'admin.html')
+        main: path.resolve(__dirname, 'index.html')
       }
     }
   },
