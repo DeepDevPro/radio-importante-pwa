@@ -1,0 +1,96 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches: [ "staging" ]
+    paths:
+      - "src/**"
+      - "public/**" 
+      - "index.html"
+      - "admin.html"
+      - "admin/**"
+      - "vite.config.ts"
+      - "package.json"
+      - ".github/workflows/deploy-staging.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-staging-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      # Usar bucket/domínio separado para staging
+      S3_BUCKET: ${{ secrets.S3_BUCKET_STAGING }}
+      CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID_STAGING }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build for staging
+        run: npm run build
+        env:
+          NODE_ENV: staging
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+
+      - name: AWS CLI version
+        run: aws --version
+
+      - name: Sync dist to S3 Staging
+        run: |
+          echo "🚀 Deploying to STAGING environment"
+          aws s3 sync dist/ s3://$S3_BUCKET \
+            --delete \
+            --exclude ".DS_Store" \
+            --exclude ".*" \
+            --exclude "*.map"
+
+      - name: Normalize metadata staging
+        run: |
+          chmod +x scripts/s3-update-metadata.sh
+          ./scripts/s3-update-metadata.sh -b "$S3_BUCKET" --all
+
+      - name: Invalidate CloudFront Staging
+        run: |
+          if [ -n "$CLOUDFRONT_DISTRIBUTION_ID" ]; then
+            echo "♻️ Invalidating CloudFront staging cache"
+            aws cloudfront create-invalidation \
+              --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" \
+              --paths \
+                "/index.html" \
+                "/admin.html" \
+                "/manifest.webmanifest" \
+                "/sw.js" \
+                "/scripts/*" \
+                "/styles/*" \
+                "/data/*"
+            echo "✅ CloudFront staging invalidation criada com sucesso!"
+          else
+            echo "CLOUDFRONT_DISTRIBUTION_ID_STAGING not set; skipping invalidation"
+          fi
+
+      - name: Deploy Status
+        run: |
+          echo "✅ STAGING Deploy completed successfully!"
+          echo "🔗 Staging URL: https://staging.radio.importantestudio.com/"
+          echo "🎛️ Admin Panel: https://staging.radio.importantestudio.com/admin.html"
