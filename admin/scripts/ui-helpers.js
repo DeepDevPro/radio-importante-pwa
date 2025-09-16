@@ -5,16 +5,47 @@
 
 import { UI_CONFIG } from './config.js';
 
-export function showAlert(containerId, message, type) {
-    const container = document.getElementById(containerId);
-    container.innerHTML = `
-        <div class="alert alert-${type}">
-            ${message}
-        </div>
+export function showAlert(message, type = 'info') {
+    // Criar container de notificações se não existir
+    let container = document.getElementById('notifications-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'notifications-container';
+        container.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            max-width: 400px;
+        `;
+        document.body.appendChild(container);
+    }
+
+    // Criar alerta
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type}`;
+    alertDiv.style.cssText = `
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 8px;
+        background: ${type === 'success' ? '#d4edda' : type === 'error' ? '#f8d7da' : '#d1ecf1'};
+        border-left: 4px solid ${type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#17a2b8'};
+        color: ${type === 'success' ? '#155724' : type === 'error' ? '#721c24' : '#0c5460'};
+        animation: slideIn 0.3s ease;
     `;
+    alertDiv.textContent = message;
+
+    container.appendChild(alertDiv);
+
+    // Remover após alguns segundos
     setTimeout(() => {
-        container.innerHTML = '';
-    }, 5000);
+        alertDiv.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.parentNode.removeChild(alertDiv);
+            }
+        }, 300);
+    }, UI_CONFIG.feedbackDuration);
 }
 
 export function formatFileSize(bytes) {

@@ -8,6 +8,10 @@ const isHttps = window.location.protocol === 'https:';
 
 // Configurações da API
 export const API_CONFIG = {
+    backends: {
+        local: 'http://localhost:8080',
+        production: 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app'
+    },
     backendUrl: isProduction ? 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app' : 'http://localhost:8080',
     productionUrl: 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app',
     productionUrlBackup: 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app',

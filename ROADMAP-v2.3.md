@@ -5,6 +5,8 @@
 > **Objetivo**: Melhorias de UX, performance e features avançadas
 
 ---
+## A REGRA MAIS IMPORTANTE ANTES DE REALIZAR QUALQUER ALTERAÇÃO:
+- Nunca alterar os arquivos das estrategias pwa para iOS, iPhone e iPad porque já estão funcionando, testadas e qualquer modificação pode quebra-las.
 
 ## 🎯 **OBJETIVOS DA v2.3**
 
@@ -28,25 +30,10 @@
 
 ### **🎵 Features do Player (Prioridade Média)**
 ```bash
-□ Repeat modes (off, one, all)
-  - Toggle entre modos de repetição
-  - Persistir preferência no localStorage
-  - UI icons para cada modo
 
 □ Shuffle mode
   - Embaralhar ordem de reprodução
-  - Manter histórico para "previous"
-  - Visual indicator ativo/inativo
 
-□ Volume control
-  - Slider de volume funcional
-  - Persistir volume no localStorage
-  - Keyboard shortcuts (↑↓)
-
-□ Seek bar interativo
-  - Clique para navegar na música
-  - Drag para posição específica
-  - Preview de timestamp
 ```
 
 ### **🔧 Admin Panel Avançado (Prioridade Média)**
@@ -54,40 +41,12 @@
 □ Bulk operations
   - Seleção múltipla de músicas
   - Delete em lote
-  - Move/reorganização
 
 □ Metadata editing
   - Editar título/artista inline
   - Salvar mudanças via API
   - Validation de campos
 
-□ File management
-  - Renomear arquivos
-  - Verificar integrity
-  - Estatísticas de storage
-
-□ Preview melhorado
-  - Mini player no admin
-  - Waveform visualization
-  - Duration display
-```
-
-### **📱 Mobile/PWA Experience (Prioridade Baixa)**
-```bash
-□ Media Session aprimorada
-  - Lock screen controls completos
-  - Notification com artwork
-  - Background audio otimizado
-
-□ iOS Safari melhorias
-  - Buffer strategy específica
-  - Gestão de memória
-  - Auto-play handling
-
-□ Install prompt
-  - Custom install banner
-  - Onboarding para PWA features
-  - Usage analytics básico
 ```
 
 ### **🚀 Performance & Monitoring (Prioridade Baixa)**
@@ -134,7 +93,6 @@
 ```bash
 □ UX: Loading states mais claros
 □ UX: Error messages user-friendly  
-□ UX: Drag & drop visual feedback
 □ TECH: TypeScript strict mode
 □ TECH: ESLint rules mais rigorosas
 □ TECH: Jest test coverage básica
@@ -227,9 +185,6 @@ TESTE PRODUÇÃO:
 ### **Fase 2: Player Features (Semana 2)**
 ```bash  
 □ Feature: Repeat modes
-□ Feature: Volume control
-□ Feature: Keyboard shortcuts
-□ Improvement: Seek bar interativo
 ```
 
 ### **Fase 3: Admin Features (Semana 3)**
@@ -237,13 +192,11 @@ TESTE PRODUÇÃO:
 □ Feature: Bulk operations
 □ Feature: Metadata editing
 □ Feature: File management tools
-□ Improvement: Preview player
 ```
 
 ### **Fase 4: Polish & Performance (Semana 4)**
 ```bash
 □ Optimization: Bundle size
-□ Optimization: Audio streaming
 □ Feature: PWA install prompt
 □ Testing: Cross-browser validation
 ```
@@ -264,9 +217,6 @@ TESTE PRODUÇÃO:
 ### **Should Have (Desejáveis)**
 ```bash
 □ Repeat mode implementado
-□ Volume control funcional
-□ Keyboard shortcuts básicos
-□ Loading states visuais
 □ TypeScript strict mode
 ```
 

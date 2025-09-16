@@ -29,47 +29,122 @@ export class ApiManager {
 
     async makeRequest(endpoint, options = {}) {
         const url = `${this.getActiveBackendUrl()}${endpoint}`;
-        // Adicione lógica de requisição aqui
+        
+        const defaultOptions = {
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        };
+        
+        const finalOptions = { ...defaultOptions, ...options };
+        
+        const response = await fetch(url, finalOptions);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        return await response.json();
     }
 
     async checkBackendStatus() {
         const statusDiv = document.getElementById('backend-status');
         try {
             statusDiv.innerHTML = '🔍 Testando conexões...';
-            // ...lógica de verificação de backends conforme admin.html...
+            
+            // Testar backend local
+            const localResult = await this.checkSingleBackend('local');
+            
+            // Testar backend production se local falhar
+            const productionResult = await this.checkSingleBackend('production');
+            
+            // Determinar qual usar
+            if (localResult.status === 'ok') {
+                this.config.currentBackend = this.config.backends.local;
+                statusDiv.innerHTML = '✅ Backend Local ativo';
+            } else if (productionResult.status === 'ok') {
+                this.config.currentBackend = this.config.backends.production;
+                statusDiv.innerHTML = '✅ Backend Produção ativo';
+            } else {
+                statusDiv.innerHTML = '❌ Nenhum backend disponível';
+            }
         } catch (error) {
             statusDiv.innerHTML = `❌ Erro ao verificar status: ${error.message}`;
         }
     }
 
     async checkSingleBackend(type) {
-        // Adicione lógica de verificação individual
-        return {};
+        try {
+            const url = type === 'local' ? this.config.backends.local : this.config.backends.production;
+            const response = await fetch(`${url}/health`, { 
+                method: 'GET',
+                timeout: 5000 
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                return { status: 'ok', data };
+            } else {
+                return { status: 'error', error: response.statusText };
+            }
+        } catch (error) {
+            return { status: 'error', error: error.message };
+        }
     }
 
     async getCatalog() {
-        // Adicione lógica para buscar catálogo
-        return [];
+        return await this.makeRequest('/api/catalog');
     }
 
     async uploadFiles(formData, onProgress = null) {
-        // Adicione lógica de upload
-        return {};
+        const url = `${this.getActiveBackendUrl()}/api/upload`;
+        
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            
+            if (onProgress) {
+                xhr.upload.onprogress = (event) => {
+                    if (event.lengthComputable) {
+                        const percentComplete = (event.loaded / event.total) * 100;
+                        onProgress(percentComplete);
+                    }
+                };
+            }
+            
+            xhr.onload = () => {
+                if (xhr.status === 200) {
+                    resolve(JSON.parse(xhr.responseText));
+                } else {
+                    reject(new Error(`Upload failed: ${xhr.statusText}`));
+                }
+            };
+            
+            xhr.onerror = () => reject(new Error('Upload failed'));
+            
+            xhr.open('POST', url);
+            xhr.send(formData);
+        });
     }
 
     async updateTrackMetadata(trackId, metadata) {
-        // Adicione lógica de atualização
-        return {};
+        return await this.makeRequest(`/api/tracks/${trackId}/metadata`, {
+            method: 'PUT',
+            body: JSON.stringify(metadata)
+        });
     }
 
     async deleteTrack(trackId) {
-        // Adicione lógica de exclusão
-        return true;
+        const response = await this.makeRequest(`/api/delete/${trackId}`, {
+            method: 'DELETE'
+        });
+        return response.success;
     }
 
     async regenerateCatalog() {
-        // Adicione lógica de regeneração
-        return {};
+        return await this.makeRequest('/api/regenerate-catalog', {
+            method: 'POST'
+        });
     }
 
     hasActiveBackend() {

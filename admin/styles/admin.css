@@ -1,5 +1,53 @@
 /* ===== ESTILOS ESPECÍFICOS DO ADMIN ===== */
 
+/* Status Panel */
+.status-panel {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border-left: 4px solid #667eea;
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.tab {
+    background: none;
+    border: none;
+    padding: 12px 24px;
+    cursor: pointer;
+    border-radius: 8px 8px 0 0;
+    transition: all 0.3s ease;
+    font-size: 16px;
+    color: #495057;
+}
+
+.tab:hover {
+    background: #f8f9fa;
+    color: #667eea;
+}
+
+.tab.active {
+    background: #667eea;
+    color: white;
+    border-bottom: 2px solid #667eea;
+}
+
+.tab-content {
+    display: none;
+    padding: 20px 0;
+}
+
+.tab-content.active {
+    display: block;
+}
+
 /* Upload Area */
 .upload-area {
     border: 2px dashed #667eea;
@@ -106,72 +154,158 @@
 }
 
 /* Editor Inline de Metadados */
-.music-title-container, .artist-container, .duration-container {
+.track-title-container, .track-artist-container {
     position: relative;
     display: inline-block;
-    max-width: 100%;
-}
-
-.music-title-container {
     width: 100%;
-    margin-bottom: 5px;
 }
 
-.display-mode {
+.track-title, .track-artist {
     cursor: pointer;
-    padding: 2px 4px;
+    padding: 4px 8px;
     border-radius: 4px;
-    transition: background-color 0.2s ease;
+    transition: all 0.2s ease;
     border: 1px solid transparent;
-    word-break: break-word;
-    max-width: 100%;
     display: inline-block;
+    min-width: 150px;
+    word-break: break-word;
+    background: transparent;
 }
 
-.display-mode:hover {
+.track-title:hover, .track-artist:hover {
     background: #f0f8ff;
     border-color: #667eea;
+    transform: translateY(-1px);
 }
 
-.edit-mode {
+.track-title {
+    font-weight: 600;
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.track-artist {
+    color: #666;
+    font-size: 14px;
+}
+
+.edit-input {
     border: 2px solid #667eea;
     border-radius: 4px;
     padding: 4px 8px;
     font-size: inherit;
     font-family: inherit;
+    font-weight: inherit;
     background: #fff;
     color: #333;
     outline: none;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    max-width: 100%;
+    width: 100%;
+    min-width: 200px;
     box-sizing: border-box;
 }
 
-.edit-mode:focus {
+.edit-input:focus {
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    border-color: #4c63d2;
 }
 
-.music-title .edit-mode {
-    width: 100%;
-    min-width: 300px;
-    max-width: 100%;
-    font-weight: 600;
+/* Estrutura do item de música */
+.music-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    background: #fff;
+    transition: all 0.2s ease;
+}
+
+.music-item:hover {
+    border-color: #667eea;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+}
+
+.track-number {
+    font-weight: bold;
+    color: #667eea;
+    min-width: 30px;
+    text-align: center;
+}
+
+.track-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.track-meta {
+    display: flex;
+    gap: 15px;
+    margin-top: 5px;
+    font-size: 12px;
+    color: #888;
+}
+
+.filename {
+    color: #666;
+}
+
+.duration {
+    color: #888;
+}
+
+.track-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.btn-small {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    color: #495057;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.btn-small:hover {
+    background: #e9ecef;
+    border-color: #adb5bd;
+}
+
+.btn-danger {
+    background: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+.btn-danger:hover {
+    background: #f5c6cb;
+    border-color: #f1b0b7;
+}
+
+/* Lista vazia */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
     font-size: 18px;
 }
 
-.artist-container .edit-mode {
-    min-width: 200px;
-    max-width: 300px;
-}
-
-.duration-display {
-    color: #666;
-    font-style: italic;
-}
-
-.editing {
-    background: #f8f9ff !important;
-    border-color: #667eea !important;
+/* Totais */
+.totals-info {
+    background: #e3f2fd;
+    padding: 15px;
+    border-radius: 8px;
+    color: #1976d2;
+    text-align: center;
+    margin-top: 20px;
 }
 
 /* Bulk Actions */
