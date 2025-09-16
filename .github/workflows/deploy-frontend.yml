@@ -56,7 +56,12 @@ jobs:
         run: aws --version
 
       - name: Sync dist to S3
-        run: aws s3 sync dist/ s3://$S3_BUCKET --delete
+        run: |
+          aws s3 sync dist/ s3://$S3_BUCKET \
+            --delete \
+            --exclude ".DS_Store" \
+            --exclude ".*" \
+            --exclude "*.map"
 
       - name: Normalize metadata
         run: |
@@ -64,6 +69,7 @@ jobs:
           ./scripts/s3-update-metadata.sh -b "$S3_BUCKET" --all
 
       - name: Invalidate critical paths on CloudFront
+        continue-on-error: true
         env:
           CF_DIST_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
         run: |

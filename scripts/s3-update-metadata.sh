@@ -94,38 +94,38 @@ exec_block(){
 
 # HTML (no-cache)
 $DO_HTML && exec_block "HTML" \
-  "aws s3 ls s3://$BUCKET/ | grep -q .html" \
+  "find dist -maxdepth 1 -name '*.html' -print -quit | grep -q ." \
   "aws s3 cp dist s3://$BUCKET/ --recursive --exclude '*' --include '*.html' --content-type 'text/html' --cache-control '$NO_CACHE' --metadata-directive REPLACE"
 
 # Service Worker (no-cache)
 $DO_SW && exec_block "Service Worker" \
-  "aws s3 ls s3://$BUCKET/sw.js" \
+  "test -f dist/sw.js" \
   "aws s3 cp dist s3://$BUCKET/ --recursive --exclude '*' --include 'sw.js' --content-type 'text/javascript' --cache-control '$NO_CACHE' --metadata-directive REPLACE"
 
 # scripts/*.js e styles/*.css (curto)
 $DO_SCRIPTS && exec_block "Scripts & CSS curtos" \
-  "aws s3 ls s3://$BUCKET/scripts/ >/dev/null 2>&1" \
+  "find dist/scripts -maxdepth 1 -name '*.js' -print -quit | grep -q . || find dist/styles -maxdepth 1 -name '*.css' -print -quit | grep -q ." \
   "aws s3 cp dist s3://$BUCKET/ --recursive --exclude '*' --include 'scripts/*.js' --include 'styles/*.css' --content-type 'text/javascript' --cache-control '$SHORT_CACHE' --metadata-directive REPLACE; \
    aws s3 cp dist s3://$BUCKET/ --recursive --exclude '*' --include 'styles/*.css' --content-type 'text/css' --cache-control '$SHORT_CACHE' --metadata-directive REPLACE"
 
 # assets/*.js (long cache)
 $DO_ASSETS && exec_block "Assets JS (hash)" \
-  "aws s3 ls s3://$BUCKET/assets/ | grep -q .js" \
+  "find dist/assets -maxdepth 1 -name '*.js' -print -quit | grep -q ." \
   "aws s3 cp dist s3://$BUCKET/ --recursive --exclude '*' --include 'assets/*.js' --content-type 'text/javascript' --cache-control '$LONG_CACHE' --metadata-directive REPLACE"
 
 # JSON
 $DO_JSON && exec_block "JSON" \
-  "aws s3 ls s3://$BUCKET/data/ >/dev/null 2>&1 || aws s3 ls s3://$BUCKET/assets/ | grep -q .json" \
+  "find dist/data -maxdepth 1 -name '*.json' -print -quit | grep -q . || find dist/assets -maxdepth 1 -name '*.json' -print -quit | grep -q ." \
   "aws s3 cp dist s3://$BUCKET/ --recursive --exclude '*' --include 'data/*.json' --include 'assets/*.json' --content-type 'application/json' --cache-control '$SHORT_CACHE' --metadata-directive REPLACE"
 
 # Manifest
 $DO_MANIFEST && exec_block "Manifest" \
-  "aws s3 ls s3://$BUCKET/manifest.webmanifest" \
+  "test -f dist/manifest.webmanifest" \
   "aws s3 cp dist s3://$BUCKET/ --recursive --exclude '*' --include 'manifest.webmanifest' --content-type 'application/manifest+json' --cache-control '$SHORT_CACHE' --metadata-directive REPLACE"
 
 # SVG
 $DO_SVG && exec_block "SVG" \
-  "aws s3 ls s3://$BUCKET/icons/ | grep -q .svg" \
+  "find dist/icons -maxdepth 1 -name '*.svg' -print -quit | grep -q . || find dist -maxdepth 1 -name '*.svg' -print -quit | grep -q ." \
   "aws s3 cp dist s3://$BUCKET/ --recursive --exclude '*' --include 'icons/*.svg' --include '*.svg' --content-type 'image/svg+xml' --cache-control '$LONG_CACHE' --metadata-directive REPLACE"
 
 # Invalidation
