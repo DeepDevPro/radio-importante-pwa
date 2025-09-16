@@ -5,20 +5,183 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Radio Importante</title>
     
-    <!-- CSS Modularizado -->
-    <link rel="stylesheet" href="dist/styles/reset.css">
-    <link rel="stylesheet" href="dist/styles/base.css">
-    <link rel="stylesheet" href="dist/styles/components.css">
-    <link rel="stylesheet" href="dist/styles/layout.css">
-    <link rel="stylesheet" href="dist/styles/admin.css">
-    
     <!-- Meta tags para PWA -->
     <meta name="description" content="Interface de administração do Radio Importante">
     <meta name="theme-color" content="#667eea">
     
-    <!-- Preload de scripts críticos -->
-    <link rel="modulepreload" href="dist/scripts/config.js">
-    <link rel="modulepreload" href="dist/scripts/admin.js">
+    <style>
+        /* Reset e estilos básicos */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .status-panel {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .tab {
+            background: none;
+            border: none;
+            padding: 15px 25px;
+            cursor: pointer;
+            border-radius: 10px 10px 0 0;
+            transition: all 0.3s ease;
+            font-size: 16px;
+        }
+        
+        .tab:hover {
+            background: #f8f9fa;
+        }
+        
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .upload-area {
+            border: 2px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f8f9fa;
+        }
+        
+        .upload-icon {
+            font-size: 48px;
+            display: block;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .alert-info {
+            background: #d1ecf1;
+            border-left: 4px solid #bee5eb;
+            color: #0c5460;
+        }
+        
+        #file-input {
+            display: none;
+        }
+        
+        .progress-bar {
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        
+        .progress-fill {
+            background: #667eea;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            transition: width 0.3s ease;
+        }
+        
+        .nav-menu {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .nav-link {
+            text-decoration: none;
+            background: #f8f9fa;
+            padding: 10px 20px;
+            border-radius: 8px;
+            color: #495057;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -155,7 +318,88 @@
     <div id="notifications-container" aria-live="polite" aria-atomic="true"></div>
 
     <!-- Scripts Modularizados -->
-    <script type="module" src="dist/scripts/admin.js"></script>
+    <script type="module" src="/src/admin.ts"></script>
+    
+    <script>
+        // Funções básicas para tabs
+        function switchTab(tabName) {
+            // Remove active de todas as tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+                tab.setAttribute('aria-selected', 'false');
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Ativa a tab selecionada
+            const activeTab = document.querySelector(`[onclick="switchTab('${tabName}')"]`);
+            const activeContent = document.getElementById(`${tabName}-tab`);
+            
+            if (activeTab && activeContent) {
+                activeTab.classList.add('active');
+                activeTab.setAttribute('aria-selected', 'true');
+                activeContent.classList.add('active');
+            }
+        }
+        
+        // Funções básicas de upload
+        function clearFiles() {
+            document.getElementById('file-input').value = '';
+            document.getElementById('file-preview').style.display = 'none';
+        }
+        
+        async function uploadFiles() {
+            const fileInput = document.getElementById('file-input');
+            if (!fileInput.files.length) {
+                alert('Selecione arquivos primeiro!');
+                return;
+            }
+            
+            const statusEl = document.getElementById('upload-status');
+            statusEl.innerHTML = '📤 Iniciando upload...';
+            
+            // Simulação básica - será substituída pelo admin.ts
+            setTimeout(() => {
+                statusEl.innerHTML = '✅ Upload concluído! (placeholder)';
+            }, 2000);
+        }
+        
+        // Upload drag & drop
+        const uploadArea = document.getElementById('upload-area');
+        if (uploadArea) {
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.style.background = '#f0f8ff';
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.style.background = '';
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.style.background = '';
+                const files = e.dataTransfer.files;
+                document.getElementById('file-input').files = files;
+                if (files.length > 0) {
+                    document.getElementById('file-preview').style.display = 'block';
+                    document.getElementById('file-list').innerHTML = 
+                        Array.from(files).map(f => `<div>📁 ${f.name}</div>`).join('');
+                }
+            });
+        }
+        
+        // Atualizar preview ao selecionar arquivos
+        document.getElementById('file-input')?.addEventListener('change', function() {
+            const files = this.files;
+            if (files.length > 0) {
+                document.getElementById('file-preview').style.display = 'block';
+                document.getElementById('file-list').innerHTML = 
+                    Array.from(files).map(f => `<div>📁 ${f.name}</div>`).join('');
+            }
+        });
+    </script></script>
 
     <!-- Fallback para browsers sem suporte a módulos -->
     <script nomodule>
