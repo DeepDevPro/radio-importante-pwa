@@ -294,6 +294,7 @@ export class StateManager {
     
     console.log('🔗 Filename original (exibição):', track.filename);
     console.log('🔗 Filename sanitizado (URL):', filenameForUrl);
+    console.log('🔗 Backend baseUrl:', API_CONFIG.baseUrl);
     console.log('🔗 URL final:', sanitizedUrl);
     
     return sanitizedUrl;
