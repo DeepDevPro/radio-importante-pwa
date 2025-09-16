@@ -69,7 +69,6 @@ jobs:
           ./scripts/s3-update-metadata.sh -b "$S3_BUCKET" --all
 
       - name: Invalidate critical paths on CloudFront
-        continue-on-error: true
         env:
           CF_DIST_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
         run: |
