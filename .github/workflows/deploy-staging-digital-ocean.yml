@@ -1,5 +1,8 @@
 name: Deploy to Staging (Digital Ocean)
 
+# Force workflow recognition - updated timestamp
+# Last update: 2025-09-19 17:45
+
 on:
   push:
     branches: [ "staging" ]
