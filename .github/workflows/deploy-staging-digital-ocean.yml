@@ -3,17 +3,6 @@ name: Deploy to Staging (Digital Ocean)
 on:
   push:
     branches: [ "staging" ]
-    paths:
-      - "src/**"
-      - "public/**"
-      - "index.html"
-      - "admin.html"
-      - "admin-*.html"
-      - "vite.config.ts"
-      - "package.json"
-      - "package-lock.json"
-      - "styles/**"
-      - "scripts/**"
   workflow_dispatch:
 
 concurrency:
