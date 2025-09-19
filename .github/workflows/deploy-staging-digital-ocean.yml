@@ -22,7 +22,7 @@ jobs:
       - name: Deploy to Digital Ocean Staging
         uses: digitalocean/app_action@v1.1.5
         with:
-          app_name: radio-importante-frontend-staging
+          app_name: radio-importante-frontend-stagin
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
           
       - name: Notify Staging Deploy Success
@@ -30,4 +30,4 @@ jobs:
           echo "🚧 Staging deploy completed successfully!"
           echo "🔗 URL: https://radio-importante-frontend-stagin-6rjzv.ondigitalocean.app/"
           echo "📋 Environment: staging"
-          echo "📦 App name: radio-importante-frontend-staging"
+          echo "📦 App name: radio-importante-frontend-stagin"
