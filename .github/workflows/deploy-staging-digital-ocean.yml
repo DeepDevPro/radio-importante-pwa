@@ -1,4 +1,4 @@
-name: Deploy to Staging
+name: Deploy to Staging (Digital Ocean)
 
 on:
   push:
@@ -17,11 +17,11 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: deploy-staging-${{ github.ref }}
+  group: deploy-staging-do-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  deploy-to-digital-ocean:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -33,7 +33,9 @@ jobs:
           app_name: radio-importante-frontend-staging
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
           
-      - name: Notify Staging Deploy
+      - name: Notify Staging Deploy Success
         run: |
-          echo "🚧 Staging deploy completed!"
-          echo "URL: https://radio-importante-frontend-stagin-6rjzv.ondigitalocean.app/"
+          echo "🚧 Staging deploy completed successfully!"
+          echo "🔗 URL: https://radio-importante-frontend-stagin-6rjzv.ondigitalocean.app/"
+          echo "📋 Environment: staging"
+          echo "📦 App name: radio-importante-frontend-staging"

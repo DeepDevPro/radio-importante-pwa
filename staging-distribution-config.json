@@ -1,0 +1,36 @@
+{
+  "CallerReference": "staging-radio-importante-$(date +%s)",
+  "Comment": "Radio Importante PWA - Staging Environment",
+  "DefaultRootObject": "index.html",
+  "Origins": {
+    "Quantity": 1,
+    "Items": [
+      {
+        "Id": "S3-radio-importante-staging",
+        "DomainName": "radio-importante-staging.s3-website-us-west-2.amazonaws.com",
+        "CustomOriginConfig": {
+          "HTTPPort": 80,
+          "HTTPSPort": 443,
+          "OriginProtocolPolicy": "http-only"
+        }
+      }
+    ]
+  },
+  "DefaultCacheBehavior": {
+    "TargetOriginId": "S3-radio-importante-staging",
+    "ViewerProtocolPolicy": "redirect-to-https",
+    "TrustedSigners": {
+      "Enabled": false,
+      "Quantity": 0
+    },
+    "ForwardedValues": {
+      "QueryString": false,
+      "Cookies": {
+        "Forward": "none"
+      }
+    },
+    "MinTTL": 0
+  },
+  "Enabled": true,
+  "PriceClass": "PriceClass_100"
+}
