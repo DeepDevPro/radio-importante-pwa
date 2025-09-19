@@ -65,6 +65,35 @@ function setupIOSPWAOptimizations(): void {
   }
 }
 
+// Configuração de staging environment
+function setupStagingIndicators(): void {
+  const hostname = window.location.hostname;
+  const isStaging = hostname.includes('staging') || hostname.includes('stagin');
+  
+  if (isStaging) {
+    // Modificar title
+    document.title = `[STAGING] ${document.title}`;
+    
+    // Adicionar classe ao body
+    document.body.classList.add('staging');
+    
+    // Criar banner
+    const banner = document.createElement('div');
+    banner.className = 'staging-banner';
+    banner.innerHTML = '🚧 AMBIENTE DE STAGING - NÃO É PRODUÇÃO 🚧';
+    document.body.insertBefore(banner, document.body.firstChild);
+    
+    // Criar indicador lateral
+    const indicator = document.createElement('div');
+    indicator.className = 'staging-indicator';
+    indicator.innerHTML = 'STAGING';
+    document.body.appendChild(indicator);
+    
+    // Log console
+    console.log('%c🚧 STAGING ENVIRONMENT 🚧', 'color: #ff6b35; font-size: 16px; font-weight: bold;');
+  }
+}
+
 class RadioImportanteApp {
   private controls!: Controls;
   private audioPlayer!: AudioPlayer;
@@ -77,6 +106,9 @@ class RadioImportanteApp {
   constructor() {
     // Aplicar otimizações PWA primeiro
     setupIOSPWAOptimizations();
+    
+    // Configurar indicadores de staging
+    setupStagingIndicators();
     
     // Registrar Service Worker
     this.registerServiceWorker();

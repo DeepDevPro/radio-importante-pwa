@@ -2,16 +2,40 @@
  * ===== CONFIGURAÇÕES CENTRALIZADAS =====
  */
 
-// Detecção de ambiente
-export const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-const isHttps = window.location.protocol === 'https:';
+// Detecção de ambiente aprimorada
+function detectEnvironment() {
+    const hostname = window.location.hostname;
+    
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        return 'development';
+    }
+    
+    if (hostname.includes('staging') || hostname.includes('stagin')) {
+        return 'staging';
+    }
+    
+    return 'production';
+}
+
+export const ENVIRONMENT = detectEnvironment();
+export const isProduction = ENVIRONMENT === 'production';
+export const isStaging = ENVIRONMENT === 'staging';
+export const isDevelopment = ENVIRONMENT === 'development';
 
 // Configurações da API
 export const API_CONFIG = {
-    backendUrl: isProduction ? 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app' : 'http://localhost:8080',
+    backends: {
+        local: 'http://localhost:8080',
+        staging: 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app', // Compartilhado inicialmente
+        production: 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app'
+    },
+    backendUrl: ENVIRONMENT === 'development' ? 'http://localhost:8080' : 
+                ENVIRONMENT === 'staging' ? 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app' :
+                'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app',
     productionUrl: 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app',
     productionUrlBackup: 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app',
-    currentBackend: null
+    currentBackend: null,
+    environment: ENVIRONMENT
 };
 
 // Configurações de UI
