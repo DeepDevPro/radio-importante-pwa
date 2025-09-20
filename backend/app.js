@@ -3,6 +3,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const storageConfig = require('./storage-config');
 
 const app = express();
 
@@ -21,10 +22,6 @@ app.use((req, res, next) => {
   }
   next();
 });
-
-// Servir arquivos estáticos de audio
-const audioPath = process.env.UPLOAD_PATH || path.join(process.cwd(), 'public', 'audio');
-app.use('/audio', express.static(audioPath));
 
 // Health check endpoints
 app.get('/', (req, res) => {
@@ -46,26 +43,9 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Configuração do multer para upload
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    // Prefer configurable UPLOAD_PATH so platform can mount persistent storage there.
-    const baseDir = process.env.UPLOAD_PATH || path.join(process.cwd(), 'public', 'audio');
-
-    // Criar diretório se não existir
-    if (!fs.existsSync(baseDir)) {
-      fs.mkdirSync(baseDir, { recursive: true });
-    }
-    cb(null, baseDir);
-  },
-  filename: function (req, file, cb) {
-    // Manter nome original do arquivo
-    cb(null, file.originalname);
-  }
-});
-
+// Configuração do multer para upload usando storage persistente
 const upload = multer({ 
-  storage: storage,
+  storage: storageConfig.storage,
   limits: { fileSize: 50 * 1024 * 1024 } // 50MB
 });
 
@@ -200,9 +180,10 @@ app.post('/api/upload', flexibleUpload, (req, res) => {
         id: `track_${Date.now()}_${index}`,
         title: path.parse(file.originalname).name,
         artist: 'Artista não definido',
-        filename: file.originalname,
+        filename: file.key || file.filename, // Use key from S3 or filename from local
         duration: duration ? parseFloat(duration) : 0,
-        format: path.extname(file.originalname).toLowerCase()
+        format: path.extname(file.originalname).toLowerCase(),
+        url: storageConfig.getFileUrl(file.key || file.filename) // URL correta baseada no storage
       };
       newTracks.push(track);
       catalog.tracks.push(track);
@@ -267,7 +248,7 @@ app.put('/api/tracks/:id/metadata', (req, res) => {
   }
 });
 
-app.delete('/api/delete/:id', (req, res) => {
+app.delete('/api/delete/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -281,13 +262,13 @@ app.delete('/api/delete/:id', (req, res) => {
 
     const deletedTrack = catalog.tracks[trackIndex];
     
-    // Remover arquivo físico
+    // Remover arquivo físico usando o storage config
     if (deletedTrack.filename) {
-      const uploadsDir = process.env.UPLOAD_PATH || path.join(process.cwd(), 'public', 'audio');
-      const filePath = path.join(uploadsDir, deletedTrack.filename);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
+      const deleteSuccess = await storageConfig.deleteFile(deletedTrack.filename);
+      if (deleteSuccess) {
         console.log(`🗑️ Arquivo removido: ${deletedTrack.filename}`);
+      } else {
+        console.log(`⚠️ Falha ao remover arquivo: ${deletedTrack.filename}`);
       }
     }
     
