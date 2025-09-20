@@ -184,7 +184,7 @@ function setupEventListeners() {
         // Clique na área de upload também abre o seletor
         uploadArea.addEventListener('click', (e) => {
             // Evitar trigger duplo se o usuário clicar no botão dentro da área
-            if (e.target !== fileSelectBtn && fileInput) {
+            if (fileSelectBtn && e.target !== fileSelectBtn && fileInput) {
                 (fileInput as any).click();
             }
         });
