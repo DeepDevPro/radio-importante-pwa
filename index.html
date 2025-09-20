@@ -200,6 +200,12 @@
         background: rgba(102, 102, 102, 0.1);
         color: #444;
       }
+
+      /* Hide debug and admin buttons in production */
+      .utility-btn.debug-btn,
+      .utility-btn.admin-btn {
+        display: none !important;
+      }
       
       /* Track Info */
       .track-info {
