@@ -361,41 +361,9 @@
             }, 2000);
         }
         
-        // Upload drag & drop
-        const uploadArea = document.getElementById('upload-area');
-        if (uploadArea) {
-            uploadArea.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                uploadArea.style.background = '#f0f8ff';
-            });
-            
-            uploadArea.addEventListener('dragleave', () => {
-                uploadArea.style.background = '';
-            });
-            
-            uploadArea.addEventListener('drop', (e) => {
-                e.preventDefault();
-                uploadArea.style.background = '';
-                const files = e.dataTransfer.files;
-                document.getElementById('file-input').files = files;
-                if (files.length > 0) {
-                    document.getElementById('file-preview').style.display = 'block';
-                    document.getElementById('file-list').innerHTML = 
-                        Array.from(files).map(f => `<div>📁 ${f.name}</div>`).join('');
-                }
-            });
-        }
-        
-        // Atualizar preview ao selecionar arquivos
-        document.getElementById('file-input')?.addEventListener('change', function() {
-            const files = this.files;
-            if (files.length > 0) {
-                document.getElementById('file-preview').style.display = 'block';
-                document.getElementById('file-list').innerHTML = 
-                    Array.from(files).map(f => `<div>📁 ${f.name}</div>`).join('');
-            }
-        });
-    </script></script>
+        // Event listeners serão gerenciados pelo admin.ts
+        // Removido para evitar duplicidade com src/admin.ts
+    </script>
 
     <!-- Fallback para browsers sem suporte a módulos -->
     <script nomodule>

@@ -144,35 +144,62 @@ async function testBackend(url: string, name: string) {
  * Configura event listeners
  */
 function setupEventListeners() {
-    const fileInput = document.getElementById('file-input') as any;
+    const fileInput = document.getElementById('file-input');
+    const fileSelectBtn = document.getElementById('file-select-btn');
     const uploadArea = document.getElementById('upload-area');
-    if (fileInput) fileInput.addEventListener('change', handleFileSelection);
+    
+    // Event listener para o input de arquivos
+    if (fileInput) {
+        fileInput.addEventListener('change', handleFileSelection);
+    }
+    
+    // Event listener para o botão de seleção (sem duplicidade)
+    if (fileSelectBtn) {
+        fileSelectBtn.addEventListener('click', () => {
+            if (fileInput) (fileInput as any).click();
+        });
+    }
+    
+    // Upload drag & drop
     if (uploadArea) {
-        uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.style.background = '#f0f8ff'; });
-        uploadArea.addEventListener('dragleave', () => { uploadArea.style.background = ''; });
+        uploadArea.addEventListener('dragover', (e) => { 
+            e.preventDefault(); 
+            (uploadArea as any).style.background = '#f0f8ff'; 
+        });
+        
+        uploadArea.addEventListener('dragleave', () => { 
+            (uploadArea as any).style.background = ''; 
+        });
+        
         uploadArea.addEventListener('drop', (e) => {
             e.preventDefault();
-            uploadArea.style.background = '';
-            const files = e.dataTransfer?.files;
+            (uploadArea as any).style.background = '';
+            const files = (e as any).dataTransfer?.files;
             if (files && fileInput) {
-                // Converter FileList para DataTransfer manualmente não é necessário: apenas mostrar preview
-                fileInput.files = files as unknown as FileList; // fallback cast
+                (fileInput as any).files = files;
                 handleFileSelection();
             }
         });
-        uploadArea.addEventListener('click', () => fileInput?.click());
+        
+        // Clique na área de upload também abre o seletor
+        uploadArea.addEventListener('click', (e) => {
+            // Evitar trigger duplo se o usuário clicar no botão dentro da área
+            if (e.target !== fileSelectBtn && fileInput) {
+                (fileInput as any).click();
+            }
+        });
     }
 }
 
 function handleFileSelection() {
-    const fileInput = document.getElementById('file-input') as any;
+    const fileInput = document.getElementById('file-input') as HTMLInputElement | null;
     const filePreview = document.getElementById('file-preview');
     const fileListDiv = document.getElementById('file-list');
     if (!fileInput?.files || fileInput.files.length === 0) return;
-    const files = Array.from(fileInput.files as any[]);
+    const files = Array.from(fileInput.files);
     if (filePreview) filePreview.style.display = 'block';
     if (fileListDiv) {
-        fileListDiv.innerHTML = files.map((file: any) => `
+        fileListDiv.innerHTML = files.map((file: File) => `
             <div style="padding:10px;border:1px solid #ddd;border-radius:8px;margin:5px 0;">
                 📁 <strong>${file.name}</strong><br>
                 📊 Tamanho: ${(file.size / 1024 / 1024).toFixed(2)} MB<br>
