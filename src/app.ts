@@ -530,11 +530,11 @@ class RadioImportanteApp {
   }
 
   private handleLoadStart(): void {
-    this.stateManager.updateState({ isLoading: true });
+    // Loading state removido para manter interface minimalista
   }
 
   private handleCanPlay(): void {
-    this.stateManager.updateState({ isLoading: false });
+    // Loading state removido para manter interface minimalista
   }
 
   private handleAudioError(error: Error): void {

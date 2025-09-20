@@ -120,14 +120,6 @@ export class Controls {
             justify-content: center;
           ">⏭️</button>
         </div>
-
-        <!-- Loading indicator -->
-        <div id="loadingIndicator" style="
-          margin-top: 20px;
-          font-size: 14px;
-          color: #666;
-          display: none;
-        ">Carregando...</div>
       </div>
     `;
   }
@@ -169,14 +161,6 @@ export class Controls {
       playButton.textContent = playing ? '⏸️' : '▶️';
     }
     console.log(`🎵 Estado: ${playing ? 'Tocando' : 'Pausado'}`);
-  }
-
-  public setLoading(loading: boolean): void {
-    const loadingIndicator = document.getElementById('loadingIndicator');
-    if (loadingIndicator) {
-      loadingIndicator.style.display = loading ? 'block' : 'none';
-    }
-    console.log(`⏳ Loading: ${loading}`);
   }
 
   public updateTrackInfo(title: string, artist: string): void {

@@ -61,7 +61,6 @@ export class Controls {
           <button class="btn btn-play" id="playButton" title="Reproduzir/Pausar">
             <img src="/icons/play.svg" class="play-icon" alt="Play" />
             <img src="/icons/pause.svg" class="pause-icon" style="display: none;" alt="Pause" />
-            <span class="loading-spinner" style="display: none;">⏳</span>
           </button>
           <button class="btn btn-next" id="nextButton" title="Próxima">
             <img src="/icons/next.svg" alt="Next" />
@@ -163,11 +162,6 @@ export class Controls {
     this.updateUI();
   }
 
-  public setLoading(isLoading: boolean): void {
-    this.state.isLoading = isLoading;
-    this.updateUI();
-  }
-
   public enableControls(): void {
     this.playButton.disabled = false;
     this.nextButton.disabled = false;
@@ -192,17 +186,12 @@ export class Controls {
   private updateUI(): void {
     const playIcon = this.playButton.querySelector('.play-icon') as HTMLElement;
     const pauseIcon = this.playButton.querySelector('.pause-icon') as HTMLElement;
-    const loadingSpinner = this.playButton.querySelector('.loading-spinner') as HTMLElement;
 
     // Reset all icons
     playIcon.style.display = 'none';
     pauseIcon.style.display = 'none';
-    loadingSpinner.style.display = 'none';
 
-    if (this.state.isLoading) {
-      loadingSpinner.style.display = 'inline';
-      this.playButton.disabled = true;
-    } else if (this.state.isPlaying) {
+    if (this.state.isPlaying) {
       pauseIcon.style.display = 'inline';
       this.playButton.disabled = false;
     } else {
