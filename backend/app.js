@@ -1,5 +1,8 @@
 /* eslint-env node */
-require('dotenv').config();
+// Only load dotenv in development
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
+}
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
