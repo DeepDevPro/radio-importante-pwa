@@ -360,7 +360,13 @@ app.listen(PORT, () => {
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
   console.log(`📁 Catalog tracks: ${catalog.tracks.length}`);
-  console.log(`📁 Upload path: ${process.env.UPLOAD_PATH || path.join(process.cwd(), 'public', 'audio')}`);
+  
+  // Show storage type being used
+  if (process.env.DO_SPACES_KEY && process.env.DO_SPACES_SECRET) {
+    console.log(`🌊 Using Digital Ocean Spaces: ${process.env.DO_SPACES_BUCKET}.${process.env.DO_SPACES_ENDPOINT}`);
+  } else {
+    console.log(`📁 Upload path: ${process.env.UPLOAD_PATH || path.join(process.cwd(), 'public', 'audio')}`);
+  }
 });
 
 // Graceful shutdown
