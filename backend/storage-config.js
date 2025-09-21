@@ -1,49 +1,44 @@
 /* eslint-env node */
-const AWS = require('aws-sdk');
-const multerS3 = require('multer-s3');
+const multer = require('multer');
+const path = require('path');
 
-// Configure Digital Ocean Spaces (S3-compatible)
-const spacesEndpoint = new AWS.Endpoint(process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com');
-const s3 = new AWS.S3({
-  endpoint: spacesEndpoint,
-  accessKeyId: process.env.DO_SPACES_KEY,
-  secretAccessKey: process.env.DO_SPACES_SECRET,
-  region: process.env.DO_SPACES_REGION || 'nyc3'
-});
+// Check if we should use Digital Ocean Spaces
+const useSpaces = process.env.DO_SPACES_KEY && process.env.DO_SPACES_SECRET;
 
-// Storage configuration for Digital Ocean Spaces
-const storage = multerS3({
-  s3: s3,
-  bucket: process.env.DO_SPACES_BUCKET || 'radio-importante-audio',
-  acl: 'public-read',
-  key: function (req, file, cb) {
+// Local storage configuration (fallback)
+const localStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, process.env.UPLOAD_PATH || path.join(process.cwd(), 'public', 'audio'));
+  },
+  filename: function (req, file, cb) {
     const sanitizedName = file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_');
     const filename = Date.now() + '-' + sanitizedName;
-    cb(null, `audio/${filename}`);
-  },
-  contentType: function (req, file, cb) {
-    cb(null, file.mimetype);
+    cb(null, filename);
   }
 });
 
+// For now, use local storage until we implement proper Spaces integration
+const storage = localStorage;
+
 // File URL generator
 const getFileUrl = (filename) => {
-  const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
-  const endpoint = process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com';
-  return `https://${bucket}.${endpoint}/${filename}`;
+  // For local storage, return relative path
+  return `/audio/${filename}`;
 };
 
 // Delete file function
 const deleteFile = async (fileKey) => {
   try {
-    await s3.deleteObject({
-      Bucket: process.env.DO_SPACES_BUCKET || 'radio-importante-audio',
-      Key: fileKey
-    }).promise();
-    console.log(`✅ Arquivo deletado do Spaces: ${fileKey}`);
-    return true;
+    const fs = require('fs');
+    const filePath = path.join(process.cwd(), 'public', 'audio', fileKey);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      console.log(`✅ Arquivo deletado: ${fileKey}`);
+      return true;
+    }
+    return false;
   } catch (error) {
-    console.error('❌ Erro ao deletar arquivo do Spaces:', error);
+    console.error('❌ Erro ao deletar arquivo:', error);
     return false;
   }
 };
