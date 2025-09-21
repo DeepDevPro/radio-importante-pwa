@@ -187,7 +187,8 @@ app.post('/api/upload', flexibleUpload, (req, res) => {
         filename: file.key || file.filename, // Use key from S3 or filename from local
         duration: duration ? parseFloat(duration) : 0,
         format: path.extname(file.originalname).toLowerCase(),
-        url: storageConfig.getFileUrl(file.key || file.filename) // URL correta baseada no storage
+        // Prefer file.location (from multer-s3) over manually constructed URL
+        url: file.location || storageConfig.getFileUrl(file.key || file.filename)
       };
       newTracks.push(track);
       catalog.tracks.push(track);
