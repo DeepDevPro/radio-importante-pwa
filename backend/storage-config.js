@@ -1,3 +1,4 @@
+/* eslint-env node */
 const AWS = require('aws-sdk');
 const multerS3 = require('multer-s3');
 
