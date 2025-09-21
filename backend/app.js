@@ -87,7 +87,7 @@ try {
       catalog.metadata.totalDuration = catalog.tracks.reduce((sum, track) => sum + (track.duration || 0), 0);
     }
   }
-} catch (error) {
+} catch {
   console.log('⚠️ Catálogo não encontrado, usando catálogo vazio');
 }
 
@@ -351,7 +351,7 @@ app.use('*', (req, res) => {
 });
 
 // Error Handler
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
   console.error('Error:', err);
   res.status(500).json({ 
     error: 'Erro interno do servidor'
