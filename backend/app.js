@@ -17,7 +17,8 @@ app.use(express.urlencoded({ extended: true }));
 
 // CORS para desenvolvimento
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
+  const allowedOrigin = process.env.CORS_ORIGINS || 'https://radio.importantestudio.com';
+  res.header('Access-Control-Allow-Origin', allowedOrigin);
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   
