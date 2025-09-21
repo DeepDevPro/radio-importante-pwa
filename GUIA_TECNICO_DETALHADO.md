@@ -2,7 +2,7 @@
 
 > **Complemento**: PLANO_EXECUCAO.md  
 > **Foco**: Detalhes técnicos, troubleshooting e manutenção  
-> **Atualizado em**: 16/09/2025 21:15 UTC  
+> **Atualizado em**: 21/09/2025 - Migração DigitalOcean Spaces  
 > **Para**: Programador Junior/Amador
 
 ---
@@ -41,6 +41,124 @@ PROBLEMA: admin.html antigo (2.195 bytes) servindo versão quebrada
 CAUSA: Vite não configurado para múltiplos entrypoints
 SOLUÇÃO: rollupOptions.input adicionou admin.html + novo src/admin.ts
 RESULTADO: Admin funcional (upload, health check, tabs, drag & drop)
+```
+
+---
+
+## 🔄 **MIGRAÇÃO DIGITALOCEAN SPACES (21/09/2025)**
+
+### **📋 Problema Técnico Identificado**
+
+#### **Storage Efêmero no DigitalOcean App Platform**
+```bash
+PROBLEMA:
+- Arquivos salvos em /app/public/audio (container local)
+- Containers são efêmeros (recriam a cada deploy)
+- Resultado: arquivos desaparecem após redeploys
+
+EVIDÊNCIA NOS LOGS:
+- Local: "🌊 Using Digital Ocean Spaces: ..."
+- Staging: "📁 Upload path: /app/public/audio"
+- Conclusão: credenciais DO_SPACES_* não detectadas em produção
+```
+
+### **🛠️ Implementação Técnica da Solução**
+
+#### **Arquitetura de Storage Híbrida**
+```javascript
+// backend/storage-config.js - Detecta ambiente e configura storage
+
+// Spaces (S3-compatible) quando credenciais disponíveis:
+const s3 = new AWS.S3({
+  endpoint: spacesEndpoint,
+  accessKeyId: process.env.DO_SPACES_KEY,
+  secretAccessKey: process.env.DO_SPACES_SECRET,
+  region: process.env.DO_SPACES_REGION || 'nyc3'
+});
+
+// Fallback para storage local quando credenciais não disponíveis
+const storage = multerS3({ s3, bucket, acl: 'public-read', ... })
+```
+
+#### **URL Generation Strategy**
+```javascript
+// Prioridade de URLs (compatibilidade máxima):
+// 1. file.location (multer-s3 direct URL)
+// 2. storageConfig.getFileUrl(key) (manual construction)  
+// 3. Local fallback (/audio/filename)
+
+url: file.location || storageConfig.getFileUrl(file.key || file.filename)
+```
+
+#### **Logs de Diagnóstico Implementados**
+```javascript
+// backend/app.js - Startup diagnostics
+console.log('🔍 Storage Configuration Diagnostics:');
+console.log(`  DO_SPACES_KEY: ${process.env.DO_SPACES_KEY ? 'SET' : 'NOT SET'}`);
+console.log(`  DO_SPACES_SECRET: ${process.env.DO_SPACES_SECRET ? 'SET' : 'NOT SET'}`);
+console.log(`  DO_SPACES_BUCKET: ${process.env.DO_SPACES_BUCKET || 'NOT SET'}`);
+
+// Decisão de storage baseada em credenciais:
+if (process.env.DO_SPACES_KEY && process.env.DO_SPACES_SECRET) {
+  console.log(`🌊 Using Digital Ocean Spaces: ${bucket}.${endpoint}`);
+} else {
+  console.log(`📁 Upload path: ${uploadPath}`);
+}
+```
+
+### **⚙️ Configuração Técnica Required**
+
+#### **Environment Variables (DigitalOcean App Platform)**
+```bash
+# NO COMPONENTE DO BACKEND (não App-Level):
+DO_SPACES_ENDPOINT=atl1.digitaloceanspaces.com
+DO_SPACES_REGION=atl1
+DO_SPACES_BUCKET=radio-importante-audio
+DO_SPACES_KEY=<SPACES_ACCESS_KEY>    # NÃO token dop_v1
+DO_SPACES_SECRET=<SPACES_SECRET_KEY> # NÃO token dop_v1
+```
+
+#### **CORS Configuration (Bucket Settings)**
+```json
+[
+  {
+    "AllowedHeaders": ["*"],
+    "AllowedMethods": ["GET", "HEAD"],
+    "AllowedOrigins": ["*"],
+    "ExposeHeaders": ["Accept-Ranges", "Content-Range", "Content-Length", "Content-Type"],
+    "MaxAgeSeconds": 3000
+  }
+]
+```
+
+#### **Key Technical Decisions**
+```bash
+✅ AWS SDK v2: Compatível com DigitalOcean Spaces (S3-compatible)
+✅ multer-s3: Integração direta do Multer com S3 API
+✅ AUTO_CONTENT_TYPE: Detecção automática de MIME type
+✅ key pattern: audio/<timestamp>-<sanitized_name>
+✅ ACL: public-read (arquivos acessíveis publicamente)
+✅ Endpoint pattern: https://<bucket>.<endpoint>/<key>
+```
+
+### **🔧 Troubleshooting Checklist**
+
+#### **Se logs mostram "📁 Upload path" ao invés de "🌊 Using Digital Ocean Spaces":**
+```bash
+1. ✅ Verificar se DO_SPACES_KEY e DO_SPACES_SECRET estão SET
+2. ✅ Confirmar que são Spaces Access Keys (não dop_v1 tokens)
+3. ✅ Validar se env vars estão no COMPONENTE backend (não só App-Level)
+4. ✅ Force Rebuild & Deploy após mudanças
+5. ✅ Conferir Runtime Logs após novo timestamp
+```
+
+#### **Se upload falha com multer-s3:**
+```bash
+1. ✅ Verificar credenciais de acesso (chaves válidas)
+2. ✅ Confirmar endpoint e região corretos (atl1)
+3. ✅ Testar CORS do bucket (GET/HEAD permitidos)
+4. ✅ Validar formato da key (audio/<filename>)
+5. ✅ Conferir se bucket existe e está acessível
 ```
 
 ---

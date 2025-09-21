@@ -2,8 +2,8 @@
 
 > **Projeto**: PWA Music Player "Radio Importante"  
 > **Data de criação**: 29/08/2025  
-> **Última atualização**: 16/09/2025 - 21:00 UTC  
-> **Status**: ✅ **DEPLOY PIPELINE COMPLETO E FUNCIONANDO PERFEITAMENTE**
+> **Última atualização**: 21/09/2025 - Migração DigitalOcean Spaces  
+> **Status**: ✅ **DEPLOY PIPELINE COMPLETO + MIGRAÇÃO SPACES EM ANDAMENTO**
 
 ---
 
@@ -59,6 +59,94 @@
 ✅ CloudFront Invalidation: Funcionando após correção IAM
 ✅ Admin Panel: Totalmente funcional com backend conectado
 ✅ Deploy Pipeline: GitHub Actions executando sem erros
+```
+
+---
+
+## 🚀 **MIGRAÇÃO DIGITALOCEAN SPACES (21/09/2025)**
+
+### **⚠️ PROBLEMA IDENTIFICADO: Arquivos Desaparecem após Deploy**
+
+**Sintoma**: Músicas carregadas via admin somem após redeploys do backend no DigitalOcean App Platform.
+
+**Causa**: Storage local em container efêmero (`/app/public/audio`) não persiste entre deployments.
+
+**Solução**: Migração para **DigitalOcean Spaces** (S3-compatible) para storage persistente.
+
+### **📋 PLANO DE EXECUÇÃO EM 4 FASES**
+
+#### **✅ Fase A - Validação de ambiente e credenciais**
+```bash
+BRANCH: feat/spaces-phase-a-env
+STATUS: ✅ IMPLEMENTADO
+
+MUDANÇAS:
+✅ Logs diagnóstico detalhados (sem expor segredos)  
+✅ Detecta DO_SPACES_* SET/NOT SET
+✅ contentType melhorado (multerS3.AUTO_CONTENT_TYPE)
+✅ Facilita identificação de problemas de credenciais
+```
+
+#### **✅ Fase B - Ajustes mínimos de código**
+```bash
+BRANCH: feat/spaces-phase-b-code  
+STATUS: ✅ IMPLEMENTADO
+
+MUDANÇAS:
+✅ Prioriza file.location (URL direta do multer-s3)
+✅ Fallback para storageConfig.getFileUrl()
+✅ Mantém compatibilidade com storage local
+✅ Garante URLs corretas do Spaces no catálogo
+```
+
+#### **🔄 Fase C - Testes controlados (EM ANDAMENTO)**
+```bash
+STATUS: ⏳ AGUARDANDO CREDENCIAIS CORRETAS
+
+BLOQUEADOR ATUAL:
+❌ Credenciais dop_v1... (Personal Access Token) não funcionam para Spaces
+✅ SOLUÇÃO: Gerar Spaces Access Keys no DigitalOcean Dashboard
+
+PRÓXIMOS PASSOS:
+1. Gerar Spaces Access Keys (não dop_v1)
+2. Configurar DO_SPACES_* no componente backend
+3. CORS no bucket Spaces
+4. Force Rebuild & Deploy
+5. Testes de upload/persistência
+```
+
+#### **✅ Fase D - Linting/DX (OPCIONAL)**
+```bash
+BRANCH: chore/spaces-phase-d-linting
+STATUS: ✅ IMPLEMENTADO
+
+MUDANÇAS:
+✅ ESLint configurado para backend/**/*.js
+✅ Resolve "process/require undefined" no VS Code
+✅ Melhora Developer Experience (DX)
+```
+
+### **🎯 CRITÉRIOS DE SUCESSO**
+```bash
+LOGS ESPERADOS:
+✅ "🌊 Using Digital Ocean Spaces: radio-importante-audio.atl1.digitaloceanspaces.com"
+❌ NÃO mostrar: "📁 Upload path: /app/public/audio"
+
+FUNCIONALIDADE:
+✅ Upload via Admin → arquivo aparece no bucket
+✅ Catálogo retorna URLs do Spaces  
+✅ Playback funciona sem CORS errors
+✅ Persistência após Force Rebuild
+```
+
+### **📊 INFRAESTRUTURA APÓS MIGRAÇÃO**
+```bash
+Frontend: AWS S3 + CloudFront (INALTERADO)
+Backend: DigitalOcean App Platform (INALTERADO) 
+Storage: DigitalOcean Spaces (NOVO)
+  ↪ Bucket: radio-importante-audio
+  ↪ Region: atl1
+  ↪ Endpoint: atl1.digitaloceanspaces.com
 ```
 
 ---
