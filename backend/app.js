@@ -365,6 +365,14 @@ app.listen(PORT, () => {
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
   console.log(`📁 Catalog tracks: ${catalog.tracks.length}`);
   
+  // Diagnostic logs for environment variables (without exposing secrets)
+  console.log('🔍 Storage Configuration Diagnostics:');
+  console.log(`  DO_SPACES_KEY: ${process.env.DO_SPACES_KEY ? 'SET' : 'NOT SET'}`);
+  console.log(`  DO_SPACES_SECRET: ${process.env.DO_SPACES_SECRET ? 'SET' : 'NOT SET'}`);
+  console.log(`  DO_SPACES_BUCKET: ${process.env.DO_SPACES_BUCKET || 'NOT SET'}`);
+  console.log(`  DO_SPACES_ENDPOINT: ${process.env.DO_SPACES_ENDPOINT || 'NOT SET'}`);
+  console.log(`  DO_SPACES_REGION: ${process.env.DO_SPACES_REGION || 'NOT SET'}`);
+  
   // Show storage type being used
   if (process.env.DO_SPACES_KEY && process.env.DO_SPACES_SECRET) {
     console.log(`🌊 Using Digital Ocean Spaces: ${process.env.DO_SPACES_BUCKET}.${process.env.DO_SPACES_ENDPOINT}`);

@@ -21,9 +21,7 @@ const storage = multerS3({
     const filename = Date.now() + '-' + sanitizedName;
     cb(null, `audio/${filename}`);
   },
-  contentType: function (req, file, cb) {
-    cb(null, file.mimetype);
-  }
+  contentType: multerS3.AUTO_CONTENT_TYPE
 });
 
 // File URL generator
