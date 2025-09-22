@@ -2,16 +2,16 @@
 
 > **Projeto**: PWA Music Player "Radio Importante"  
 > **Data de criação**: 29/08/2025  
-> **Última atualização**: 21/09/2025 - Migração DigitalOcean Spaces  
-> **Status**: ✅ **DEPLOY PIPELINE COMPLETO + MIGRAÇÃO SPACES EM ANDAMENTO**
+> **Última atualização**: 22/09/2025 - Fix Upload "this.client.send is not a function"  
+> **Status**: ✅ **DEPLOY PIPELINE COMPLETO + UPLOAD SISTEMA TOTALMENTE FUNCIONAL**
 
 ---
 
-## 🎉 **STATUS ATUAL (16/09/2025 - 21:00 UTC)**
+## 🎉 **STATUS ATUAL (22/09/2025 - 13:05 UTC)**
 
-### ✅ **DEPLOY PIPELINE 100% OPERACIONAL**
+### ✅ **SISTEMA TOTALMENTE OPERACIONAL - UPLOAD FUNCIONANDO**
 
-**⚠️ ATUALIZAÇÃO CRÍTICA**: O sistema de deploy foi **100% corrigido** com CloudFront invalidation funcionando e admin panel totalmente operacional. Todos os problemas de IAM, build e cache foram resolvidos.
+**🔧 CORREÇÃO CRÍTICA**: O erro "this.client.send is not a function" foi **100% resolvido** através do downgrade do multer-s3 para versão compatível com AWS SDK v2. Upload via admin UI e API está completamente funcional.
 
 #### 🚀 **INFRAESTRUTURA FINAL E FUNCIONANDO:**
 
@@ -29,12 +29,13 @@
 ### **✅ Backend - DigitalOcean App Platform (MANTIDO)**
 ```bash
 ✅ URL: https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/
-✅ Status: HEALTHY (testado em 16/09/2025 20:45 UTC)
-✅ Response: {"status":"healthy","service":"radio-importante-backend","version":"2.2.4"}
+✅ Status: HEALTHY (testado em 22/09/2025 13:02 UTC)
+✅ Response: {"status":"OK","message":"Radio Importante Backend","version":"2.2.4"}
 ✅ Technology: Docker Container (Node.js 18 Alpine)
-✅ Deploy: Automático via GitHub (branch main)
+✅ Deploy: Automático via GitHub (branch staging)
 ✅ Environment: Produção
 ✅ Uptime: 100% desde migração
+✅ Upload: Funcionando com DigitalOcean Spaces
 ```
 
 ### **✅ Deploy Pipeline Completo (NOVO - CORRIGIDO)**
@@ -538,7 +539,7 @@ RESULTADO: ✅ Build successful
 COMANDO: docker run -p 8080:8080 radio-backend:local
 RESULTADO: ✅ Container rodando
 TESTE: curl http://localhost:8080/health
-RESULTADO: ✅ {"status":"healthy"...}
+RESULTADO: ✅ {"status":"healthy","service":"radio-importante-backend","version":"2.2.4"}
 STATUS: ✅ Funcionando localmente
 ```
 
@@ -646,10 +647,7 @@ STATUS: ✅ Deploy inicial funcionou
 
 #### **4.4 Correção do problema de múltiplas instâncias**
 ```bash
-PROBLEMA DESCOBERTO: 
-- Upload funcionava (200 OK)
-- Mas arquivo retornava 404 quando acessado via HTTP
-CAUSA IDENTIFICADA: 2 instâncias do app rodando
+PROBLEMA DESCOBERTO: 2 instâncias do app rodando
 - Arquivo salvo na instância A
 - Request HTTP servido pela instância B (que não tem o arquivo)
 
@@ -1350,11 +1348,23 @@ O projeto **Radio Importante PWA** está **completamente funcional** após uma s
    - ✅ SSL/HTTPS: Certificados válidos
    - ✅ Backend Integration: DigitalOcean + AWS funcionando perfeitamente
 
+5. **✅ Correção do Upload após o status do frontend**
+```bash
+🔧 CORREÇÃO UPLOAD - multer-s3 v2.10.0 (NOVO - 22/09/2025)
+✅ PROBLEMA RESOLVIDO: "this.client.send is not a function"
+✅ CAUSA: Incompatibilidade multer-s3 3.x + AWS SDK v2
+✅ SOLUÇÃO: Downgrade multer-s3: 3.0.1 → 2.10.0
+✅ COMMIT: 6fab52f - Enviado para branch staging
+✅ TESTE VIA CURL: HTTP 200 - Upload funcional
+✅ TESTE VIA ADMIN UI: Upload funcional - arquivos no Spaces
+✅ RESULTADO: Sistema de upload totalmente operacional
+```
+
 #### **📊 Status Operacional Completo:**
 
 ```yaml
 🌐 Frontend: https://radio-importante.com.br → ✅ ONLINE
-🎛️ Admin Panel: https://radio-importante.com.br/admin.html → ✅ FUNCIONANDO
+📱 Admin Panel: https://radio-importante.com.br/admin.html → ✅ FUNCIONANDO
 🔧 Backend API: https://radio-importante-pwa-backend-skg2w.ondigitalocean.app → ✅ ONLINE
 🚀 Deploy Pipeline: GitHub Actions → ✅ AUTOMATIZADO
 ⚡ CloudFront CDN: E7IJOAICB6CUO → ✅ GLOBAL
@@ -1433,30 +1443,6 @@ O Radio Importante PWA está agora rodando em uma infraestrutura **moderna, est�
 - ✅ **Frontend PWA**: Comunicando com backend
 - ✅ **Deploy automático**: Via GitHub push
 - ✅ **Monitoring**: Via DigitalOcean dashboard
-
-### **📋 Checklist de Validação Final**
-```bash
-✅ Health check responding (200 OK)
-✅ Upload endpoint working (POST /api/upload)  
-✅ File serving working (GET /audio/filename)
-✅ Catalog API working (GET /api/catalog)
-✅ CORS configured correctly
-✅ Environment variables applied
-✅ Docker container running stable  
-✅ Auto-deploy from GitHub working
-✅ Monitoring configured
-✅ Documentation updated
-```
-
-### **🚀 Sistema Pronto para Produção - TOTALMENTE ESTÁVEL**
-
-O Radio Importante PWA está agora **100% operacional**, **completamente estável** e pronto para uso contínuo em produção. Todas as funcionalidades principais estão funcionando perfeitamente:
-
-- ✅ **Deploy Pipeline**: Automatizado com CloudFront invalidation funcionando
-- ✅ **Admin Panel**: Interface moderna e totalmente funcional  
-- ✅ **Backend API**: DigitalOcean estável com todas as APIs respondendo
-- ✅ **Frontend PWA**: AWS CloudFront servindo globalmente
-- ✅ **Build System**: Otimizado com TypeScript + Vite
 
 **🎉 CONQUISTA:** Todos os problemas críticos de infraestrutura foram resolvidos. O projeto está pronto para uso em produção com uma base sólida para futuras melhorias.
 
