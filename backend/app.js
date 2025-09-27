@@ -191,7 +191,8 @@ app.post('/api/upload', flexibleUpload, (req, res) => {
         id: `track_${Date.now()}_${index}`,
         title: path.parse(file.originalname).name,
         artist: 'Artista não definido',
-        filename: file.key || file.filename, // Use key from S3 or filename from local
+        // CORREÇÃO: Para DigitalOcean Spaces, extrair apenas o nome do arquivo sem o prefixo "audio/"
+        filename: file.key ? file.key.replace(/^audio\//, '') : file.filename,
         duration: duration ? parseFloat(duration) : 0,
         format: path.extname(file.originalname).toLowerCase(),
         // Prefer file.location (from multer-s3) over manually constructed URL
