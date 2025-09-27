@@ -1,4 +1,6 @@
 /// <reference lib="dom" />
+/// <reference lib="dom.iterable" />
+/// <reference lib="es2015" />
 
 /**
  * Admin Panel para Radio Importante PWA
@@ -15,6 +17,10 @@ declare global {
         playPreview: (filename: string) => void;
         deleteTrack: (trackId: string, filename: string) => Promise<void>;
         editTrack: (trackId: string) => void;
+        enableEdit: (trackId: string, field: 'title' | 'artist') => void;
+        saveEdit: (trackId: string, field: 'title' | 'artist', value: string) => Promise<void>;
+        cancelEdit: (trackId: string, field: 'title' | 'artist') => void;
+        handleEditKeydown: (event: any, trackId: string, field: 'title' | 'artist', value: string) => void;
     }
 }
 
@@ -22,6 +28,7 @@ declare global {
 interface Track {
     id: string;
     title: string;
+    name?: string; // Campo opcional que pode existir na versão local
     artist: string;
     filename: string;
     duration: number;
@@ -37,6 +44,195 @@ const BACKEND_CONFIG = {
 // Estado global do admin
 let currentBackend: string | null = null;
 let isUploading = false;
+
+/**
+ * Formatar duração em segundos para formato legível
+ */
+function formatDuration(seconds: number): string {
+    if (!seconds || seconds === 0) return '0:00';
+    
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    
+    if (hours > 0) {
+        return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    } else {
+        return `${minutes}:${secs.toString().padStart(2, '0')}`;
+    }
+}
+
+/**
+ * Atualizar totalizador de músicas
+ */
+function updateTotals(totalTracks: number, totalDurationSeconds: number): void {
+    const totalsElement = document.getElementById('music-totals');
+    if (!totalsElement) return;
+    
+    const formattedDuration = formatDuration(totalDurationSeconds);
+    
+    totalsElement.innerHTML = `
+        <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #2196f3; color: #1976d2;">
+            📊 <strong>Total:</strong> ${totalTracks} música${totalTracks !== 1 ? 's' : ''} • 
+            ⏱️ <strong>${formattedDuration}</strong> de duração total
+        </div>
+    `;
+}
+
+/**
+ * Calcular duração do arquivo de áudio
+ */
+function calculateAudioDuration(file: any): Promise<number> {
+    return new Promise((resolve, reject) => {
+        const audio = new Audio();
+        
+        audio.onloadedmetadata = () => {
+            resolve(audio.duration);
+            (window as any).URL.revokeObjectURL(audio.src);
+        };
+        
+        audio.onerror = () => {
+            reject(new Error('Erro ao carregar áudio para cálculo de duração'));
+            (window as any).URL.revokeObjectURL(audio.src);
+        };
+        
+        audio.src = (window as any).URL.createObjectURL(file);
+    });
+}
+
+/**
+ * Habilitar edição inline de um campo
+ */
+function enableEdit(trackId: string, field: 'title' | 'artist'): void {
+    const trackElement = document.getElementById(`track-${trackId}`);
+    const container = trackElement?.querySelector(`.${field}-container`) || 
+                     trackElement?.querySelector('.music-title-container');
+    
+    if (!container) return;
+    
+    const displayElement = container.querySelector('.display-mode') as any;
+    const editElement = container.querySelector('.edit-mode') as any;
+    
+    if (displayElement && editElement) {
+        // Esconder display, mostrar input
+        displayElement.style.display = 'none';
+        editElement.style.display = 'inline';
+        editElement.focus();
+        editElement.select();
+        
+        // Marcar elemento como sendo editado
+        trackElement!.classList.add('editing');
+    }
+}
+
+/**
+ * Salvar edição inline
+ */
+async function saveEdit(trackId: string, field: 'title' | 'artist', value: string): Promise<void> {
+    const trackElement = document.getElementById(`track-${trackId}`);
+    const container = trackElement?.querySelector(`.${field}-container`) || 
+                     trackElement?.querySelector('.music-title-container');
+    
+    if (!container) return;
+    
+    const displayElement = container.querySelector('.display-mode') as any;
+    const editElement = container.querySelector('.edit-mode') as any;
+    
+    try {
+        // Validações
+        if (field === 'title' && !value.trim()) {
+            // showAlert('manage-status', 'Título não pode estar vazio', 'error');
+            window.alert('Título não pode estar vazio');
+            editElement.focus();
+            return;
+        }
+
+        // Salvar no backend
+        if (currentBackend) {
+            const response = await fetch(`${currentBackend}/api/tracks/${trackId}/metadata`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    [field]: value
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Erro ao salvar: ${response.statusText}`);
+            }
+        }
+
+        // Atualizar interface
+        displayElement.textContent = value || (field === 'artist' ? 'Artista não definido' : 'Título não definido');
+
+        // Remover marca de edição e alternar visibilidade
+        trackElement!.classList.remove('editing');
+        displayElement.style.display = 'inline';
+        editElement.style.display = 'none';
+
+        // Feedback visual
+        displayElement.style.background = '#d4edda';
+        setTimeout(() => {
+            displayElement.style.background = '';
+        }, 1000);
+
+        // Recarregar totais
+        loadMusicList();
+        
+    } catch (error) {
+        console.error('Erro ao salvar:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+        window.alert(`❌ Erro ao salvar: ${errorMessage}`);
+        editElement.focus();
+    }
+}
+
+/**
+ * Cancelar edição inline
+ */
+function cancelEdit(trackId: string, field: 'title' | 'artist'): void {
+    const trackElement = document.getElementById(`track-${trackId}`);
+    const container = trackElement?.querySelector(`.${field}-container`) || 
+                     trackElement?.querySelector('.music-title-container');
+    
+    if (!container) return;
+    
+    const displayElement = container.querySelector('.display-mode') as any;
+    const editElement = container.querySelector('.edit-mode') as any;
+    
+    if (displayElement && editElement) {
+        // Remover marca de edição
+        trackElement!.classList.remove('editing');
+        
+        // Alternar visibilidade
+        displayElement.style.display = 'inline';
+        editElement.style.display = 'none';
+    }
+}
+
+/**
+ * Finalizar processo de edição (comum para save e cancel)
+ */
+function finishEdit(trackElement: Element, displayElement: HTMLElement, editElement: HTMLInputElement): void {
+    trackElement.classList.remove('editing');
+    displayElement.style.display = 'block';
+    editElement.style.display = 'none';
+}
+
+/**
+ * Lidar com teclas durante edição
+ */
+function handleEditKeydown(event: any, trackId: string, field: 'title' | 'artist', value: string): void {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        saveEdit(trackId, field, value);
+    } else if (event.key === 'Escape') {
+        event.preventDefault();
+        cancelEdit(trackId, field);
+    }
+}
 
 /**
  * Inicializa o painel admin
@@ -303,34 +499,60 @@ async function loadMusicList() {
             return;
         }
         
-        musicList.innerHTML = tracks.map((track: Track) => `
-            <div class="music-item" style="border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin: 10px 0; background: #f9f9f9;">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        // Calcular totais
+        const totalTracks = tracks.length;
+        const totalDuration = tracks.reduce((sum: number, track: Track) => sum + (track.duration || 0), 0);
+        updateTotals(totalTracks, totalDuration);
+        
+        musicList.innerHTML = tracks.map((track: Track, index: number) => `
+            <div class="music-item" id="track-${track.id}" style="border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin: 10px 0; background: #f9f9f9; transition: all 0.2s ease;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                    <div style="background: #667eea; color: white; padding: 8px 12px; border-radius: 50%; font-weight: bold; min-width: 35px; text-align: center;">
+                        ${index + 1}
+                    </div>
                     <div style="flex: 1; min-width: 250px;">
-                        <div style="font-weight: bold; font-size: 16px; margin-bottom: 5px;">
-                            🎵 ${track.title || 'Título não definido'}
+                        <div class="music-title-container">
+                            <div class="music-title display-mode" onclick="enableEdit('${track.id}', 'title')" 
+                                 style="font-weight: bold; font-size: 18px; cursor: pointer; padding: 4px 8px; border-radius: 4px; border: 1px solid transparent; transition: all 0.2s ease;"
+                                 title="Clique para editar">
+                                ${track.title || track.name || 'Título não definido'}
+                            </div>
+                            <input type="text" class="music-title edit-mode" value="${((track.title || track.name) || '').replace(/"/g, '&quot;')}" 
+                                   style="display: none; font-weight: bold; font-size: 18px; width: 100%; min-width: 300px; padding: 4px 8px; border: 2px solid #667eea; border-radius: 4px; outline: none; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);"
+                                   onblur="saveEdit('${track.id}', 'title', this.value)" 
+                                   onkeydown="handleEditKeydown(event, '${track.id}', 'title', this.value)">
                         </div>
-                        <div style="color: #666; font-size: 14px; margin-bottom: 5px;">
-                            👤 ${track.artist || 'Artista não definido'}
+                        <div class="music-meta">
+                            <span class="artist-container">
+                                <span class="display-mode" onclick="enableEdit('${track.id}', 'artist')" 
+                                     style="cursor: pointer; padding: 2px 4px; border-radius: 4px; border: 1px solid transparent; transition: all 0.2s ease;"
+                                     title="Clique para editar artista">
+                                    ${track.artist || 'Artista não definido'}
+                                </span>
+                                <input type="text" class="edit-mode" value="${(track.artist || '').replace(/"/g, '&quot;')}" 
+                                       style="display: none; min-width: 200px; max-width: 300px; padding: 4px 8px; border: 2px solid #667eea; border-radius: 4px; outline: none; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);"
+                                       onblur="saveEdit('${track.id}', 'artist', this.value)" 
+                                       onkeydown="handleEditKeydown(event, '${track.id}', 'artist', this.value)">
+                            </span>
+                            •
+                            <span class="duration-display" title="Duração calculada automaticamente">
+                                ${formatDuration(track.duration || 0)}
+                            </span>
+                            • 
+                            ${track.filename || 'Arquivo não identificado'}
                         </div>
                         <div style="color: #888; font-size: 12px;">
                             📁 ${track.filename} • 
-                            ⏱️ ${track.duration || 0}s • 
+                            ⏱️ <span class="duration-display">${formatDuration(track.duration || 0)}</span> • 
                             🎼 ${track.format || 'N/A'}
                         </div>
                     </div>
                     <div style="display: flex; gap: 10px; align-items: center;">
-                        <button onclick="playPreview('${track.filename}')" 
-                                style="padding: 8px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                            ▶️ Preview
-                        </button>
-                        <button onclick="editTrack('${track.id}')" 
-                                style="padding: 8px 12px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                            ✏️ Editar
-                        </button>
+                        <input type="checkbox" class="music-checkbox" data-track-id="${track.id}" style="margin-right: 10px; transform: scale(1.2);">
                         <button onclick="deleteTrack('${track.id}', '${track.filename}')" 
-                                style="padding: 8px 12px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                            🗑️ Deletar
+                                style="padding: 8px 12px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; transition: all 0.2s ease;"
+                                title="Deletar música">
+                            🗑️
                         </button>
                     </div>
                 </div>
@@ -386,7 +608,7 @@ function playPreview(filename: string) {
     
     audio.play().catch(err => {
         console.error('Erro ao reproduzir preview:', err);
-        alert('❌ Erro ao reproduzir áudio. Verifique se o arquivo existe.');
+        window.alert('❌ Erro ao reproduzir áudio. Verifique se o arquivo existe.');
     });
 }
 
@@ -396,7 +618,7 @@ function playPreview(filename: string) {
 async function deleteTrack(trackId: string, filename: string) {
     if (!currentBackend) return;
     
-    if (!confirm(`⚠️ Tem certeza que deseja deletar "${filename}"?\n\nEsta ação não pode ser desfeita.`)) {
+    if (!window.confirm(`⚠️ Tem certeza que deseja deletar "${filename}"?\n\nEsta ação não pode ser desfeita.`)) {
         return;
     }
     
@@ -406,7 +628,7 @@ async function deleteTrack(trackId: string, filename: string) {
         });
         
         if (response.ok) {
-            alert('✅ Música deletada com sucesso!');
+            window.alert('✅ Música deletada com sucesso!');
             loadMusicList(); // Recarregar lista
         } else {
             const error = await response.json().catch(() => ({ message: `HTTP ${response.status}` }));
@@ -415,7 +637,7 @@ async function deleteTrack(trackId: string, filename: string) {
     } catch (error) {
         console.error('Erro ao deletar música:', error);
         const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-        alert(`❌ Erro ao deletar música: ${errorMessage}`);
+        window.alert(`❌ Erro ao deletar música: ${errorMessage}`);
     }
 }
 
@@ -423,7 +645,7 @@ async function deleteTrack(trackId: string, filename: string) {
  * Editar track (placeholder)
  */
 function editTrack(trackId: string) {
-    alert(`🚧 Funcionalidade de edição em desenvolvimento.\n\nTrack ID: ${trackId}`);
+    window.alert(`🚧 Funcionalidade de edição em desenvolvimento.\n\nTrack ID: ${trackId}`);
 }
 
 /**
@@ -454,6 +676,10 @@ window.loadMusicList = loadMusicList;
 window.playPreview = playPreview;
 window.deleteTrack = deleteTrack;
 window.editTrack = editTrack;
+window.enableEdit = enableEdit;
+window.saveEdit = saveEdit;
+window.cancelEdit = cancelEdit;
+window.handleEditKeydown = handleEditKeydown;
 
 // Inicializa quando o DOM estiver pronto
 if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initAdmin); } else { initAdmin(); }
