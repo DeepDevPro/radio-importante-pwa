@@ -54,6 +54,44 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Rota para servir arquivos de áudio do DigitalOcean Spaces
+app.get('/audio/:filename', async (req, res) => {
+  try {
+    const filename = req.params.filename;
+    
+    // Construir URL do arquivo no Spaces
+    const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
+    const endpoint = process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com';
+    const spacesUrl = `https://${bucket}.${endpoint}/audio/${filename}`;
+    
+    console.log(`🎵 [audio] Proxy request: ${filename} -> ${spacesUrl}`);
+    
+    // Fazer proxy para o Spaces
+    const https = require('https');
+    const request = https.get(spacesUrl, (spacesRes) => {
+      // Repassar headers relevantes
+      res.set({
+        'Content-Type': spacesRes.headers['content-type'] || 'audio/mpeg',
+        'Content-Length': spacesRes.headers['content-length'],
+        'Accept-Ranges': 'bytes',
+        'Cache-Control': 'public, max-age=3600'
+      });
+      
+      res.status(spacesRes.statusCode);
+      spacesRes.pipe(res);
+    });
+    
+    request.on('error', (error) => {
+      console.error(`❌ [audio] Erro ao acessar Spaces: ${error.message}`);
+      res.status(404).json({ error: 'Arquivo não encontrado' });
+    });
+    
+  } catch (error) {
+    console.error('❌ [audio] Erro na rota de áudio:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
 // Configuração do multer para upload usando storage persistente
 const upload = multer({ 
   storage: storageConfig.storage,
