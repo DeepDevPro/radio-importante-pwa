@@ -82,7 +82,7 @@ function updateTotals(totalTracks: number, totalDurationSeconds: number): void {
 /**
  * Calcular duração do arquivo de áudio
  */
-function calculateAudioDuration(file: any): Promise<number> {
+function calculateAudioDuration(file: File): Promise<number> {
     return new Promise((resolve, reject) => {
         const audio = new Audio();
         
@@ -98,6 +98,35 @@ function calculateAudioDuration(file: any): Promise<number> {
         
         audio.src = (window as any).URL.createObjectURL(file);
     });
+}
+
+/**
+ * Calcular duração para um arquivo específico no preview
+ */
+function calculateDurationForFile(file: File, index: number): void {
+    const durationElement = document.getElementById(`duration-${index}`);
+    
+    calculateAudioDuration(file)
+        .then((duration: number) => {
+            if (durationElement) {
+                if (isFinite(duration) && duration > 0) {
+                    durationElement.textContent = `⏱️ ${formatDuration(duration)}`;
+                    durationElement.style.color = '#28a745';
+                    // Armazenar duração no arquivo para usar no upload
+                    (file as any).calculatedDuration = Math.round(duration);
+                } else {
+                    durationElement.textContent = '⚠️ Duração desconhecida';
+                    durationElement.style.color = '#dc3545';
+                }
+            }
+        })
+        .catch((error: Error) => {
+            console.error(`❌ Erro ao calcular duração de ${file.name}:`, error);
+            if (durationElement) {
+                durationElement.textContent = '❌ Erro ao ler arquivo';
+                durationElement.style.color = '#dc3545';
+            }
+        });
 }
 
 /**
@@ -395,13 +424,19 @@ function handleFileSelection() {
     const files = Array.from(fileInput.files);
     if (filePreview) filePreview.style.display = 'block';
     if (fileListDiv) {
-        fileListDiv.innerHTML = files.map((file: File) => `
+        fileListDiv.innerHTML = files.map((file: File, index: number) => `
             <div style="padding:10px;border:1px solid #ddd;border-radius:8px;margin:5px 0;">
                 📁 <strong>${file.name}</strong><br>
                 📊 Tamanho: ${(file.size / 1024 / 1024).toFixed(2)} MB<br>
-                🎵 Tipo: ${file.type || 'Desconhecido'}
+                🎵 Tipo: ${file.type || 'Desconhecido'}<br>
+                ⏱️ <span id="duration-${index}">🔄 Calculando duração...</span>
             </div>
         `).join('');
+        
+        // Calcular duração de cada arquivo
+        files.forEach((file: File, index: number) => {
+            calculateDurationForFile(file, index);
+        });
     }
 }
 
@@ -418,9 +453,15 @@ async function uploadFiles() {
     try {
         if (uploadStatus) uploadStatus.innerHTML = '📤 Iniciando upload...';
         if (uploadProgress) uploadProgress.style.display = 'block';
-        const files = Array.from(fileInput.files as any[]);
+        const files = Array.from(fileInput.files) as any[];
         const formData = new window.FormData();
-        files.forEach((file: any) => formData.append('audioFiles', file)); // campo correto
+        files.forEach((file: any, index: number) => {
+            formData.append('audioFiles', file);
+            // Enviar duração calculada junto com o arquivo
+            if (file.calculatedDuration) {
+                formData.append(`duration_${index}`, file.calculatedDuration.toString());
+            }
+        });
         let progress = 0;
         const interval = setInterval(() => {
             progress = Math.min(progress + 10, 90);
