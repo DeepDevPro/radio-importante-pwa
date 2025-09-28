@@ -86,9 +86,17 @@ Por quê: `multer-s3@2.x` foi feito para `aws-sdk` v2 e não usa `.send` do v3.
 - Upload funciona via curl: ✅
 - Upload funciona via admin UI: ✅
 - Arquivos chegam no Spaces: ✅
+- Duration calculation restaurado: ✅ (commit 1067f3e)
 
 **O que foi preservado:**
-- Admin UI intacta (nenhuma alteração)
+- Admin UI intacta (nenhuma alteração estrutural)
+- Lógica de rotas mantida
+- Apenas backend/package.json + src/admin.ts modificados
+
+**Atualizações posteriores (28/09/2025):**
+- ✅ Duration fix implementado e deployed
+- ✅ Branch structure organizada (staging stable, feature/ux-improvements-v2.4 active)
+- 🔄 Próximas melhorias de UX planejadas
 - Lógica de rotas mantida
 - Apenas backend/package.json alterado
 
