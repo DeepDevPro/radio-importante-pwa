@@ -627,9 +627,8 @@ async function loadMusicList() {
                         </div>
                     </div>
                     <div style="display: flex; gap: 10px; align-items: center;">
-                        <input type="checkbox" class="music-checkbox" data-track-id="${track.id}" style="margin-right: 10px; transform: scale(1.2);">
                         <button onclick="deleteTrack('${track.id}', '${track.filename}')" 
-                                style="padding: 8px 12px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; transition: all 0.2s ease;"
+                                style="padding: 8px 12px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; transition: all 0.2s ease; filter: brightness(1.2);"
                                 title="Deletar música">
                             🗑️
                         </button>
