@@ -65,18 +65,54 @@ function formatDuration(seconds: number): string {
 /**
  * Atualizar totalizador de músicas
  */
-function updateTotals(totalTracks: number, totalDurationSeconds: number): void {
-    const totalsElement = document.getElementById('music-totals');
-    if (!totalsElement) return;
-    
-    const formattedDuration = formatDuration(totalDurationSeconds);
-    
-    totalsElement.innerHTML = `
-        <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #2196f3; color: #1976d2;">
-            📊 <strong>Total:</strong> ${totalTracks} música${totalTracks !== 1 ? 's' : ''} • 
-            ⏱️ <strong>${formattedDuration}</strong> de duração total
-        </div>
-    `;
+/**
+ * Atualizar totalizador de músicas
+ */
+function updateTotals(totalTracks: number, totalDuration: number): void {
+    const musicTotals = document.getElementById('music-totals');
+    if (musicTotals) {
+        const formattedDuration = formatDuration(totalDuration);
+        musicTotals.innerHTML = `
+            📊 <strong>Total:</strong> ${totalTracks} música(s) • 
+            ⏱️ <strong>Duração:</strong> ${formattedDuration}
+        `;
+    }
+}
+
+/**
+ * Atualizar apenas os totais sem recarregar a lista inteira
+ */
+async function updateTotalsOnly(): Promise<void> {
+    if (!currentBackend) {
+        console.error('❌ Backend não disponível para atualizar totais');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${currentBackend}/api/catalog`);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const catalog = await response.json(); 
+        const tracks = catalog.tracks || [];
+        
+        // Atualizar apenas o elemento de totais
+        const musicTotals = document.getElementById('music-totals');
+        if (musicTotals && tracks.length > 0) {
+            const totalTracks = tracks.length;
+            const totalDuration = tracks.reduce((sum: number, track: Track) => sum + (track.duration || 0), 0);
+            const formattedDuration = formatDuration(totalDuration);
+            
+            musicTotals.innerHTML = `
+                📊 <strong>Total:</strong> ${totalTracks} música(s) • 
+                ⏱️ <strong>Duração:</strong> ${formattedDuration}
+            `;
+        }
+    } catch (error) {
+        console.error('Erro ao atualizar totais:', error);
+        // Não mostrar erro ao usuário para não interromper a edição
+    }
 }
 
 /**
@@ -201,14 +237,16 @@ async function saveEdit(trackId: string, field: 'title' | 'artist', value: strin
         displayElement.style.display = 'inline';
         editElement.style.display = 'none';
 
-        // Feedback visual
+        // Feedback visual suave sem recarregar a página
         displayElement.style.background = '#d4edda';
+        displayElement.style.color = 'white';
         setTimeout(() => {
             displayElement.style.background = '';
-        }, 1000);
+            displayElement.style.color = '';
+        }, 1500);
 
-        // Recarregar totais
-        loadMusicList();
+        // Atualizar apenas os totais sem recarregar toda a lista
+        await updateTotalsOnly();
         
     } catch (error) {
         console.error('Erro ao salvar:', error);
