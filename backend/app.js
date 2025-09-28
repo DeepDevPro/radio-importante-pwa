@@ -1,8 +1,13 @@
 /* eslint-env node */
+// Only load dotenv in development
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
+}
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const storageConfig = require('./storage-config');
 
 const app = express();
 
@@ -12,7 +17,14 @@ app.use(express.urlencoded({ extended: true }));
 
 // CORS para desenvolvimento
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
+  const corsOrigins = process.env.CORS_ORIGINS || 'https://radio.importantestudio.com';
+  const allowedOrigins = corsOrigins.split(',').map(origin => origin.trim());
+  const requestOrigin = req.headers.origin;
+  
+  if (allowedOrigins.includes(requestOrigin)) {
+    res.header('Access-Control-Allow-Origin', requestOrigin);
+  }
+  
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   
@@ -21,10 +33,6 @@ app.use((req, res, next) => {
   }
   next();
 });
-
-// Servir arquivos estáticos de audio
-const audioPath = process.env.UPLOAD_PATH || path.join(process.cwd(), 'public', 'audio');
-app.use('/audio', express.static(audioPath));
 
 // Health check endpoints
 app.get('/', (req, res) => {
@@ -46,26 +54,47 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Configuração do multer para upload
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    // Prefer configurable UPLOAD_PATH so platform can mount persistent storage there.
-    const baseDir = process.env.UPLOAD_PATH || path.join(process.cwd(), 'public', 'audio');
-
-    // Criar diretório se não existir
-    if (!fs.existsSync(baseDir)) {
-      fs.mkdirSync(baseDir, { recursive: true });
-    }
-    cb(null, baseDir);
-  },
-  filename: function (req, file, cb) {
-    // Manter nome original do arquivo
-    cb(null, file.originalname);
+// Rota para servir arquivos de áudio do DigitalOcean Spaces
+app.get('/audio/:filename', async (req, res) => {
+  try {
+    const filename = req.params.filename;
+    
+    // Construir URL do arquivo no Spaces
+    const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
+    const endpoint = process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com';
+    const spacesUrl = `https://${bucket}.${endpoint}/audio/${filename}`;
+    
+    console.log(`🎵 [audio] Proxy request: ${filename} -> ${spacesUrl}`);
+    
+    // Fazer proxy para o Spaces
+    const https = require('https');
+    const request = https.get(spacesUrl, (spacesRes) => {
+      // Repassar headers relevantes
+      res.set({
+        'Content-Type': spacesRes.headers['content-type'] || 'audio/mpeg',
+        'Content-Length': spacesRes.headers['content-length'],
+        'Accept-Ranges': 'bytes',
+        'Cache-Control': 'public, max-age=3600'
+      });
+      
+      res.status(spacesRes.statusCode);
+      spacesRes.pipe(res);
+    });
+    
+    request.on('error', (error) => {
+      console.error(`❌ [audio] Erro ao acessar Spaces: ${error.message}`);
+      res.status(404).json({ error: 'Arquivo não encontrado' });
+    });
+    
+  } catch (error) {
+    console.error('❌ [audio] Erro na rota de áudio:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
 
+// Configuração do multer para upload usando storage persistente
 const upload = multer({ 
-  storage: storage,
+  storage: storageConfig.storage,
   limits: { fileSize: 50 * 1024 * 1024 } // 50MB
 });
 
@@ -200,9 +229,12 @@ app.post('/api/upload', flexibleUpload, (req, res) => {
         id: `track_${Date.now()}_${index}`,
         title: path.parse(file.originalname).name,
         artist: 'Artista não definido',
-        filename: file.originalname,
+        // CORREÇÃO: Para DigitalOcean Spaces, extrair apenas o nome do arquivo sem o prefixo "audio/"
+        filename: file.key ? file.key.replace(/^audio\//, '') : file.filename,
         duration: duration ? parseFloat(duration) : 0,
-        format: path.extname(file.originalname).toLowerCase()
+        format: path.extname(file.originalname).toLowerCase(),
+        // Prefer file.location (from multer-s3) over manually constructed URL
+        url: file.location || storageConfig.getFileUrl(file.key || file.filename)
       };
       newTracks.push(track);
       catalog.tracks.push(track);
@@ -267,7 +299,7 @@ app.put('/api/tracks/:id/metadata', (req, res) => {
   }
 });
 
-app.delete('/api/delete/:id', (req, res) => {
+app.delete('/api/delete/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -281,13 +313,13 @@ app.delete('/api/delete/:id', (req, res) => {
 
     const deletedTrack = catalog.tracks[trackIndex];
     
-    // Remover arquivo físico
+    // Remover arquivo físico usando o storage config
     if (deletedTrack.filename) {
-      const uploadsDir = process.env.UPLOAD_PATH || path.join(process.cwd(), 'public', 'audio');
-      const filePath = path.join(uploadsDir, deletedTrack.filename);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
+      const deleteSuccess = await storageConfig.deleteFile(deletedTrack.filename);
+      if (deleteSuccess) {
         console.log(`🗑️ Arquivo removido: ${deletedTrack.filename}`);
+      } else {
+        console.log(`⚠️ Falha ao remover arquivo: ${deletedTrack.filename}`);
       }
     }
     
@@ -379,7 +411,21 @@ app.listen(PORT, () => {
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
   console.log(`📁 Catalog tracks: ${catalog.tracks.length}`);
-  console.log(`📁 Upload path: ${process.env.UPLOAD_PATH || path.join(process.cwd(), 'public', 'audio')}`);
+  
+  // Diagnostic logs for environment variables (without exposing secrets)
+  console.log('🔍 Storage Configuration Diagnostics:');
+  console.log(`  DO_SPACES_KEY: ${process.env.DO_SPACES_KEY ? 'SET' : 'NOT SET'}`);
+  console.log(`  DO_SPACES_SECRET: ${process.env.DO_SPACES_SECRET ? 'SET' : 'NOT SET'}`);
+  console.log(`  DO_SPACES_BUCKET: ${process.env.DO_SPACES_BUCKET || 'NOT SET'}`);
+  console.log(`  DO_SPACES_ENDPOINT: ${process.env.DO_SPACES_ENDPOINT || 'NOT SET'}`);
+  console.log(`  DO_SPACES_REGION: ${process.env.DO_SPACES_REGION || 'NOT SET'}`);
+  
+  // Show storage type being used
+  if (process.env.DO_SPACES_KEY && process.env.DO_SPACES_SECRET) {
+    console.log(`🌊 Using Digital Ocean Spaces: ${process.env.DO_SPACES_BUCKET}.${process.env.DO_SPACES_ENDPOINT}`);
+  } else {
+    console.log(`📁 Upload path: ${process.env.UPLOAD_PATH || path.join(process.cwd(), 'public', 'audio')}`);
+  }
 });
 
 // Graceful shutdown
