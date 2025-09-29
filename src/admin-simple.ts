@@ -483,8 +483,8 @@ class AdminManager {
       
       console.log(`📤 Salvando faixa "${file.title}" por "${file.artist}"`);
       
-      // Detectar se estamos em produção (S3) ou desenvolvimento (Vite)
-      const isProduction = !window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1');
+      // Sempre em produção - sem desenvolvimento local
+      const isProduction = true;
       
       if (isProduction) {
         // Em produção: salvar apenas no localStorage e mostrar aviso

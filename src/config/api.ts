@@ -9,13 +9,9 @@ export interface ApiConfig {
   };
 }
 
-// Detectar ambiente: desenvolvimento, staging ou produção
-function detectEnvironment(): 'development' | 'staging' | 'production' {
+// Detectar ambiente: staging ou produção
+function detectEnvironment(): 'staging' | 'production' {
   const hostname = window.location.hostname;
-  
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return 'development';
-  }
   
   if (hostname.includes('staging') || hostname.includes('stagin')) {
     return 'staging';
@@ -26,10 +22,9 @@ function detectEnvironment(): 'development' | 'staging' | 'production' {
 
 const environment = detectEnvironment();
 
-// URLs da API por ambiente
+// URLs da API por ambiente - apenas produção
 const BACKEND_URLS = {
-  development: 'http://localhost:8080',
-  staging: 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app', // Compartilhado inicialmente
+  staging: 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app',
   production: 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app'
 };
 
@@ -54,8 +49,7 @@ export function getEnvironmentInfo() {
     environment,
     backendUrl: API_CONFIG.baseUrl,
     isStaging: environment === 'staging',
-    isProduction: environment === 'production',
-    isDevelopment: environment === 'development'
+    isProduction: environment === 'production'
   };
 }
 

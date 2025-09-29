@@ -112,17 +112,18 @@ export class AudioPlayer {
     try {
       console.log('🍎 Carregando stream contínua para iOS PWA...');
       
-      // Carregar track cues
-      const response = await fetch('/audio/hls/track-cues.json');
+      // Usar backend de produção para carregar track cues
+      const backendUrl = 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app';
+      const response = await fetch(`${backendUrl}/audio/hls/track-cues.json`);
       if (response.ok) {
         const data = await response.json();
         this.trackCues = data.tracks;
         console.log(`✅ Track cues carregados: ${this.trackCues.length} faixas`);
         
-        // Configurar arquivo único AAC (mais confiável que HLS)
-        this.audio.src = '/audio/radio-importante-continuous.aac';
+        // Configurar arquivo único MP3 do backend de produção (CRÍTICO: iPhone PWA só funciona com MP3)
+        this.audio.src = `${backendUrl}/audio/radio-importante-continuous.mp3`;
         this.hlsMode = true;
-        console.log('🎵 Stream contínua AAC configurada para iOS PWA');
+        console.log('🎵 Stream contínua MP3 configurada para iOS PWA');
       } else {
         console.warn('⚠️ Track cues não encontrados, usando modo normal');
       }
@@ -308,7 +309,7 @@ export class AudioPlayer {
   // Novo método para tentar múltiplas URLs
   public async loadTrackWithFallback(urls: string[]): Promise<void> {
     // Para iPhone PWA com arquivo contínuo, não recarregar o arquivo
-    if (this.deviceDetection.isIPhonePWA() && this.hlsMode && this.audio.src.includes('radio-importante-continuous.aac')) {
+    if (this.deviceDetection.isIPhonePWA() && this.hlsMode && this.audio.src.includes('radio-importante-continuous')) {
       console.log('🍎 iPhone PWA: Arquivo contínuo já carregado, não recarregando');
       return;
     }
