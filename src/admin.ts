@@ -512,7 +512,7 @@ async function uploadFiles() {
         let result: any = {}; // resposta pode variar
         try { result = await response.json(); } catch (e) { console.warn('Resposta não JSON', e); }
         if (response.ok && result.success) {
-            if (uploadStatus) uploadStatus.innerHTML = `✅ <strong>Upload concluído!</strong><br>📁 Arquivos processados: ${(result.tracks?.length) || files.length}`;
+            if (uploadStatus) uploadStatus.innerHTML = `✅ <strong>Upload concluído!</strong><br>📁 Arquivos processados: ${(result.tracks?.length) || files.length}<br>🔄 Gerando arquivo contínuo para iPhone PWA...`;
             clearFiles();
         } else {
             const msg = result.message || result.error || `HTTP ${response.status}`;

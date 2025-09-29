@@ -8,6 +8,15 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const storageConfig = require('./storage-config');
+const { execSync } = require('child_process');
+const os = require('os');
+const https = require('https');
+let AWS;
+try {
+  AWS = require('aws-sdk');
+} catch (e) {
+  console.warn('⚠️ aws-sdk não encontrado. Instale com: npm install aws-sdk');
+}
 
 const app = express();
 
@@ -52,6 +61,79 @@ app.get('/health', (req, res) => {
     version: '2.2.4',
     timestamp: new Date().toISOString()
   });
+});
+
+// Rota para servir track-cues.json (necessário para iPhone PWA)
+app.get('/audio/hls/track-cues.json', async (req, res) => {
+  try {
+    console.log('🍎 [iPhone PWA] Solicitação de track-cues.json');
+    
+    // Construir URL do arquivo no Spaces
+    const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
+    const endpoint = process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com';
+    const spacesUrl = `https://${bucket}.${endpoint}/hls/track-cues.json`;
+    
+    console.log(`🎯 [track-cues] Proxy request: ${spacesUrl}`);
+    
+    // Fazer proxy para o Spaces
+    const https = require('https');
+    const request = https.get(spacesUrl, (spacesRes) => {
+      res.set({
+        'Content-Type': 'application/json',
+        'Content-Length': spacesRes.headers['content-length'],
+        'Cache-Control': 'public, max-age=300'
+      });
+      
+      res.status(spacesRes.statusCode);
+      spacesRes.pipe(res);
+    });
+    
+    request.on('error', (error) => {
+      console.error(`❌ [track-cues] Erro ao acessar Spaces: ${error.message}`);
+      res.status(404).json({ error: 'Track cues não encontrado' });
+    });
+    
+  } catch (error) {
+    console.error('❌ [track-cues] Erro na rota:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });  
+  }
+});
+
+// Rota para servir arquivo contínuo AAC (necessário para iPhone PWA)
+app.get('/audio/radio-importante-continuous.aac', async (req, res) => {
+  try {
+    console.log('🍎 [iPhone PWA] Solicitação de arquivo contínuo AAC');
+    
+    // Construir URL do arquivo no Spaces
+    const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
+    const endpoint = process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com';
+    const spacesUrl = `https://${bucket}.${endpoint}/radio-importante-continuous.aac`;
+    
+    console.log(`🎯 [continuous] Proxy request: ${spacesUrl}`);
+    
+    // Fazer proxy para o Spaces
+    const https = require('https');
+    const request = https.get(spacesUrl, (spacesRes) => {
+      res.set({
+        'Content-Type': 'audio/aac',
+        'Content-Length': spacesRes.headers['content-length'],
+        'Accept-Ranges': 'bytes',
+        'Cache-Control': 'public, max-age=3600'
+      });
+      
+      res.status(spacesRes.statusCode);
+      spacesRes.pipe(res);
+    });
+    
+    request.on('error', (error) => {
+      console.error(`❌ [continuous] Erro ao acessar Spaces: ${error.message}`);
+      res.status(404).json({ error: 'Arquivo contínuo não encontrado' });
+    });
+    
+  } catch (error) {
+    console.error('❌ [continuous] Erro na rota:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
 });
 
 // Rota para servir arquivos de áudio do DigitalOcean Spaces
@@ -112,7 +194,7 @@ let catalog = {
 
 // Tentar carregar catálogo existente
 try {
-  const catalogPath = process.env.CATALOG_PATH || path.join(process.cwd(), 'public', 'data', 'catalog.json');
+  const catalogPath = process.env.CATALOG_PATH || path.join(process.cwd(), '..', 'public', 'data', 'catalog.json');
   if (fs.existsSync(catalogPath)) {
     const catalogData = fs.readFileSync(catalogPath, 'utf8');
     const loadedCatalog = JSON.parse(catalogData);
@@ -201,7 +283,7 @@ const flexibleUpload = (req, res, next) => {
   });
 };
 
-app.post('/api/upload', flexibleUpload, (req, res) => {
+app.post('/api/upload', flexibleUpload, async (req, res) => {
   console.log('📥 [upload] Rota /api/upload chamada');
   console.log('📥 [upload] Campos do body após multer:', Object.keys(req.body || {}));
   if (req.files) {
@@ -245,6 +327,15 @@ app.post('/api/upload', flexibleUpload, (req, res) => {
     saveCatalog();
 
     console.log(`✅ [upload] ${newTracks.length} arquivo(s) processado(s) com sucesso`);
+    
+    // Gerar arquivo contínuo para iPhone PWA automaticamente
+    console.log('🔄 [continuous] Iniciando geração automática após upload...');
+    try {
+      await generateContinuousFile();
+      console.log('✅ [continuous] Arquivo contínuo atualizado automaticamente');
+    } catch (error) {
+      console.warn('⚠️ [continuous] Erro na geração automática:', error.message);
+    }
 
     res.json({
       success: true,
@@ -357,6 +448,99 @@ app.post('/api/regenerate-catalog', (req, res) => {
   });
 });
 
+// Sincronizar catálogo com arquivos reais do Spaces
+app.post('/api/sync-catalog', async (req, res) => {
+  try {
+    console.log('🔄 [sync] Iniciando sincronização com DigitalOcean Spaces...');
+    
+    if (!AWS) {
+      throw new Error('AWS SDK não disponível');
+    }
+    
+    const spacesEndpoint = new AWS.Endpoint(process.env.DO_SPACES_ENDPOINT || 'atl1.digitaloceanspaces.com');
+    const s3 = new AWS.S3({
+      endpoint: spacesEndpoint,
+      accessKeyId: process.env.DO_SPACES_KEY,
+      secretAccessKey: process.env.DO_SPACES_SECRET,
+      region: process.env.DO_SPACES_REGION || 'atl1'
+    });
+    
+    const params = {
+      Bucket: process.env.DO_SPACES_BUCKET || 'radio-importante-audio',
+      Prefix: 'audio/',
+      MaxKeys: 100
+    };
+    
+    const data = await s3.listObjectsV2(params).promise();
+    console.log(`📁 [sync] Encontrados ${data.Contents?.length || 0} objetos no Spaces`);
+    
+    if (!data.Contents) {
+      throw new Error('Nenhum arquivo encontrado no Spaces');
+    }
+    
+    // Filtrar apenas arquivos de áudio
+    const audioFiles = data.Contents.filter(obj => {
+      const key = obj.Key || '';
+      return key.includes('audio/') && 
+             (key.endsWith('.mp3') || key.endsWith('.wav') || key.endsWith('.aac') || key.endsWith('.flac') || key.endsWith('.mp4')) &&
+             obj.Size && obj.Size > 1000; // Arquivos maiores que 1KB
+    });
+    
+    console.log(`🎵 [sync] Arquivos de áudio válidos: ${audioFiles.length}`);
+    
+    // Criar novo catálogo baseado nos arquivos reais
+    const newTracks = audioFiles.map((obj, index) => {
+      const filename = (obj.Key || '').replace('audio/', '');
+      const fileExtension = path.extname(filename).toLowerCase();
+      
+      // Gerar ID único baseado no timestamp e filename
+      const trackId = `track_${Date.now()}_${index}`;
+      
+      // Extrair título do filename (remover extensão e limpar)
+      let title = path.basename(filename, fileExtension);
+      
+      // Se o filename tem padrão timestamp, tentar extrair título real
+      if (title.match(/^\d+-.+/)) {
+        title = title.replace(/^\d+-/, '').replace(/_/g, ' ');
+      }
+      
+      return {
+        id: trackId,
+        title: title || 'Título não definido',
+        artist: 'Artista não definido',
+        filename: filename,
+        duration: 0, // Será calculado posteriormente se necessário
+        format: fileExtension
+      };
+    });
+    
+    // Atualizar catálogo
+    catalog.tracks = newTracks;
+    catalog.metadata.totalTracks = newTracks.length;
+    catalog.metadata.totalDuration = 0; // Será calculado conforme necessário
+    
+    // Salvar catálogo atualizado
+    saveCatalog();
+    
+    console.log(`✅ [sync] Catálogo sincronizado: ${newTracks.length} tracks`);
+    
+    res.json({
+      success: true,
+      message: `Catálogo sincronizado com sucesso! ${newTracks.length} arquivos encontrados no Spaces.`,
+      tracksFound: newTracks.length,
+      catalog: catalog
+    });
+    
+  } catch (error) {
+    console.error('❌ [sync] Erro na sincronização:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao sincronizar catálogo',
+      error: error instanceof Error ? error.message : 'Erro desconhecido'
+    });
+  }
+});
+
 app.post('/api/clear-catalog', (req, res) => {
   catalog.tracks = [];
   catalog.metadata.totalTracks = 0;
@@ -370,10 +554,40 @@ app.post('/api/clear-catalog', (req, res) => {
   });
 });
 
+// Endpoint para gerar arquivo contínuo para iPhone PWA
+app.post('/api/generate-continuous', async (req, res) => {
+  try {
+    console.log('🍎 [iPhone PWA] Iniciando geração de arquivo contínuo...');
+    
+    if (catalog.tracks.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Nenhuma faixa disponível para gerar arquivo contínuo'
+      });
+    }
+    
+    const result = await generateContinuousFile();
+    
+    res.json({
+      success: true,
+      message: 'Arquivo contínuo gerado com sucesso',
+      ...result
+    });
+    
+  } catch (error) {
+    console.error('❌ [continuous] Erro ao gerar arquivo:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao gerar arquivo contínuo',
+      error: error.message
+    });
+  }
+});
+
 // Função para salvar catálogo
 function saveCatalog() {
   try {
-    const catalogPath = process.env.CATALOG_PATH || path.join(process.cwd(), 'public', 'data', 'catalog.json');
+    const catalogPath = process.env.CATALOG_PATH || path.join(process.cwd(), '..', 'public', 'data', 'catalog.json');
     const catalogDir = path.dirname(catalogPath);
     
     // Criar diretório se não existir
@@ -385,6 +599,202 @@ function saveCatalog() {
     console.log('📝 Catálogo salvo com sucesso');
   } catch (error) {
     console.error('❌ Erro ao salvar catálogo:', error);
+  }
+}
+
+// Função para gerar arquivo contínuo para iPhone PWA
+async function generateContinuousFile() {
+  console.log('🔧 [continuous] Iniciando geração...');
+  
+  // 1. Verificar se FFmpeg está disponível
+  try {
+    execSync('ffmpeg -version', { stdio: 'pipe' });
+    console.log('✅ [continuous] FFmpeg encontrado');
+  } catch (error) {
+    throw new Error('FFmpeg não encontrado. Necessário para gerar arquivo contínuo.');
+  }
+  
+  // 2. Baixar arquivos do Spaces para temp
+  const tempDir = path.join(os.tmpdir(), 'radio-importante-continuous');
+  if (!fs.existsSync(tempDir)) {
+    fs.mkdirSync(tempDir, { recursive: true });
+  }
+  
+  console.log(`📁 [continuous] Diretório temporário: ${tempDir}`);
+  
+  const trackFiles = [];
+  const trackCues = [];
+  let currentTime = 0;
+  
+  const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
+  const endpoint = process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com';
+  
+  // 3. Baixar cada arquivo e calcular cues
+  for (let i = 0; i < catalog.tracks.length; i++) {
+    const track = catalog.tracks[i];
+    const tempFilePath = path.join(tempDir, `track_${i}_${track.filename}`);
+    
+    try {
+      console.log(`⬇️ [continuous] Baixando: ${track.filename}`);
+      
+      // Baixar arquivo do Spaces
+      const spacesUrl = `https://${bucket}.${endpoint}/audio/${track.filename}`;
+      
+      await new Promise((resolve, reject) => {
+        const file = fs.createWriteStream(tempFilePath);
+        const request = https.get(spacesUrl, (response) => {
+          response.pipe(file);
+          file.on('finish', () => {
+            file.close();
+            resolve();
+          });
+        });
+        
+        request.on('error', (err) => {
+          fs.unlink(tempFilePath, () => {}); // Delete temp file on error
+          reject(err);
+        });
+      });
+      
+      // Obter duração real do arquivo
+      let duration;
+      try {
+        const ffprobeCmd = `ffprobe -v quiet -show_entries format=duration -of csv=p=0 "${tempFilePath}"`;
+        const durationStr = execSync(ffprobeCmd, { encoding: 'utf8' }).trim();
+        duration = parseFloat(durationStr) || track.duration || 300;
+      } catch (e) {
+        duration = track.duration || 300; // Fallback para duração do catálogo
+      }
+      
+      trackFiles.push(tempFilePath);
+      
+      // Criar cue para esta track
+      trackCues.push({
+        id: track.id,
+        title: track.title,
+        artist: track.artist,
+        genre: track.genre || 'Unknown',
+        startTime: currentTime,
+        endTime: currentTime + duration,
+        duration: duration,
+        filename: track.filename
+      });
+      
+      currentTime += duration;
+      console.log(`✅ [continuous] ${track.filename} - ${duration.toFixed(1)}s`);
+      
+    } catch (error) {
+      console.warn(`⚠️ [continuous] Erro ao baixar ${track.filename}:`, error.message);
+      // Continuar sem este arquivo
+    }
+  }
+  
+  if (trackFiles.length === 0) {
+    throw new Error('Nenhum arquivo válido encontrado para gerar arquivo contínuo');
+  }
+  
+  // 4. Criar lista de arquivos para FFmpeg
+  const fileListPath = path.join(tempDir, 'filelist.txt');
+  const fileListContent = trackFiles.map(file => `file '${file}'`).join('\n');
+  fs.writeFileSync(fileListPath, fileListContent);
+  
+  // 5. Gerar arquivo contínuo AAC
+  const outputPath = path.join(tempDir, 'radio-importante-continuous.aac');
+  console.log('🎬 [continuous] Executando FFmpeg...');
+  
+  const ffmpegCmd = [
+    'ffmpeg',
+    '-f concat',
+    '-safe 0',
+    `-i "${fileListPath}"`,
+    '-c:a aac',
+    '-b:a 128k',
+    '-y',
+    `"${outputPath}"`
+  ].join(' ');
+  
+  try {
+    execSync(ffmpegCmd, { 
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+      maxBuffer: 1024 * 1024 * 100 // 100MB buffer
+    });
+    console.log('✅ [continuous] Arquivo AAC gerado');
+  } catch (error) {
+    throw new Error(`Erro FFmpeg: ${error.message}`);
+  }
+  
+  // 6. Criar track-cues.json
+  const trackCuesData = {
+    mode: 'single',
+    totalDuration: currentTime,
+    trackCount: trackCues.length,
+    generatedAt: new Date().toISOString(),
+    tracks: trackCues
+  };
+  
+  const trackCuesPath = path.join(tempDir, 'track-cues.json');
+  fs.writeFileSync(trackCuesPath, JSON.stringify(trackCuesData, null, 2));
+  console.log('📋 [continuous] Track cues gerado');
+  
+  // 7. Upload para DigitalOcean Spaces
+  await uploadToSpaces(outputPath, 'radio-importante-continuous.aac');
+  await uploadToSpaces(trackCuesPath, 'hls/track-cues.json');
+  
+  // 8. Limpar arquivos temporários
+  try {
+    trackFiles.forEach(file => fs.unlinkSync(file));
+    fs.unlinkSync(fileListPath);
+    fs.unlinkSync(outputPath);
+    fs.unlinkSync(trackCuesPath);
+    fs.rmdirSync(tempDir);
+    console.log('🧹 [continuous] Arquivos temporários limpos');
+  } catch (e) {
+    console.warn('⚠️ [continuous] Erro ao limpar temp files:', e.message);
+  }
+  
+  console.log('🎉 [continuous] Arquivo contínuo gerado com sucesso!');
+  
+  return {
+    totalDuration: currentTime,
+    trackCount: trackCues.length,
+    fileSize: fs.statSync(outputPath).size,
+    generatedAt: new Date().toISOString()
+  };
+}
+
+// Função para upload para DigitalOcean Spaces
+async function uploadToSpaces(localPath, spacesKey) {
+  if (!AWS) {
+    throw new Error('AWS SDK não disponível. Execute: npm install aws-sdk');
+  }
+  
+  const spacesEndpoint = new AWS.Endpoint(process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com');
+  const s3 = new AWS.S3({
+    endpoint: spacesEndpoint,
+    accessKeyId: process.env.DO_SPACES_KEY,
+    secretAccessKey: process.env.DO_SPACES_SECRET,
+    region: process.env.DO_SPACES_REGION || 'nyc3'
+  });
+  
+  const fileContent = fs.readFileSync(localPath);
+  const contentType = spacesKey.endsWith('.json') ? 'application/json' : 'audio/aac';
+  
+  const params = {
+    Bucket: process.env.DO_SPACES_BUCKET || 'radio-importante-audio',
+    Key: spacesKey,
+    Body: fileContent,
+    ContentType: contentType,
+    ACL: 'public-read'
+  };
+  
+  try {
+    const result = await s3.upload(params).promise();
+    console.log(`✅ [spaces] Upload: ${spacesKey} -> ${result.Location}`);
+    return result;
+  } catch (error) {
+    console.error(`❌ [spaces] Erro upload ${spacesKey}:`, error);
+    throw error;
   }
 }
 
