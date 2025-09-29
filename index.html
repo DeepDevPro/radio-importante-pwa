@@ -526,12 +526,17 @@
     <script>
       // Garantir que o DOM esteja carregado
       document.addEventListener('DOMContentLoaded', function() {
-        // Detectar se estamos em staging
-        if (window.location.hostname.includes('staging') || window.location.hostname.includes('stagin')) {
+        // Detectar se estamos em staging ou desenvolvimento local
+        const isStaging = window.location.hostname.includes('staging') || 
+                         window.location.hostname.includes('stagin') ||
+                         window.location.hostname === 'localhost' ||
+                         window.location.hostname === '127.0.0.1';
+        
+        if (isStaging) {
           const utilityButtons = document.getElementById('utility-buttons');
           if (utilityButtons) {
             utilityButtons.style.display = 'block';
-            console.log('🚧 Botões de Debug e Admin habilitados para staging');
+            console.log('🚧 Botões de Debug e Admin habilitados para staging/desenvolvimento');
           }
         }
       });

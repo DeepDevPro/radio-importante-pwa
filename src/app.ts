@@ -68,7 +68,10 @@ function setupIOSPWAOptimizations(): void {
 // Configuração de staging environment
 function setupStagingIndicators(): void {
   const hostname = window.location.hostname;
-  const isStaging = hostname.includes('staging') || hostname.includes('stagin');
+  const isStaging = hostname.includes('staging') || 
+                   hostname.includes('stagin') ||
+                   hostname === 'localhost' ||
+                   hostname === '127.0.0.1';
   
   if (isStaging) {
     // Modificar title
