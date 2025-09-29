@@ -539,9 +539,52 @@
         if (isStaging) {
           const utilityButtons = document.getElementById('utility-buttons');
           if (utilityButtons) {
-            utilityButtons.style.setProperty('display', 'block', 'important');
+            utilityButtons.style.setProperty('display', 'flex', 'important');
+            
+            // Mostrar os botões individuais também
+            const debugBtn = utilityButtons.querySelector('.debug-btn');
+            const adminBtn = utilityButtons.querySelector('.admin-btn');
+            
+            if (debugBtn) debugBtn.style.setProperty('display', 'flex', 'important');
+            if (adminBtn) adminBtn.style.setProperty('display', 'flex', 'important');
+            
             console.log('🚧 Botões de Debug e Admin habilitados para staging/desenvolvimento');
           }
+        }
+        
+        // SOLUÇÃO ALTERNATIVA: Gesto secreto para iPhone PWA
+        // Tap 5 vezes na logo para abrir debug
+        let tapCount = 0;
+        let tapTimer = null;
+        
+        const logo = document.querySelector('.radio-logo');
+        if (logo) {
+          logo.addEventListener('click', function() {
+            tapCount++;
+            
+            if (tapTimer) clearTimeout(tapTimer);
+            
+            if (tapCount >= 5) {
+              // 5 taps - abrir debug
+              console.log('🐛 Gesto secreto detectado - abrindo debug');
+              window.open('/debug.html', '_blank');
+              tapCount = 0;
+            } else if (tapCount >= 3) {
+              // 3 taps - abrir admin  
+              tapTimer = setTimeout(() => {
+                if (tapCount === 3) {
+                  console.log('⚙️ Gesto secreto detectado - abrindo admin');
+                  window.open('/admin.html', '_blank');
+                }
+                tapCount = 0;
+              }, 500);
+            } else {
+              // Reset após 1 segundo se não completar sequência
+              tapTimer = setTimeout(() => {
+                tapCount = 0;
+              }, 1000);
+            }
+          });
         }
       });
     </script>
