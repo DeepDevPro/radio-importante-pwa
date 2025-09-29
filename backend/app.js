@@ -102,18 +102,17 @@ app.get('/audio/hls/track-cues.json', async (req, res) => {
 // Rota para servir arquivo contínuo AAC (necessário para iPhone PWA)
 app.get('/audio/radio-importante-continuous.aac', async (req, res) => {
   try {
-    console.log('🍎 [iPhone PWA] Solicitação de arquivo contínuo AAC');
+    console.log('📻 [continuous] Servindo arquivo contínuo MP3...');
     
-    // Construir URL do arquivo no Spaces
-    const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
-    const endpoint = process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com';
+    // Servir diretamente do DigitalOcean Spaces com proxy
+    const bucket = process.env.DO_SPACES_BUCKET;
+    const endpoint = process.env.DO_SPACES_ENDPOINT;
     const spacesUrl = `https://${bucket}.${endpoint}/radio-importante-continuous.aac`;
-    
-    console.log(`🎯 [continuous] Proxy request: ${spacesUrl}`);
     
     // Fazer proxy para o Spaces
     const https = require('https');
     const request = https.get(spacesUrl, (spacesRes) => {
+      // Configurar headers para AAC (compatível com MP3 no iOS)
       res.set({
         'Content-Type': 'audio/aac',
         'Content-Length': spacesRes.headers['content-length'],
@@ -126,12 +125,48 @@ app.get('/audio/radio-importante-continuous.aac', async (req, res) => {
     });
     
     request.on('error', (error) => {
-      console.error(`❌ [continuous] Erro ao acessar Spaces: ${error.message}`);
+      console.error(`❌ [continuous] Erro ao acessar arquivo contínuo: ${error.message}`);
       res.status(404).json({ error: 'Arquivo contínuo não encontrado' });
     });
     
   } catch (error) {
-    console.error('❌ [continuous] Erro na rota:', error);
+    console.error('❌ [continuous] Erro na rota do arquivo contínuo:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// Rota para servir arquivo contínuo MP3 (CRÍTICO: iPhone PWA só funciona com MP3)
+app.get('/audio/radio-importante-continuous.mp3', async (req, res) => {
+  try {
+    console.log('🍎 [iPhone PWA] Servindo arquivo contínuo MP3...');
+    
+    // Servir diretamente do DigitalOcean Spaces com proxy
+    const bucket = process.env.DO_SPACES_BUCKET;
+    const endpoint = process.env.DO_SPACES_ENDPOINT;
+    const spacesUrl = `https://${bucket}.${endpoint}/radio-importante-continuous.mp3`;
+    
+    // Fazer proxy para o Spaces
+    const https = require('https');
+    const request = https.get(spacesUrl, (spacesRes) => {
+      // Configurar headers para MP3
+      res.set({
+        'Content-Type': 'audio/mpeg',
+        'Content-Length': spacesRes.headers['content-length'],
+        'Accept-Ranges': 'bytes',
+        'Cache-Control': 'public, max-age=3600'
+      });
+      
+      res.status(spacesRes.statusCode);
+      spacesRes.pipe(res);
+    });
+    
+    request.on('error', (error) => {
+      console.error(`❌ [iPhone PWA] Erro ao acessar arquivo MP3: ${error.message}`);
+      res.status(404).json({ error: 'Arquivo MP3 contínuo não encontrado' });
+    });
+    
+  } catch (error) {
+    console.error('❌ [iPhone PWA] Erro na rota do arquivo MP3:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
@@ -698,8 +733,8 @@ async function generateContinuousFile() {
   const fileListContent = trackFiles.map(file => `file '${file}'`).join('\n');
   fs.writeFileSync(fileListPath, fileListContent);
   
-  // 5. Gerar arquivo contínuo AAC
-  const outputPath = path.join(tempDir, 'radio-importante-continuous.aac');
+  // 5. Gerar arquivo contínuo MP3
+  const outputPath = path.join(tempDir, 'radio-importante-continuous.mp3');
   console.log('🎬 [continuous] Executando FFmpeg...');
   
   const ffmpegCmd = [
@@ -707,7 +742,7 @@ async function generateContinuousFile() {
     '-f concat',
     '-safe 0',
     `-i "${fileListPath}"`,
-    '-c:a aac',
+    '-c:a libmp3lame',
     '-b:a 128k',
     '-y',
     `"${outputPath}"`
@@ -719,7 +754,7 @@ async function generateContinuousFile() {
       stdio: ['pipe', 'pipe', 'pipe'],
       maxBuffer: 1024 * 1024 * 100 // 100MB buffer
     });
-    console.log('✅ [continuous] Arquivo AAC gerado');
+    console.log('✅ [continuous] Arquivo MP3 gerado');
   } catch (error) {
     throw new Error(`Erro FFmpeg: ${error.message}`);
   }
@@ -738,10 +773,14 @@ async function generateContinuousFile() {
   console.log('📋 [continuous] Track cues gerado');
   
   // 7. Upload para DigitalOcean Spaces
-  await uploadToSpaces(outputPath, 'radio-importante-continuous.aac');
+  await uploadToSpaces(outputPath, 'radio-importante-continuous.mp3');
   await uploadToSpaces(trackCuesPath, 'hls/track-cues.json');
   
-  // 8. Limpar arquivos temporários
+  // 8. Obter info do arquivo antes da limpeza
+  const fileSize = fs.statSync(outputPath).size;
+  console.log('🎉 [continuous] Arquivo contínuo gerado com sucesso!');
+  
+  // 9. Limpar arquivos temporários
   try {
     trackFiles.forEach(file => fs.unlinkSync(file));
     fs.unlinkSync(fileListPath);
@@ -753,12 +792,10 @@ async function generateContinuousFile() {
     console.warn('⚠️ [continuous] Erro ao limpar temp files:', e.message);
   }
   
-  console.log('🎉 [continuous] Arquivo contínuo gerado com sucesso!');
-  
   return {
     totalDuration: currentTime,
     trackCount: trackCues.length,
-    fileSize: fs.statSync(outputPath).size,
+    fileSize: fileSize,
     generatedAt: new Date().toISOString()
   };
 }
