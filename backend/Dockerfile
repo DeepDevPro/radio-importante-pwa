@@ -2,6 +2,9 @@
 # Uses Node 18, listens on PORT env var (default 8080)
 FROM node:18-alpine
 
+# Install FFmpeg for audio processing
+RUN apk add --no-cache ffmpeg
+
 # Create app directory
 WORKDIR /usr/src/app
 
