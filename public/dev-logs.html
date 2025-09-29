@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📱 Logs de Debug - Radio Importante</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: #333;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 15px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    
+    h1 {
+      color: #271F30;
+      text-align: center;
+      margin-bottom: 30px;
+      border-bottom: 3px solid #667eea;
+      padding-bottom: 15px;
+    }
+    
+    .controls {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+    
+    .btn {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: inline-block;
+    }
+    
+    .btn:hover {
+      background: #5a67d8;
+      transform: translateY(-2px);
+    }
+    
+    .btn.refresh { background: #28a745; }
+    .btn.clear { background: #dc3545; }
+    .btn.back { background: #6c757d; }
+    
+    .log-grid {
+      display: grid;
+      gap: 20px;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    }
+    
+    .log-card {
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 20px;
+      background: #f8f9fa;
+      transition: all 0.3s ease;
+    }
+    
+    .log-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .log-device {
+      font-size: 18px;
+      font-weight: bold;
+      color: #271F30;
+      margin-bottom: 10px;
+    }
+    
+    .log-meta {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 15px;
+    }
+    
+    .log-actions {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .log-actions .btn {
+      font-size: 12px;
+      padding: 8px 16px;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+    
+    .empty {
+      text-align: center;
+      padding: 60px;
+      color: #666;
+      background: #f8f9fa;
+      border-radius: 12px;
+      border: 2px dashed #ddd;
+    }
+    
+    .status {
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    
+    .status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .status.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .status.info { background: #cce7ff; color: #004085; border: 1px solid #9fc9e8; }
+    
+    .device-icon {
+      font-size: 24px;
+      margin-right: 10px;
+    }
+    
+    @media (max-width: 768px) {
+      .container { margin: 10px; padding: 20px; }
+      .controls { flex-direction: column; }
+      .log-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📱 Logs de Debug do iPhone PWA</h1>
+    
+    <div id="status" class="status"></div>
+    
+    <div class="controls">
+      <button class="btn refresh" onclick="loadLogs()">🔄 Atualizar</button>
+      <button class="btn clear" onclick="clearAllLogs()">🗑️ Limpar Todos</button>
+      <a href="/" class="btn back">← Voltar ao App</a>
+      <a href="/debug.html" class="btn" style="background: #fd7e14;">🐛 Página de Debug</a>
+    </div>
+    
+    <div id="logs-container">
+      <div class="loading">
+        🔄 Carregando logs...
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const BACKEND_URL = 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app';
+    
+    function showStatus(message, type = 'info') {
+      const statusDiv = document.getElementById('status');
+      statusDiv.className = `status ${type}`;
+      statusDiv.innerHTML = message;
+      statusDiv.style.display = 'block';
+      
+      // Auto-hide após 5 segundos
+      setTimeout(() => {
+        statusDiv.style.display = 'none';
+      }, 5000);
+    }
+    
+    function getDeviceIcon(device) {
+      if (device.includes('iPhone')) return '📱';
+      if (device.includes('iPad')) return '📱';
+      if (device.includes('iOS')) return '🍎';
+      return '💻';
+    }
+    
+    function formatFileSize(bytes) {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+    
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+    
+    async function loadLogs() {
+      const container = document.getElementById('logs-container');
+      container.innerHTML = '<div class="loading">🔄 Carregando logs...</div>';
+      
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/debug-logs`);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        const logs = data.logs || [];
+        
+        if (logs.length === 0) {
+          container.innerHTML = `
+            <div class="empty">
+              📭 <strong>Nenhum log encontrado</strong><br>
+              <small>Os logs aparecerão aqui quando enviados pela página de debug</small>
+            </div>
+          `;
+          return;
+        }
+        
+        container.innerHTML = `
+          <div class="log-grid">
+            ${logs.map(log => `
+              <div class="log-card">
+                <div class="log-device">
+                  <span class="device-icon">${getDeviceIcon(log.filename)}</span>
+                  ${log.filename.replace('debug-', '').replace('.txt', '')}
+                </div>
+                <div class="log-meta">
+                  📅 ${formatDate(log.created)}<br>
+                  📊 ${formatFileSize(log.size)}<br>
+                  🔄 Modificado: ${formatDate(log.modified)}
+                </div>
+                <div class="log-actions">
+                  <a href="${BACKEND_URL}${log.downloadUrl}" 
+                     class="btn" 
+                     download="${log.filename}"
+                     target="_blank">
+                    💾 Baixar
+                  </a>
+                  <button class="btn" 
+                          onclick="previewLog('${log.filename}')"
+                          style="background: #17a2b8;">
+                    👁️ Visualizar
+                  </button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+        
+        showStatus(`✅ ${logs.length} log(s) carregado(s)`, 'success');
+        
+      } catch (error) {
+        console.error('Erro ao carregar logs:', error);
+        container.innerHTML = `
+          <div class="empty">
+            ❌ <strong>Erro ao carregar logs</strong><br>
+            <small>${error.message}</small><br><br>
+            <button class="btn" onclick="loadLogs()">🔄 Tentar Novamente</button>
+          </div>
+        `;
+        showStatus(`❌ Erro ao carregar logs: ${error.message}`, 'error');
+      }
+    }
+    
+    async function previewLog(filename) {
+      try {
+        const response = await fetch(`${BACKEND_URL}/debug-logs/${filename}`);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const content = await response.text();
+        
+        // Criar modal de preview
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0,0,0,0.8);
+          z-index: 10000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 20px;
+        `;
+        
+        const modalContent = document.createElement('div');
+        modalContent.style.cssText = `
+          background: white;
+          padding: 20px;
+          border-radius: 12px;
+          max-width: 90%;
+          max-height: 80%;
+          overflow: auto;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        `;
+        
+        modalContent.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 15px;">
+            <h3 style="margin: 0;">📄 ${filename}</h3>
+            <button onclick="document.body.removeChild(this.closest('div').parentElement)" 
+                    style="background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
+              ✕ Fechar
+            </button>
+          </div>
+          <pre style="background: #f8f9fa; padding: 15px; border-radius: 8px; font-size: 12px; line-height: 1.4; white-space: pre-wrap; overflow-x: auto;">${content}</pre>
+          <div style="margin-top: 15px; text-align: center;">
+            <a href="${BACKEND_URL}/debug-logs/${filename}" 
+               download="${filename}"
+               class="btn">
+              💾 Baixar Arquivo
+            </a>
+          </div>
+        `;
+        
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+        
+      } catch (error) {
+        showStatus(`❌ Erro ao visualizar log: ${error.message}`, 'error');
+      }
+    }
+    
+    async function clearAllLogs() {
+      if (!confirm('⚠️ Tem certeza que deseja limpar TODOS os logs?\n\nEsta ação não pode ser desfeita.')) {
+        return;
+      }
+      
+      showStatus('🗑️ Funcionalidade de limpeza será implementada em breve...', 'info');
+    }
+    
+    // Carregar logs ao inicializar
+    loadLogs();
+    
+    // Auto-refresh a cada 30 segundos
+    setInterval(loadLogs, 30000);
+  </script>
+</body>
+</html>
