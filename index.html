@@ -509,6 +509,32 @@
         <p>Carregando...</p>
       </div>
     </div>
+    
+    <!-- Botões de Debug e Admin apenas para staging -->
+    <div class="utility-buttons" id="utility-buttons" style="display: none;">
+      <button class="utility-btn debug-btn" onclick="window.open('/debug.html', '_blank')" title="Abrir página de debug">
+        🐛 Debug
+      </button>
+      <button class="utility-btn admin-btn" onclick="window.open('/admin.html', '_blank')" title="Abrir painel administrativo">
+        ⚙️ Admin
+      </button>
+    </div>
+    
     <script type="module" src="/src/app.ts"></script>
+    
+    <!-- Script para mostrar botões apenas em staging -->
+    <script>
+      // Garantir que o DOM esteja carregado
+      document.addEventListener('DOMContentLoaded', function() {
+        // Detectar se estamos em staging
+        if (window.location.hostname.includes('staging') || window.location.hostname.includes('stagin')) {
+          const utilityButtons = document.getElementById('utility-buttons');
+          if (utilityButtons) {
+            utilityButtons.style.display = 'block';
+            console.log('🚧 Botões de Debug e Admin habilitados para staging');
+          }
+        }
+      });
+    </script>
   </body>
 </html>
