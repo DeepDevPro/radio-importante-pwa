@@ -166,8 +166,12 @@
       }
 
       .utility-buttons {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
         display: flex;
         gap: 8px;
+        z-index: 1000;
       }
 
       .utility-btn {
@@ -201,10 +205,10 @@
         color: #444;
       }
 
-      /* Hide debug and admin buttons in production */
+      /* Hide debug and admin buttons in production - will be overridden by JS in staging */
       .utility-btn.debug-btn,
       .utility-btn.admin-btn {
-        display: none !important;
+        display: none;
       }
       
       /* Track Info */
@@ -535,7 +539,7 @@
         if (isStaging) {
           const utilityButtons = document.getElementById('utility-buttons');
           if (utilityButtons) {
-            utilityButtons.style.display = 'block';
+            utilityButtons.style.setProperty('display', 'block', 'important');
             console.log('🚧 Botões de Debug e Admin habilitados para staging/desenvolvimento');
           }
         }
