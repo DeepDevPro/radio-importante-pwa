@@ -2,22 +2,23 @@
 
 > **Complemento**: PLANO_EXECUCAO.md  
 > **Foco**: Detalhes técnicos, troubleshooting e manutenção  
-> **Atualizado em**: 28/09/2025 - Duration Calculation Fix + Branch Structure  
+> **Atualizado em**: 29/09/2025 - Debug/Admin UI + iPhone PWA Gestos  
 > **Para**: Programador Junior/Amador
 
 ---
 
-## 🆕 Atualizações Recentes (28/09/2025) - DURATION FIX COMPLETO ✅
+## 🆕 Atualizações Recentes (29/09/2025) - DEBUG UI + IPHONE PWA GESTOS ✅
 
-### 🕐 Duration Calculation + Branch Structure - Fix Crítico Aplicado
+### �️ Debug/Admin UI + iPhone PWA Gestos - Sistema Completo de Desenvolvimento
 ```bash
-STATUS: 🎉 DURATION CALCULATION TOTALMENTE RESTAURADO
-COMMITS: 
-- 1067f3e: feat: Restaurar cálculo automático de duração dos arquivos de áudio
-- 6fab52f: Fix Upload "this.client.send is not a function"
-- 7604f81: Fix duplicação filename (backend/app.js) 
-- d7cbba5: Add rota /audio/:filename proxy (backend/app.js)
-BRANCH STRUCTURE: staging (stable) → feature/ux-improvements-v2.4 (active)
+STATUS: 🎉 DEBUG/ADMIN UI TOTALMENTE FUNCIONAL + GESTO SECRETO IPHONE
+COMMITS RECENTES: 
+- 815fc34: fix: corrigir exibição botões Debug/Admin + gesto secreto para iPhone
+- ad49009: fix: corrigir CSS dos botões Debug/Admin para aparecer em staging
+- 2508188: feat: atualizar título da staging para teste dos botões Debug/Admin
+- 4ff6219: fix: melhorar detecção de ambiente staging para mostrar botões Debug/Admin
+- f57b209: fix: corrigir exibição dos botões Debug e Admin em staging
+BRANCH STRUCTURE: staging (active development) | main (stable) | staging-stable-v2.2.5-backup (preserved)
 
 PROBLEMAS RESOLVIDOS:
 ✅ Upload: "this.client.send is not a function" → multer-s3 2.10.0
@@ -287,6 +288,177 @@ TECHNICAL READINESS:
 ✅ Build system working
 ✅ Documentation updated
 ✅ All critical systems functional
+```
+
+---
+
+## 🛠️ **DEBUG/ADMIN UI TECHNICAL IMPLEMENTATION (29/09/2025)**
+
+### **📋 Problem Analysis: CSS vs JavaScript Conflict**
+
+#### **Root Cause Identification**
+```bash
+PROBLEMA TÉCNICO IDENTIFICADO:
+- JavaScript: Detecção staging funcionando ✅
+- Console: "🚧 Botões de Debug e Admin habilitados para staging/desenvolvimento" ✅
+- CSS Rule: .utility-btn.debug-btn { display: none !important; } ❌
+- Resultado: Botões existem no DOM mas invisible ao usuário
+
+DEBUGGING PROCESS:
+1. Verificar detecção hostname: ✅ "stagin" detectado corretamente
+2. Verificar getElementById: ✅ elementos encontrados
+3. Verificar CSS computed styles: ❌ display: none !important ganhando
+4. Verificar JavaScript execution order: ✅ DOMContentLoaded funcionando
+```
+
+### **🔧 Technical Solutions Applied**
+
+#### **CSS Specificity Fix (Commits ad49009, 815fc34)**
+```css
+/* ANTES - PROBLEMÁTICO */
+.utility-btn.debug-btn,
+.utility-btn.admin-btn {
+  display: none !important; /* Impossível sobrescrever */
+}
+
+/* DEPOIS - CORRIGIDO */
+.utility-btn.debug-btn,
+.utility-btn.admin-btn {
+  display: none; /* Sem !important - permitir override JS */
+}
+
+/* POSICIONAMENTO CORRETO */
+.utility-buttons {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  display: flex;
+  gap: 8px;
+  z-index: 1000; /* Garantir visibilidade sobre outros elementos */
+}
+```
+
+#### **JavaScript Robustness Enhancement**
+```typescript
+// DETECÇÃO STAGING ROBUSTA - Commit 4ff6219
+const isStaging = window.location.hostname.includes('staging') || 
+                 window.location.hostname.includes('stagin') ||    // DigitalOcean specific
+                 window.location.hostname === 'localhost' ||       // Development
+                 window.location.hostname === '127.0.0.1';        // IP local
+
+// APLICAÇÃO CSS COM !IMPORTANT - Commit 815fc34
+if (isStaging) {
+  const utilityButtons = document.getElementById('utility-buttons');
+  if (utilityButtons) {
+    // Container principal
+    utilityButtons.style.setProperty('display', 'flex', 'important');
+    
+    // Botões individuais (CRÍTICO)
+    const debugBtn = utilityButtons.querySelector('.debug-btn');
+    const adminBtn = utilityButtons.querySelector('.admin-btn');
+    
+    if (debugBtn) debugBtn.style.setProperty('display', 'flex', 'important');
+    if (adminBtn) adminBtn.style.setProperty('display', 'flex', 'important');
+    
+    console.log('🚧 Botões de Debug e Admin habilitados para staging/desenvolvimento');
+  }
+}
+```
+
+#### **iPhone PWA Gesture System (Commit 815fc34)**
+```javascript
+// SISTEMA DE GESTOS SECRETOS
+let tapCount = 0;
+let tapTimer = null;
+
+const logo = document.querySelector('.radio-logo');
+if (logo) {
+  logo.addEventListener('click', function() {
+    tapCount++;
+    
+    if (tapTimer) clearTimeout(tapTimer);
+    
+    if (tapCount >= 5) {
+      // 5 TAPS = DEBUG
+      console.log('🐛 Gesto secreto detectado - abrindo debug');
+      window.open('/debug.html', '_blank');
+      tapCount = 0;
+    } else if (tapCount >= 3) {
+      // 3 TAPS = ADMIN
+      tapTimer = setTimeout(() => {
+        if (tapCount === 3) {
+          console.log('⚙️ Gesto secreto detectado - abrindo admin');
+          window.open('/admin.html', '_blank');
+        }
+        tapCount = 0;
+      }, 500); // Delay para permitir 5 taps
+    } else {
+      // RESET TIMER
+      tapTimer = setTimeout(() => {
+        tapCount = 0;
+      }, 1000);
+    }
+  });
+}
+```
+
+### **🎯 Environment Detection Matrix**
+```bash
+STAGING DETECTION LOGIC:
+✅ radio-importante-frontend-stagin-6rjzv.ondigitalocean.app → "stagin" detected
+✅ radio-importante-frontend-staging-xyz.ondigitalocean.app → "staging" detected  
+✅ localhost:5173 → "localhost" detected
+✅ 127.0.0.1:5173 → "127.0.0.1" detected
+
+PRODUCTION BLOCKING:
+❌ radio-importante-frontend-xyz.ondigitalocean.app → No match, buttons hidden
+❌ Custom domain → No match, buttons hidden
+❌ GitHub Pages → No match, buttons hidden
+
+RESULTADO: Botões aparecem APENAS em ambientes de desenvolvimento/staging
+```
+
+### **📱 iPhone PWA Specific Implementation**
+```bash
+PROBLEMA IPHONE PWA:
+- Botões podem não aparecer devido a cache/CSS issues
+- Necessário método alternativo garantido
+- Gesto deve ser intuitivo mas discreto
+
+SOLUÇÃO GESTURE SYSTEM:
+✅ Target: Logo da Radio Importante (sempre visível)
+✅ 3 taps rápidos = Admin (mais comum, sequência mais fácil)
+✅ 5 taps rápidos = Debug (menos comum, evita ativação acidental)
+✅ Timer inteligente: Reset automático após 1s de inatividade
+✅ Delay de 500ms para permitir upgrade de 3→5 taps
+✅ Console logs para feedback/debugging
+✅ window.open('_blank') para nova aba/janela
+
+VALIDAÇÃO TÉCNICA:
+✅ Funciona em todos os browsers
+✅ Funciona em iPhone PWA (standalone mode)
+✅ Não interfere com funcionalidade normal da logo
+✅ Discreto: não aparece na UI normal
+✅ Robusto: funciona mesmo com CSS issues
+```
+
+### **✅ Implementation Validation**
+```bash
+COMMITS SEQUENCE APPLIED:
+- 4ff6219: Staging detection enhancement
+- 2508188: Staging title visual identification  
+- ad49009: CSS !important removal
+- 815fc34: Individual buttons + gesture system
+
+TESTING MATRIX:
+✅ Desktop Chrome: Botões visíveis em staging URL
+✅ Desktop Safari: Botões visíveis em staging URL  
+✅ Mobile Chrome: Botões visíveis em staging URL
+✅ iPhone Safari: Botões visíveis + gesture fallback
+✅ iPhone PWA: Gesture system primary method
+✅ Localhost: Botões visíveis durante development
+
+STATUS: DUAL SOLUTION OPERATIONAL - Visual buttons + Gesture fallback
 ```
 
 ---
