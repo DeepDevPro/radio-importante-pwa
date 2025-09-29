@@ -37,8 +37,7 @@ interface Track {
 
 // Configuração do backend
 const BACKEND_CONFIG = {
-    production: 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app',
-    local: 'http://localhost:8080'
+    production: 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app'
 };
 
 // Estado global do admin
@@ -324,7 +323,7 @@ async function checkBackendStatus() {
     try {
         statusDiv.innerHTML = '🔍 Testando conexões...';
         
-        // Testa backend de produção primeiro
+        // Usar apenas backend de produção
         const productionStatus = await testBackend(BACKEND_CONFIG.production, 'Produção (DigitalOcean)');
         
         if (productionStatus.success) {
@@ -336,25 +335,11 @@ async function checkBackendStatus() {
                 💚 <strong>Status:</strong> ${productionStatus.data?.status || 'Healthy'}
             `;
         } else {
-            // Se produção falhar, tenta local
-            const localStatus = await testBackend(BACKEND_CONFIG.local, 'Local (Development)');
-            
-            if (localStatus.success) {
-                currentBackend = BACKEND_CONFIG.local;
-                statusDiv.innerHTML = `
-                    ✅ <strong>Backend Ativo:</strong> ${localStatus.name}<br>
-                    🌐 <strong>URL:</strong> ${BACKEND_CONFIG.local}<br>
-                    ⏱️ <strong>Response Time:</strong> ${localStatus.responseTime}ms<br>
-                    💚 <strong>Status:</strong> ${localStatus.data?.status || 'Healthy'}
-                `;
-            } else {
-                currentBackend = null;
-                statusDiv.innerHTML = `
-                    ❌ <strong>Nenhum backend disponível!</strong><br>
-                    🚫 Produção: ${productionStatus.error}<br>
-                    🚫 Local: ${localStatus.error}
-                `;
-            }
+            currentBackend = null;
+            statusDiv.innerHTML = `
+                ❌ <strong>Backend não disponível!</strong><br>
+                🚫 Produção: ${productionStatus.error}
+            `;
         }
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
@@ -512,7 +497,7 @@ async function uploadFiles() {
         let result: any = {}; // resposta pode variar
         try { result = await response.json(); } catch (e) { console.warn('Resposta não JSON', e); }
         if (response.ok && result.success) {
-            if (uploadStatus) uploadStatus.innerHTML = `✅ <strong>Upload concluído!</strong><br>📁 Arquivos processados: ${(result.tracks?.length) || files.length}`;
+            if (uploadStatus) uploadStatus.innerHTML = `✅ <strong>Upload concluído!</strong><br>📁 Arquivos processados: ${(result.tracks?.length) || files.length}<br>🔄 Gerando arquivo contínuo para iPhone PWA...`;
             clearFiles();
         } else {
             const msg = result.message || result.error || `HTTP ${response.status}`;

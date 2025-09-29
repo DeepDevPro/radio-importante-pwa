@@ -23,7 +23,6 @@ const NEVER_CACHE = [
   '/api/',
   '/data/catalog.json', // Sempre buscar versão mais recente
   '/admin.html', // CRÍTICO: admin.html sempre deve buscar a versão mais recente
-  'localhost:', // Evitar cache durante desenvolvimento
 ];
 
 // Função para verificar se uma URL deve ser cacheada
