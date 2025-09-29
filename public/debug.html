@@ -400,8 +400,9 @@ Seção: ${outputId.replace('-output', '').toUpperCase()}
         const audio = new Audio();
         log(output, '✅ Elemento Audio criado');
         
-        // Testar URL de áudio
-        const testUrl = '/audio/Para-Entrar.mp3';
+        // Testar URL do backend de produção (MP3 contínuo para iPhone PWA)
+        const backendUrl = 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app';
+        const testUrl = `${backendUrl}/audio/radio-importante-continuous.mp3`;
         audio.src = testUrl;
         log(output, `📁 URL definida: ${testUrl}`);
         
@@ -453,7 +454,10 @@ Seção: ${outputId.replace('-output', '').toUpperCase()}
           log(output, '🔧 Configurações iPhone: preload=metadata, crossOrigin=null');
         }
         
-        const hlsUrl = '/audio/hls/playlist-continuous.m3u8';
+        // Testar HLS do backend de produção
+        const backendUrl = 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app';
+        const hlsUrl = `${backendUrl}/audio/hls/playlist-continuous.m3u8`;
+        audio.src = hlsUrl;
         log(output, `📁 URL HLS definida: ${hlsUrl}`);
         
         audio.addEventListener('loadstart', () => {
@@ -517,10 +521,12 @@ Seção: ${outputId.replace('-output', '').toUpperCase()}
       
       log(output, '=== TESTE DE REDE ===');
       
+      // URLs do backend de produção para testar
+      const backendUrl = 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app';
       const urls = [
-        '/audio/Para-Entrar.mp3',
-        '/audio/hls/playlist-continuous.m3u8',
-        '/audio/hls/track-cues.json'
+        `${backendUrl}/audio/radio-importante-continuous.mp3`,
+        `${backendUrl}/audio/hls/playlist-continuous.m3u8`,
+        `${backendUrl}/audio/hls/track-cues.json`
       ];
       
       urls.forEach(async (url) => {
