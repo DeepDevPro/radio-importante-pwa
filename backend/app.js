@@ -13,7 +13,8 @@ const storageConfig = require('./storage-config');
 const { execSync } = require('child_process');
 const os = require('os');
 const https = require('https');
-const { parseNodeStream } = require('music-metadata');
+// music-metadata será importado dinamicamente (ESM)
+let parseNodeStream;
 let AWS;
 try {
   AWS = require('aws-sdk');
@@ -732,6 +733,12 @@ app.post('/api/sync-catalog', async (req, res) => {
     // [NOVO] Enriquecimento de metadados (apenas se fullMode=true)
     if (fullMode) {
       console.log('🏷️ [meta] Iniciando enriquecimento de metadados...');
+      
+      // Importar music-metadata dinamicamente (ESM)
+      if (!parseNodeStream) {
+        const musicMetadata = await import('music-metadata');
+        parseNodeStream = musicMetadata.parseNodeStream;
+      }
       
       // Limitar processamento para performance (máximo 20 por vez)
       const tracksNeedingMetadata = newTracks.filter(track => track.needsMetadata);
