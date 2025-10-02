@@ -3,9 +3,11 @@
 Data: 29/09/2025
 Statu### F2: HLS VOD (Video on Demand) ✅ CONCLUÍDO
 **Objetivo**: Gerar HLS sob demanda para playlists customizáveis
-**Status**: ✅ BACKEND + PROXY COMPLETADO
-
-#### F2.1: Backend API ✅ CONCLUÍDO
+**Status**: ✅ BACKEND + PROXY COMPLETA- ✅ Sync básico e `full=true` enriquecendo dur/ID3
+- ✅ Botão Admin "Sincronizar" atualiza lista e totais
+- ✅ **HLS VOD disponível em `generated/hls/latest/` e tocando no iPhone PWA!**
+- [ ] HLS Rotativo publicado em `generated/hls/rolling/` e tocando no iPhone
+- [ ] Fallback funcionando: HLS → estratégia IOSPWAStrategy existente → por faixas### F2.1: Backend API ✅ CONCLUÍDO
 - ✅ POST `/api/generate-hls` - Gerar HLS com configurações:
   - `shuffle: boolean` - Embaralhar faixas
   - `limit: number` - Limite de faixas (padrão: 10) 
@@ -50,11 +52,20 @@ Statu### F2: HLS VOD (Video on Demand) ✅ CONCLUÍDO
 - ✅ Progress bar durante geração
 - ✅ Exibir manifesto e link de teste
 
-#### F2.6: Teste iPhone PWA ⏳ PRONTO PARA TESTE
-- ⏳ Teste de reprodução HLS no Safari iOS
-- ⏳ Validar background playback via Service Worker
-- ⏳ Teste de continuidade entre segmentos
-- ⏳ Performance e cache behavior
+#### F2.6: Teste iPhone PWA ✅ **SUCESSO COMPLETO!**
+- ✅ **Teste de reprodução HLS no Safari iOS** - APROVADO
+- ✅ **Validar background playback via Service Worker** - APROVADO
+- ✅ **Teste de continuidade entre segmentos** - APROVADO (pequenos pulos iniciais normais)
+- ✅ **Performance e cache behavior** - APROVADO
+
+**🎯 RESULTADO FINAL**: 
+- ✅ PWA instalado e funcionando
+- ✅ HLS gerado e reproduzindo  
+- ✅ Background playback CONFIRMADO
+- ✅ Screen lock playback CONFIRMADO
+- ⚠️ Pulos iniciais entre faixas (para otimizar em F3)
+
+**Status: F2 HLS VOD TOTALMENTE VALIDADO E FUNCIONAL! 🚀**
 
 **🎯 TESTE MANUAL**: Acesse no iPhone Safari:
 1. https://radio-importante-pwa-stagin-fprqy.ondigitalocean.app/admin.html
@@ -146,28 +157,28 @@ Nota: `metadata-cache.json` ficará para uma subfase F1.1 (sem impacto no fluxo 
 
 ---
 
-## F2 – Backend: HLS VOD (m3u8 + segmentos) – Opt-in
+## F2 – Backend: HLS VOD (m3u8 + segmentos) ✅ **COMPLETAMENTE VALIDADO**
 
-- [ ] [STOP] Aprovação: adicionar `ffmpeg-static` e `fluent-ffmpeg` (backend)
-- [ ] Implementar `POST /api/generate-hls` (assíncrono): `{ shuffle, limit, bitrate, segment }`
-- [ ] Gerar VOD longo em `/tmp` com re-encode único (AAC 128k, 44.1k, segmentos 6s)
-- [ ] Upload para `generated/hls/latest/` (MIME: `.m3u8`→`application/vnd.apple.mpegurl`, `.ts`→`video/MP2T` ou `.m4s`→`video/iso.segment`)
-- [ ] Salvar `generated/hls/latest/manifest.json` e `generated/status/hls-status.json`
-- [ ] Implementar `GET /api/hls-status` (ler status JSON)
-- [ ] Adicionar proxy/redirect `GET /hls/latest/index.m3u8`
-- [ ] Deploy staging
-- [ ] Teste background iPhone PWA: `<audio src="/hls/latest/index.m3u8">` deve continuar no lockscreen
-- [!] Aceite F2: HLS VOD disponível e reproduz no iPhone (background). Sem impactar MP3 contínuo
+- ✅ [STOP] Aprovação: adicionar `ffmpeg-static` e `fluent-ffmpeg` (backend)
+- ✅ Implementar `POST /api/generate-hls` (assíncrono): `{ shuffle, limit, bitrate, segment }`
+- ✅ Gerar VOD longo em `/tmp` com re-encode único (AAC 128k, 44.1k, segmentos 6s)
+- ✅ Upload para `generated/hls/latest/` (MIME: `.m3u8`→`application/vnd.apple.mpegurl`, `.ts`→`video/MP2T` ou `.m4s`→`video/iso.segment`)
+- ✅ Salvar `generated/hls/latest/manifest.json` e `generated/status/hls-status.json`
+- ✅ Implementar `GET /api/hls-status` (ler status JSON)
+- ✅ Adicionar proxy/redirect `GET /hls/latest/index.m3u8`
+- ✅ Deploy staging
+- ✅ **Teste background iPhone PWA: `<audio src="/hls/latest/index.m3u8">` FUNCIONA EM LOCKSCREEN!**
+- ✅ **Aceite F2: HLS VOD disponível e reproduz no iPhone (background). Sem impactar MP3 contínuo**
 
 ---
 
-## F2 – Frontend (Admin): Botão opcional "Gerar HLS (VOD)"
+## F2 – Frontend (Admin): Botão opcional "Gerar HLS (VOD)" ✅ **COMPLETAMENTE VALIDADO**
 
-- [ ] Adicionar botão (opcional) que chama `POST /api/generate-hls` com presets simples
-- [ ] Mostrar feedback rápido (iniciado) e link para status
-- [ ] Não alterar outras partes da UI
-- [ ] Deploy staging e validar
-- [!] Aceite F2-Front: botão dispara job; status acessível; sem efeitos colaterais
+- ✅ Adicionar botão (opcional) que chama `POST /api/generate-hls` com presets simples
+- ✅ Mostrar feedback rápido (iniciado) e link para status
+- ✅ Não alterar outras partes da UI
+- ✅ Deploy staging e validar
+- ✅ **Aceite F2-Front: botão dispara job; status acessível; TESTADO NO IPHONE PWA!**
 
 ---
 
