@@ -1,7 +1,60 @@
 # ✅ CHECKLIST DE TAREFAS – HLS (VOD + Rotativo) com fallback MP3
 
 Data: 29/09/2025
-Status: Guia passo a passo para executar o plano com segurança
+Statu### F2: HLS VOD (Video on Demand) ✅ CONCLUÍDO
+**Objetivo**: Gerar HLS sob demanda para playlists customizáveis
+**Status**: ✅ BACKEND + PROXY COMPLETADO
+
+#### F2.1: Backend API ✅ CONCLUÍDO
+- ✅ POST `/api/generate-hls` - Gerar HLS com configurações:
+  - `shuffle: boolean` - Embaralhar faixas
+  - `limit: number` - Limite de faixas (padrão: 10) 
+  - `bitrate: string` - Taxa de bits ("128k", "192k", "256k")
+  - `segment: number` - Duração dos segmentos (6s padrão)
+  - `mode: string` - "latest" (futuro: "rolling")
+
+- ✅ GET `/api/hls-status?jobId=X` - Status do job:
+  - `status`: "processing", "completed", "failed"
+  - `progress`: 0-100
+  - `manifest`: Detalhes das faixas processadas
+  - `playlistUrl`: URL da playlist m3u8
+
+- ✅ GET `/hls/latest/index.m3u8` - Proxy para playlist HLS
+- ✅ GET `/hls/latest/:segment` - Proxy para segmentos TS
+
+#### F2.2: Implementação FFmpeg ✅ CONCLUÍDO
+- ✅ ffmpeg-static: Binários FFmpeg embarcados
+- ✅ fluent-ffmpeg: Interface JavaScript
+- ✅ Processo async com jobs temporários
+- ✅ Upload para generated/hls/latest/ no Spaces
+- ✅ Cleanup automático de arquivos temporários
+- ✅ MIME types corretos (.m3u8, .ts)
+
+#### F2.3: Arquitetura de Jobs ✅ CONCLUÍDO
+- ✅ Job IDs únicos com timestamp
+- ✅ Status tracking em generated/status/
+- ✅ Manifesto JSON com metadados das faixas
+- ✅ Progresso granular (download, process, upload)
+- ✅ Error handling robusto
+
+#### F2.4: Validação ✅ CONCLUÍDO
+- ✅ Geração de HLS com 3 faixas (88s total)
+- ✅ Playlist válida (15 segmentos de 6s)
+- ✅ Segmentos acessíveis via proxy
+- ✅ Headers corretos e CORS
+- ✅ Cache policy (5min playlist, 24h segmentos)
+
+#### F2.5: Frontend Admin ⏳ PENDENTE
+- ⏳ Botão "Gerar HLS (VOD)" no admin.html
+- ⏳ Interface para configurar opções (shuffle, limit, bitrate)
+- ⏳ Progress bar durante geração
+- ⏳ Exibir manifesto e link de teste
+
+#### F2.6: Teste iPhone PWA ⏳ PENDENTE
+- ⏳ Teste de reprodução HLS no Safari iOS
+- ⏳ Validar background playback via Service Worker
+- ⏳ Teste de continuidade entre segmentos
+- ⏳ Performance e cache behavioro a passo para executar o plano com segurança
 Referências obrigatórias: `PLANO_EXECUCAO.md`, `GUIA_TECNICO_DETALHADO.md`, `PLANO-SINCRONIZAR-COM-SPACES.md`
 
 Diretriz central:

@@ -308,6 +308,68 @@
                         Escaneia arquivos, enriquece metadados (duração/título/artista) e atualiza catálogo
                     </span>
                 </div>
+
+                <!-- Botão Gerar HLS VOD -->
+                <div style="margin: 20px 0; padding: 15px; background: #fff8e1; border-radius: 10px; border-left: 4px solid #ff9800;">
+                    <button class="btn" id="generate-hls-btn" onclick="generateHLS()" style="margin-right: 10px; background: linear-gradient(135deg, #ff9800, #f57f17); color: white;">
+                        🎬 Gerar HLS (VOD)
+                    </button>
+                    <span style="color: #666; font-size: 14px;">
+                        Gera playlist HLS para reprodução contínua em background (iPhone PWA)
+                    </span>
+                    
+                    <!-- Configurações HLS -->
+                    <div id="hls-config" style="margin-top: 10px; display: none;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 10px;">
+                            <label style="display: flex; flex-direction: column; font-size: 12px;">
+                                Faixas:
+                                <select id="hls-limit" style="padding: 5px; border-radius: 5px; border: 1px solid #ddd;">
+                                    <option value="3">3 faixas</option>
+                                    <option value="5">5 faixas</option>
+                                    <option value="10" selected>10 faixas</option>
+                                    <option value="20">20 faixas</option>
+                                </select>
+                            </label>
+                            <label style="display: flex; flex-direction: column; font-size: 12px;">
+                                Qualidade:
+                                <select id="hls-bitrate" style="padding: 5px; border-radius: 5px; border: 1px solid #ddd;">
+                                    <option value="96k">96k (menor)</option>
+                                    <option value="128k" selected>128k (padrão)</option>
+                                    <option value="192k">192k (alta)</option>
+                                    <option value="256k">256k (máxima)</option>
+                                </select>
+                            </label>
+                            <label style="display: flex; flex-direction: column; font-size: 12px;">
+                                Segmentos:
+                                <select id="hls-segment" style="padding: 5px; border-radius: 5px; border: 1px solid #ddd;">
+                                    <option value="3">3s (resposta rápida)</option>
+                                    <option value="6" selected>6s (balanceado)</option>
+                                    <option value="10">10s (menos requisições)</option>
+                                </select>
+                            </label>
+                            <label style="display: flex; align-items: center; font-size: 12px; gap: 5px;">
+                                <input type="checkbox" id="hls-shuffle" checked style="margin: 0;">
+                                Embaralhar faixas
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Status do HLS -->
+                    <div id="hls-status" style="margin-top: 15px; display: none;">
+                        <div style="background: #e3f2fd; padding: 10px; border-radius: 5px; font-size: 14px;">
+                            <div id="hls-progress-text">Preparando...</div>
+                            <div style="background: #ddd; height: 6px; border-radius: 3px; margin: 8px 0; overflow: hidden;">
+                                <div id="hls-progress-bar" style="background: linear-gradient(90deg, #4caf50, #8bc34a); height: 100%; width: 0%; transition: width 0.3s;"></div>
+                            </div>
+                            <div id="hls-result" style="display: none; margin-top: 10px;">
+                                <strong>HLS Gerado!</strong><br>
+                                <a id="hls-test-link" href="#" target="_blank" style="color: #1976d2; text-decoration: none;">🎯 Testar Playlist</a>
+                                <span style="margin: 0 10px;">|</span>
+                                <span id="hls-tracks-info" style="color: #666;"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 
                 <div class="alert alert-info">
                     ✏️ <strong>Editor de Metadados:</strong> Clique nos campos editáveis (título, artista) para editá-los diretamente. A duração é calculada automaticamente pelo sistema. Use <kbd>Enter</kbd> para salvar ou <kbd>Escape</kbd> para cancelar.
@@ -459,6 +521,150 @@
                 // Reabilita botão
                 btn.disabled = false;
                 btn.textContent = '🔄 Sincronizar com Spaces (Completo)';
+            }
+        }
+        
+        // Função para gerar HLS VOD (F2)
+        async function generateHLS() {
+            const btn = document.getElementById('generate-hls-btn');
+            const configEl = document.getElementById('hls-config');
+            const statusEl = document.getElementById('hls-status');
+            const progressText = document.getElementById('hls-progress-text');
+            const progressBar = document.getElementById('hls-progress-bar');
+            const resultEl = document.getElementById('hls-result');
+            const testLink = document.getElementById('hls-test-link');
+            const tracksInfo = document.getElementById('hls-tracks-info');
+            
+            // Alternar configurações se já estão visíveis
+            if (configEl.style.display === 'block' && !btn.disabled) {
+                configEl.style.display = 'none';
+                return;
+            }
+            
+            // Mostrar configurações se primeira vez
+            if (!btn.disabled && statusEl.style.display === 'none') {
+                configEl.style.display = 'block';
+                return;
+            }
+            
+            try {
+                // Coletar configurações
+                const limit = parseInt(document.getElementById('hls-limit').value);
+                const bitrate = document.getElementById('hls-bitrate').value;
+                const segment = parseInt(document.getElementById('hls-segment').value);
+                const shuffle = document.getElementById('hls-shuffle').checked;
+                
+                // Desabilitar botão e mostrar status
+                btn.disabled = true;
+                btn.textContent = '🎬 Gerando...';
+                configEl.style.display = 'none';
+                statusEl.style.display = 'block';
+                resultEl.style.display = 'none';
+                
+                // Resetar progresso
+                progressBar.style.width = '0%';
+                progressText.textContent = 'Iniciando geração HLS...';
+                
+                // Configuração da API
+                const backendUrl = 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app';
+                const apiUrl = `${backendUrl}/api/generate-hls`;
+                
+                console.log('🎬 [HLS] Iniciando geração:', { limit, bitrate, segment, shuffle });
+                
+                // Chamada para gerar HLS
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        shuffle,
+                        limit,
+                        bitrate,
+                        segment
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Erro ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                const jobId = result.jobId;
+                
+                console.log('🎬 [HLS] Job iniciado:', jobId);
+                progressText.textContent = `Job ${jobId} iniciado - acompanhando progresso...`;
+                progressBar.style.width = '10%';
+                
+                // Acompanhar progresso
+                const statusUrl = `${backendUrl}/api/hls-status?jobId=${jobId}`;
+                let attempts = 0;
+                const maxAttempts = 30; // 30 * 2s = 60s timeout
+                
+                const checkStatus = async () => {
+                    try {
+                        attempts++;
+                        const statusResponse = await fetch(statusUrl);
+                        
+                        if (!statusResponse.ok) {
+                            throw new Error(`Status error: ${statusResponse.status}`);
+                        }
+                        
+                        const status = await statusResponse.json();
+                        console.log('🎬 [HLS] Status:', status);
+                        
+                        // Atualizar progress
+                        const progress = status.progress || 0;
+                        progressBar.style.width = `${progress}%`;
+                        progressText.textContent = status.message || 'Processando...';
+                        
+                        if (status.status === 'completed') {
+                            // Sucesso!
+                            progressBar.style.width = '100%';
+                            progressText.textContent = 'HLS gerado com sucesso!';
+                            
+                            // Mostrar resultado
+                            const manifest = status.manifest || {};
+                            const tracks = manifest.tracks || [];
+                            const totalDuration = manifest.totalDuration || 0;
+                            
+                            testLink.href = `${backendUrl}/hls/latest/index.m3u8`;
+                            tracksInfo.textContent = `${tracks.length} faixas, ${Math.round(totalDuration/60)}min total`;
+                            resultEl.style.display = 'block';
+                            
+                            console.log('✅ [HLS] Geração concluída:', manifest);
+                            
+                        } else if (status.status === 'failed') {
+                            throw new Error(status.message || 'Falha na geração HLS');
+                            
+                        } else if (attempts >= maxAttempts) {
+                            throw new Error('Timeout: geração demorou mais que 60 segundos');
+                            
+                        } else {
+                            // Continuar verificando
+                            setTimeout(checkStatus, 2000);
+                        }
+                        
+                    } catch (error) {
+                        console.error('Erro ao verificar status:', error);
+                        progressText.textContent = `Erro: ${error.message}`;
+                        progressBar.style.background = '#f44336';
+                    }
+                };
+                
+                // Iniciar verificação
+                setTimeout(checkStatus, 1000);
+                
+            } catch (error) {
+                console.error('Erro na geração HLS:', error);
+                progressText.textContent = `Erro: ${error.message}`;
+                progressBar.style.background = '#f44336';
+                progressBar.style.width = '100%';
+                
+            } finally {
+                // Reabilitar botão após 3 segundos
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.textContent = '🎬 Gerar HLS (VOD)';
+                }, 3000);
             }
         }
         
