@@ -1,0 +1,34 @@
+name: Deploy Backend to Staging
+
+on:
+  push:
+    branches: [ "staging" ]
+    paths:
+      - "backend/**"
+      - ".github/workflows/deploy-backend-staging.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-backend-staging-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Deploy Backend to Digital Ocean
+        uses: digitalocean/app_action@v1.1.5
+        with:
+          app_name: radio-importante-pwa-backend-skg2w
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          
+      - name: Notify Backend Deploy Success
+        run: |
+          echo "🚧 Backend deploy completed successfully!"
+          echo "🔗 URL: https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/"
+          echo "📋 Environment: staging/production backend"
+          echo "📦 App name: radio-importante-pwa-backend-skg2w"
+          echo "🔄 Updated with F1 features: music-metadata support"
