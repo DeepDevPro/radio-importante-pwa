@@ -877,6 +877,113 @@ app.post('/api/generate-continuous', async (req, res) => {
   }
 });
 
+// ========== F0 VERIFICATION ENDPOINT (temporário) ==========
+
+// Endpoint temporário para verificação F0 - estrutura de pastas no Spaces
+app.get('/api/verify-spaces-structure', async (req, res) => {
+  try {
+    console.log('🔍 [F0] Iniciando verificação da estrutura do Spaces');
+    
+    if (!AWS) {
+      return res.status(500).json({ 
+        error: 'AWS SDK não disponível',
+        details: 'Instale aws-sdk: npm install aws-sdk'
+      });
+    }
+    
+    // Configurar acesso ao Spaces
+    const spacesEndpoint = new AWS.Endpoint(process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com');
+    const s3 = new AWS.S3({
+      endpoint: spacesEndpoint,
+      accessKeyId: process.env.DO_SPACES_KEY,
+      secretAccessKey: process.env.DO_SPACES_SECRET,
+      region: process.env.DO_SPACES_REGION || 'nyc3'
+    });
+    
+    const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
+    console.log(`🔍 [F0] Verificando estrutura do bucket: ${bucket}`);
+    
+    // Verificar prefixos existentes
+    const prefixesToCheck = [
+      'audio/',
+      'data/',
+      'generated/',
+      'generated/mixes/',
+      'generated/status/',
+      'generated/hls/',
+      'generated/hls/latest/',
+      'generated/hls/rolling/'
+    ];
+    
+    const results = {};
+    
+    for (const prefix of prefixesToCheck) {
+      try {
+        const params = {
+          Bucket: bucket,
+          Prefix: prefix,
+          MaxKeys: 5
+        };
+        
+        const data = await s3.listObjectsV2(params).promise();
+        results[prefix] = {
+          exists: data.Contents && data.Contents.length > 0,
+          count: data.Contents ? data.Contents.length : 0,
+          files: data.Contents ? data.Contents.map(obj => obj.Key).slice(0, 3) : []
+        };
+        
+        console.log(`📁 [F0] ${prefix}: ${results[prefix].exists ? '✅' : '❌'} (${results[prefix].count} arquivos)`);
+        
+      } catch (error) {
+        results[prefix] = {
+          exists: false,
+          error: error.message
+        };
+        console.log(`📁 [F0] ${prefix}: ❌ Error: ${error.message}`);
+      }
+    }
+    
+    // Verificar MIME types suportados (checklist F0)
+    const mimeTypes = {
+      '.json': 'application/json',
+      '.m3u8': 'application/vnd.apple.mpegurl',
+      '.ts': 'video/MP2T',
+      '.m4s': 'video/iso.segment',
+      '.mp3': 'audio/mpeg'
+    };
+    
+    const summary = {
+      bucket: bucket,
+      endpoint: process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com',
+      structure: results,
+      mimeTypes: mimeTypes,
+      recommendations: {
+        existingPaths: Object.keys(results).filter(path => results[path].exists),
+        missingPaths: Object.keys(results).filter(path => !results[path].exists),
+        readyForHLS: results['audio/'] && results['audio/'].exists
+      }
+    };
+    
+    console.log('✅ [F0] Verificação concluída');
+    
+    res.json({
+      success: true,
+      message: 'Verificação da estrutura do Spaces concluída',
+      timestamp: new Date().toISOString(),
+      data: summary
+    });
+    
+  } catch (error) {
+    console.error('❌ [F0] Erro na verificação:', error);
+    res.status(500).json({ 
+      error: 'Erro na verificação da estrutura',
+      details: error.message 
+    });
+  }
+});
+
+// ===========================================================
+
 // Função para salvar catálogo no DigitalOcean Spaces (SOLUÇÃO PARA PERSISTÊNCIA APÓS DEPLOY)
 async function saveCatalogToSpaces() {
   try {
