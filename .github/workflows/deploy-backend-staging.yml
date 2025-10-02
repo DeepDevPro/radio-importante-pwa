@@ -22,7 +22,7 @@ jobs:
       - name: Deploy Backend to Digital Ocean
         uses: digitalocean/app_action@v1.1.5
         with:
-          app_name: radio-importante-pwa-backend-skg2w
+          app_name: radio-importante-pwa-backend
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
           
       - name: Notify Backend Deploy Success
@@ -30,5 +30,5 @@ jobs:
           echo "🚧 Backend deploy completed successfully!"
           echo "🔗 URL: https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/"
           echo "📋 Environment: staging/production backend"
-          echo "📦 App name: radio-importante-pwa-backend-skg2w"
+          echo "📦 App name: radio-importante-pwa-backend"
           echo "🔄 Updated with F1 features: music-metadata support"
