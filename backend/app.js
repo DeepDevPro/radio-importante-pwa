@@ -1409,6 +1409,46 @@ app.get('/hls/latest/index.m3u8', async (req, res) => {
   }
 });
 
+// Proxy para servir segmentos HLS
+app.get('/hls/latest/:segment', async (req, res) => {
+  try {
+    const segment = req.params.segment;
+    console.log(`📺 [HLS] Servindo segmento: ${segment}`);
+    
+    // Validar nome do segmento
+    if (!segment.match(/^segment_\d{3}\.ts$/)) {
+      return res.status(400).json({ error: 'Nome de segmento inválido' });
+    }
+    
+    const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
+    const endpoint = process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com';
+    const spacesUrl = `https://${bucket}.${endpoint}/generated/hls/latest/${segment}`;
+    
+    // Fazer proxy para o Spaces
+    const https = require('https');
+    const request = https.get(spacesUrl, (spacesRes) => {
+      res.set({
+        'Content-Type': 'video/MP2T',
+        'Content-Length': spacesRes.headers['content-length'],
+        'Cache-Control': 'public, max-age=86400', // 24h cache para segmentos
+        'Access-Control-Allow-Origin': '*'
+      });
+      
+      res.status(spacesRes.statusCode);
+      spacesRes.pipe(res);
+    });
+    
+    request.on('error', (error) => {
+      console.error(`❌ [HLS] Erro ao acessar segmento ${segment}: ${error.message}`);
+      res.status(404).json({ error: 'Segmento HLS não encontrado' });
+    });
+    
+  } catch (error) {
+    console.error('❌ [HLS] Erro na rota de segmento:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
 // ========== F2 HLS GENERATION LOGIC ==========
 
 async function generateHLSJob(jobId, config) {

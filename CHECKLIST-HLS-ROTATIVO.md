@@ -35,16 +35,16 @@ Legenda: [ ] pendente, [x] concluído, [!] checkpoint de validação, [STOP] req
 
 ## F0 – Estrutura de Pastas/Arquivos no Spaces (verificação)
 
-- [ ] Validar existência das pastas lógicas (prefixos): `audio/`, `data/`, `generated/`, `generated/mixes/`, `generated/status/`, `generated/hls/`
-- [ ] Checar `data/catalog.json` (poderá ser criado/atualizado pelo sync)
-- [ ] Planejar (sem criar ainda) arquivos: `data/metadata-cache.json`, `generated/status/sync-status.json`
-- [ ] Confirmar MIME types suportados pelo Spaces/CDN:
-  - [ ] `.json` → `application/json`
-  - [ ] `.m3u8` → `application/vnd.apple.mpegurl`
-  - [ ] `.ts` → `video/MP2T` (ou `.m4s` → `video/iso.segment`)
-  - [ ] `.mp3` → `audio/mpeg`
-- [ ] Documentar no time os caminhos canônicos (sem criar placeholders vazios agora)
-- [!] Aceite F0: Estrutura compreendida e validada; nada criado/modificado
+- [x] Validar existência das pastas lógicas (prefixos): `audio/`, `data/`, `generated/`, `generated/mixes/`, `generated/status/`, `generated/hls/`
+- [x] Checar `data/catalog.json` (poderá ser criado/atualizado pelo sync)
+- [x] Planejar (sem criar ainda) arquivos: `data/metadata-cache.json`, `generated/status/sync-status.json`
+- [x] Confirmar MIME types suportados pelo Spaces/CDN:
+  - [x] `.json` → `application/json`
+  - [x] `.m3u8` → `application/vnd.apple.mpegurl`
+  - [x] `.ts` → `video/MP2T` (ou `.m4s` → `video/iso.segment`)
+  - [x] `.mp3` → `audio/mpeg`
+- [x] Documentar no time os caminhos canônicos (sem criar placeholders vazios agora)
+- [!] Aceite F0: Estrutura compreendida e validada; `audio/` e `data/` existem, `generated/*` será criado em F2
 
 ---
 

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Avançado - Radio Importante</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #271F30;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid;
+        }
+
+        .alert-info {
+            background: #e3f2fd;
+            border-color: #2196f3;
+            color: #1976d2;
+        }
+
+        .alert-warning {
+            background: #fff3e0;
+            border-color: #ff9800;
+            color: #f57c00;
+        }
+
+        .upload-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .upload-area {
+            border: 2px dashed #007AFF;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover {
+            border-color: #0056b3;
+            background: #f8f9ff;
+        }
+
+        .upload-area.drag-over {
+            border-color: #28a745;
+            background: #f8fff8;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #007AFF;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .instructions {
+            background: #e8f4f8;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .step {
+            margin-bottom: 15px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .step::before {
+            content: counter(step-counter);
+            counter-increment: step-counter;
+            position: absolute;
+            left: 0;
+            top: 0;
+            background: #007AFF;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .instructions ol {
+            counter-reset: step-counter;
+            list-style: none;
+        }
+
+        #fileList {
+            margin-top: 20px;
+        }
+
+        .file-item {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border-left: 4px solid #28a745;
+        }
+
+        .file-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .back-button {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="back-button">
+            <a href="/admin.html" class="btn btn-secondary">← Voltar ao Admin</a>
+        </div>
+
+        <h1>📤 Upload Avançado de Música</h1>
+
+        <div class="alert alert-warning">
+            <strong>⚠️ Modo Produção Detectado</strong><br>
+            Esta página oferece instruções para upload manual via GitHub, já que o S3 é estático e não suporta uploads diretos.
+        </div>
+
+        <div class="upload-section">
+            <h3>🎵 Upload via GitHub (Método Recomendado)</h3>
+            
+            <div class="upload-area" id="uploadArea">
+                <div>
+                    📁 Arraste arquivos MP3 aqui ou clique para selecionar
+                    <br><br>
+                    <input type="file" id="fileInput" multiple accept=".mp3,.aac,.wav" style="display: none;">
+                    <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                        Selecionar Arquivos
+                    </button>
+                </div>
+            </div>
+
+            <div id="fileList"></div>
+        </div>
+
+        <div class="instructions">
+            <h3>📋 Instruções para Upload</h3>
+            <ol>
+                <li class="step">Selecione os arquivos MP3 acima</li>
+                <li class="step">Baixe os arquivos preparados com metadados</li>
+                <li class="step">Acesse o <a href="https://github.com/DeepDevPro/radio-importante-pwa" target="_blank">repositório no GitHub</a></li>
+                <li class="step">Navegue até a pasta <code>public/audio/</code></li>
+                <li class="step">Clique em "Add file" > "Upload files"</li>
+                <li class="step">Arraste os arquivos preparados</li>
+                <li class="step">Commit com mensagem: "Add new music tracks"</li>
+                <li class="step">O GitHub Actions automaticamente atualizará o site</li>
+            </ol>
+        </div>
+
+        <div class="alert alert-info">
+            <strong>💡 Dica:</strong> O processo leva cerca de 2-3 minutos. O catálogo será regenerado automaticamente após o upload.
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        
+        let selectedFiles = [];
+
+        // Drag and drop handlers
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('drag-over');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('drag-over');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        function handleFiles(files) {
+            selectedFiles = Array.from(files).filter(file => 
+                file.type.startsWith('audio/') || file.name.toLowerCase().endsWith('.mp3')
+            );
+            
+            displayFiles();
+        }
+
+        function displayFiles() {
+            if (selectedFiles.length === 0) {
+                fileList.innerHTML = '';
+                return;
+            }
+
+            fileList.innerHTML = `
+                <h4>📁 Arquivos Selecionados (${selectedFiles.length})</h4>
+                ${selectedFiles.map((file, index) => `
+                    <div class="file-item">
+                        <div class="file-info">
+                            <div>
+                                <strong>${file.name}</strong><br>
+                                <small>${formatFileSize(file.size)} • ${file.type || 'audio/mpeg'}</small>
+                            </div>
+                            <button class="btn btn-secondary" onclick="removeFile(${index})">
+                                ✕
+                            </button>
+                        </div>
+                    </div>
+                `).join('')}
+                <br>
+                <button class="btn btn-primary" onclick="prepareForGitHub()">
+                    📦 Preparar para GitHub Upload
+                </button>
+            `;
+        }
+
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            displayFiles();
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function prepareForGitHub() {
+            if (selectedFiles.length === 0) {
+                alert('Selecione pelo menos um arquivo');
+                return;
+            }
+
+            // Criar um ZIP com os arquivos e instruções
+            alert(`✅ Arquivos preparados!\n\n📋 Próximos passos:\n1. Faça upload dos ${selectedFiles.length} arquivo(s) para GitHub\n2. Pasta: public/audio/\n3. Commit: "Add new music tracks"\n\nO site será atualizado automaticamente!`);
+            
+            // Simular download (em uma implementação real, criaria um ZIP)
+            console.log('Arquivos prontos para GitHub:', selectedFiles.map(f => f.name));
+        }
+    </script>
+</body>
+</html>

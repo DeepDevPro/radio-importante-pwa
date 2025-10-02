@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Teste Isolado - Backend DigitalOcean</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #2c3e50; text-align: center; }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        .status {
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 5px;
+            display: inline-block;
+            margin: 5px 0;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .logs {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        button:hover { background: #2980b9; }
+        button:disabled { background: #bdc3c7; cursor: not-allowed; }
+        input[type="file"] {
+            margin: 10px 0;
+            padding: 10px;
+            border: 2px dashed #3498db;
+            border-radius: 5px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .url-display {
+            background: #e8f4fd;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            word-break: break-all;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste Isolado - Backend DigitalOcean</h1>
+        <p><strong>Objetivo:</strong> Testar comunicação direta com o backend sem interferência do sistema existente.</p>
+        
+        <div class="url-display">
+            <strong>Backend URL:</strong> https://radio-importante-pwa-backend-skg2w.ondigitalocean.app
+        </div>
+
+        <!-- TESTE 1: CONEXÃO -->
+        <div class="test-section">
+            <h3>🔗 Teste 1: Conexão Básica</h3>
+            <button onclick="testarConexao()" id="btnConexao">Testar Health Check</button>
+            <div id="statusConexao"></div>
+        </div>
+
+        <!-- TESTE 2: CATÁLOGO -->
+        <div class="test-section">
+            <h3>📋 Teste 2: API do Catálogo</h3>
+            <button onclick="testarCatalogo()" id="btnCatalogo">Buscar Catálogo</button>
+            <div id="statusCatalogo"></div>
+        </div>
+
+        <!-- TESTE 3: UPLOAD -->
+        <div class="test-section">
+            <h3>⬆️ Teste 3: Upload de Arquivo</h3>
+            <input type="file" id="arquivoUpload" accept="audio/*" multiple>
+            <button onclick="testarUpload()" id="btnUpload">Fazer Upload</button>
+            <div id="statusUpload"></div>
+        </div>
+
+        <!-- LOGS -->
+        <div class="test-section">
+            <h3>📝 Logs Detalhados</h3>
+            <button onclick="limparLogs()">Limpar Logs</button>
+            <div id="logs" class="logs"></div>
+        </div>
+    </div>
+
+    <script>
+        // URL FIXA - NÃO DEPENDE DE CONFIGURAÇÃO ALGUMA
+        const BACKEND_URL = 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app';
+        
+        function log(mensagem, tipo = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logs = document.getElementById('logs');
+            const cor = tipo === 'error' ? '#ff6b6b' : tipo === 'success' ? '#51cf66' : '#74c0fc';
+            logs.innerHTML += `<div style="color: ${cor}">[${timestamp}] ${mensagem}</div>`;
+            logs.scrollTop = logs.scrollHeight;
+            console.log(`[${timestamp}] ${mensagem}`);
+        }
+
+        function setStatus(elementId, mensagem, tipo) {
+            const elemento = document.getElementById(elementId);
+            elemento.innerHTML = `<div class="status ${tipo}">${mensagem}</div>`;
+        }
+
+        function limparLogs() {
+            document.getElementById('logs').innerHTML = '';
+            log('Logs limpos', 'info');
+        }
+
+        // TESTE 1: CONEXÃO BÁSICA
+        async function testarConexao() {
+            log('🔗 Iniciando teste de conexão...', 'info');
+            setStatus('statusConexao', 'Testando...', 'info');
+            
+            try {
+                const url = `${BACKEND_URL}/health`;
+                log(`📤 Fazendo requisição para: ${url}`, 'info');
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                log(`📥 Status HTTP: ${response.status}`, response.ok ? 'success' : 'error');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Resposta: ${JSON.stringify(data, null, 2)}`, 'success');
+                    setStatus('statusConexao', `✅ Backend Online! Status: ${response.status}`, 'success');
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                log(`❌ Erro na conexão: ${error.message}`, 'error');
+                setStatus('statusConexao', `❌ Falha na conexão: ${error.message}`, 'error');
+            }
+        }
+
+        // TESTE 2: CATÁLOGO
+        async function testarCatalogo() {
+            log('📋 Iniciando teste do catálogo...', 'info');
+            setStatus('statusCatalogo', 'Buscando catálogo...', 'info');
+            
+            try {
+                const url = `${BACKEND_URL}/api/catalog`;
+                log(`📤 Fazendo requisição para: ${url}`, 'info');
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                log(`📥 Status HTTP: ${response.status}`, response.ok ? 'success' : 'error');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Catálogo recebido: ${data.tracks?.length || 0} faixas`, 'success');
+                    log(`📄 Dados: ${JSON.stringify(data, null, 2)}`, 'info');
+                    setStatus('statusCatalogo', `✅ Catálogo OK! ${data.tracks?.length || 0} faixas encontradas`, 'success');
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                log(`❌ Erro ao buscar catálogo: ${error.message}`, 'error');
+                setStatus('statusCatalogo', `❌ Falha no catálogo: ${error.message}`, 'error');
+            }
+        }
+
+        // TESTE 3: UPLOAD
+        async function testarUpload() {
+            const arquivos = document.getElementById('arquivoUpload').files;
+            
+            if (arquivos.length === 0) {
+                log('⚠️ Nenhum arquivo selecionado', 'error');
+                setStatus('statusUpload', '⚠️ Selecione um arquivo primeiro', 'error');
+                return;
+            }
+
+            log(`⬆️ Iniciando upload de ${arquivos.length} arquivo(s)...`, 'info');
+            setStatus('statusUpload', 'Fazendo upload...', 'info');
+            
+            try {
+                const formData = new FormData();
+                
+                for (let arquivo of arquivos) {
+                    formData.append('audioFiles', arquivo);
+                    log(`📁 Arquivo adicionado: ${arquivo.name} (${(arquivo.size/1024/1024).toFixed(2)}MB)`, 'info');
+                }
+                
+                const url = `${BACKEND_URL}/api/upload`;
+                log(`📤 Fazendo upload para: ${url}`, 'info');
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                log(`📥 Status HTTP: ${response.status}`, response.ok ? 'success' : 'error');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Upload concluído!`, 'success');
+                    log(`📄 Resposta: ${JSON.stringify(data, null, 2)}`, 'success');
+                    setStatus('statusUpload', `✅ Upload OK! ${data.message || 'Arquivo enviado com sucesso'}`, 'success');
+                } else {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+            } catch (error) {
+                log(`❌ Erro no upload: ${error.message}`, 'error');
+                setStatus('statusUpload', `❌ Falha no upload: ${error.message}`, 'error');
+            }
+        }
+
+        // AUTO-TESTE NA CARGA DA PÁGINA
+        window.onload = function() {
+            log('🚀 Página carregada - Sistema de teste isolado ativo', 'success');
+            log(`🔧 Backend configurado: ${BACKEND_URL}`, 'info');
+            log('💡 Execute os testes manualmente ou clique nos botões acima', 'info');
+        };
+    </script>
+</body>
+</html>
