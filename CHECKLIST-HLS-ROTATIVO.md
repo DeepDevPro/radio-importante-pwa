@@ -3,7 +3,20 @@
 Data: 29/09/2025
 Statu### F2: HLS VOD (Video on Demand) ✅ CONCLUÍDO
 **Objetivo**: Gerar HLS sob demanda para playlists customizáveis
-**Status**: ✅ BACKEND + PROXY COMPLETADO
+**Status**: ✅ BACKEND + PROXY ## Validação dos Critérios de Aceite (Consolidação)
+
+- ✅ Sync básico e `full=true` enriquecendo dur/ID3
+- ✅ Botão Admin "Sincronizar" atualiza lista e totais
+- ✅ **HLS VOD disponível em `generated/hls/latest/` e tocando no iPhone PWA!**
+- [ ] HLS Rotativo publicado em `generated/hls/rolling/` e tocando no iPhone (F3)
+- [ ] Fallback funcionando: HLS → estratégia IOSPWAStrategy existente → por faixas (F4)
+
+### 🎯 F2 Marcos Alcançados:
+- ✅ **Background Playback**: Funcionando perfeitamente no iPhone PWA
+- ✅ **Screen Lock Playback**: Funcionando perfeitamente no iPhone PWA  
+- ✅ **HLS Generation**: Pipeline completo e estável
+- ✅ **Admin Interface**: Controle total via interface web
+- ✅ **Production Ready**: Sistema testado e validado em ambiente realADO
 
 #### F2.1: Backend API ✅ CONCLUÍDO
 - ✅ POST `/api/generate-hls` - Gerar HLS com configurações:
@@ -73,10 +86,13 @@ Legenda: [ ] pendente, [x] concluído, [!] checkpoint de validação, [STOP] req
 
 ---
 
-## 🔄 Atualização 02/10/2025
+## 🔄 Atualização 02/10/2025 - F2 CONSOLIDADO ✅
 - [x] F1 (backend) concluído: `/api/sync-catalog?full=true` com `music-metadata` (ESM import dinâmico), limite 20 faixas/execução, retorno com `durationComputed` e `metadataFilled`.
 - [x] F1 (frontend) concluído: botão "Sincronizar com Spaces (Completo)" no `admin.html`, desabilita durante execução, mostra resumo e atualiza lista/totais.
 - [x] Correção de rota: Admin agora chama o backend diretamente (URL fixa do DO App Platform) para evitar 405 em staging.
+- [x] **F2 (backend + frontend) COMPLETAMENTE VALIDADO**: HLS VOD com background playback funcionando no iPhone PWA!
+- [x] **F2 iPhone PWA Testing**: Background e screen lock playback CONFIRMADOS em teste real!
+- [x] **Backup criado**: `staging-stable-f2-complete` branch com marco histórico preservado
 - [ ] Pendência: `data/metadata-cache.json` (cache incremental) – será tratado em F1.1.
 - [x] IOSPWAStrategy confirmada e mantida IMUTÁVEL (somente fallback).
 
@@ -244,9 +260,15 @@ Nota: `metadata-cache.json` ficará para uma subfase F1.1 (sem impacto no fluxo 
 
 ## Checkpoints de Aprovação (não implementar sem validar antes)
 
-- [x] [STOP] Adicionar/instalar `music-metadata` (F1)
-- [ ] [STOP] Adicionar/instalar `ffmpeg-static` e `fluent-ffmpeg` (F2/F3)
-- [ ] [STOP] Ajustes em CORS/Headers no Spaces (se necessário para `.m3u8`, `.ts/.m4s`)
+- ✅ [STOP] Adicionar/instalar `music-metadata` (F1) - APROVADO E IMPLEMENTADO
+- ✅ [STOP] Adicionar/instalar `ffmpeg-static` e `fluent-ffmpeg` (F2) - APROVADO E VALIDADO
+- [ ] [STOP] Ajustes em CORS/Headers no Spaces (se necessário para `.m3u8`, `.ts/.m4s`) - F3/F4
+
+### 🎉 F2 MILESTONE COMPLETED:
+**Data**: 02 de Outubro de 2025  
+**Status**: TOTALMENTE VALIDADO  
+**Backup**: `staging-stable-f2-complete`  
+**Próximo**: F3 (HLS Rotativo) ou F4 (Player Automático)
 
 ---
 
