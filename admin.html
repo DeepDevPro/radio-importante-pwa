@@ -311,7 +311,7 @@
 
                 <!-- Botão Gerar HLS VOD -->
                 <div style="margin: 20px 0; padding: 15px; background: #fff8e1; border-radius: 10px; border-left: 4px solid #ff9800;">
-                    <button class="btn" id="generate-hls-btn" onclick="generateHLS()" style="margin-right: 10px; background: linear-gradient(135deg, #ff9800, #f57f17); color: white;">
+                    <button class="btn" id="generate-hls-btn" onclick="showHLSConfig()" style="margin-right: 10px; background: linear-gradient(135deg, #ff9800, #f57f17); color: white;">
                         🎬 Gerar HLS (VOD)
                     </button>
                     <span style="color: #666; font-size: 14px;">
@@ -351,6 +351,16 @@
                                 <input type="checkbox" id="hls-shuffle" checked style="margin: 0;">
                                 Embaralhar faixas
                             </label>
+                        </div>
+                        
+                        <!-- Botão Confirmar Geração -->
+                        <div style="margin-top: 15px; text-align: center;">
+                            <button class="btn" onclick="generateHLS()" style="background: linear-gradient(135deg, #4caf50, #66bb6a); color: white; padding: 8px 20px; font-size: 14px;">
+                                ✅ Confirmar e Gerar HLS
+                            </button>
+                            <button class="btn" onclick="document.getElementById('hls-config').style.display='none'" style="background: #666; color: white; padding: 8px 15px; font-size: 14px; margin-left: 10px;">
+                                ❌ Cancelar
+                            </button>
                         </div>
                     </div>
                     
@@ -524,6 +534,20 @@
             }
         }
         
+        // Função para mostrar configurações HLS
+        function showHLSConfig() {
+            const configEl = document.getElementById('hls-config');
+            const statusEl = document.getElementById('hls-status');
+            
+            // Alternar configurações
+            if (configEl.style.display === 'block') {
+                configEl.style.display = 'none';
+            } else {
+                configEl.style.display = 'block';
+                statusEl.style.display = 'none'; // ocultar status anterior
+            }
+        }
+        
         // Função para gerar HLS VOD (F2)
         async function generateHLS() {
             const btn = document.getElementById('generate-hls-btn');
@@ -534,18 +558,6 @@
             const resultEl = document.getElementById('hls-result');
             const testLink = document.getElementById('hls-test-link');
             const tracksInfo = document.getElementById('hls-tracks-info');
-            
-            // Alternar configurações se já estão visíveis
-            if (configEl.style.display === 'block' && !btn.disabled) {
-                configEl.style.display = 'none';
-                return;
-            }
-            
-            // Mostrar configurações se primeira vez
-            if (!btn.disabled && statusEl.style.display === 'none') {
-                configEl.style.display = 'block';
-                return;
-            }
             
             try {
                 // Coletar configurações
