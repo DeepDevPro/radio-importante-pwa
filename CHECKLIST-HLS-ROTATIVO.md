@@ -44,17 +44,24 @@ Statu### F2: HLS VOD (Video on Demand) ✅ CONCLUÍDO
 - ✅ Headers corretos e CORS
 - ✅ Cache policy (5min playlist, 24h segmentos)
 
-#### F2.5: Frontend Admin ⏳ PENDENTE
-- ⏳ Botão "Gerar HLS (VOD)" no admin.html
-- ⏳ Interface para configurar opções (shuffle, limit, bitrate)
-- ⏳ Progress bar durante geração
-- ⏳ Exibir manifesto e link de teste
+#### F2.5: Frontend Admin ✅ CONCLUÍDO
+- ✅ Botão "Gerar HLS (VOD)" no admin.html
+- ✅ Interface para configurar opções (shuffle, limit, bitrate)
+- ✅ Progress bar durante geração
+- ✅ Exibir manifesto e link de teste
 
-#### F2.6: Teste iPhone PWA ⏳ PENDENTE
+#### F2.6: Teste iPhone PWA ⏳ PRONTO PARA TESTE
 - ⏳ Teste de reprodução HLS no Safari iOS
 - ⏳ Validar background playback via Service Worker
 - ⏳ Teste de continuidade entre segmentos
-- ⏳ Performance e cache behavioro a passo para executar o plano com segurança
+- ⏳ Performance e cache behavior
+
+**🎯 TESTE MANUAL**: Acesse no iPhone Safari:
+1. https://radio-importante-pwa-stagin-fprqy.ondigitalocean.app/admin.html
+2. Clique "Gerar HLS (VOD)" → "Gerar"
+3. Aguarde conclusão → "Testar Playlist"
+4. Adicione à tela inicial (PWA)
+5. Teste reprodução em backgroundo a passo para executar o plano com segurança
 Referências obrigatórias: `PLANO_EXECUCAO.md`, `GUIA_TECNICO_DETALHADO.md`, `PLANO-SINCRONIZAR-COM-SPACES.md`
 
 Diretriz central:
