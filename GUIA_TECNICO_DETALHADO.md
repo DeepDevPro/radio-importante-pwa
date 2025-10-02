@@ -2,8 +2,43 @@
 
 > **Complemento**: PLANO_EXECUCAO.md  
 > **Foco**: Detalhes técnicos, troubleshooting e manutenção  
-> **Atualizado em**: 29/09/2025 - Debug/Admin UI + iPhone PWA Gestos  
+> **Atualizado em**: 02/10/2025 - F1 Sync+Metadados concluída em staging  
 > **Para**: Programador Junior/Amador
+
+---
+
+## 🆕 Atualizações Recentes (02/10/2025) — F1 Sync+Metadados ✅
+
+### Backend
+- Endpoint: `POST /api/sync-catalog?full=true`  
+- Enriquecimento: `duration`, `title`, `artist` apenas quando faltam  
+- Stream: lê `.mp3` direto do Spaces (S3-compatible) via `getObject().createReadStream()`  
+- Biblioteca: `music-metadata` com import dinâmico ESM (`const mm = await import('music-metadata')`) → `parseNodeStream()`  
+- Performance: limite de 20 faixas/execução; logs prefixados (SYNC, META)  
+- Retorno inclui: `durationComputed` e `metadataFilled`
+
+### Frontend (Admin)
+- Botão: "Sincronizar com Spaces (Completo)" em `admin.html`  
+- Comportamento: desabilita durante execução, mostra status, recarrega lista e totais  
+- Ajuste temporário: chamada direta para URL do backend do DO App Platform para evitar 405 em staging. Planejado consolidar via `src/config/api.ts` mais tarde
+
+### Estratégia iPhone PWA
+- `src/player/strategies/IOSPWAStrategy.ts` permanece IMUTÁVEL e é usada como fallback apenas. Nenhuma alteração necessária nesta fase
+
+---
+
+## Troubleshooting (F1)
+- Erro 405 no staging: foi causado por chamar `/api/...` no domínio do frontend. Correção: usar URL direta do backend enquanto consolidamos a config
+- ESM vs CommonJS: `music-metadata` é ESM; evitar `require('music-metadata')`. Usar `await import('music-metadata')` e obter `parseNodeStream`
+- CORS Spaces: confirmar `GET, HEAD` e headers `Range, Content-Type` para streaming parcial
+
+---
+
+## Próximos Passos
+- F1.1: Implementar `data/metadata-cache.json` para evitar retrabalho em execuções futuras  
+- F2: Implementar pipeline HLS VOD com `ffmpeg-static` + `fluent-ffmpeg` (assíncrono)  
+- F3: HLS Rotativo com publicação atômica  
+- F4: Switch de background no Player (opt-in), mantendo IOSPWAStrategy como fallback
 
 ---
 

@@ -3,6 +3,23 @@
 Data: 29/09/2025
 Status: Proposta técnica detalhada e incremental, focada em simplicidade e robustez
 
+---
+
+## 🔄 Atualização 02/10/2025 — Progresso F1 (Staging)
+
+- ✅ Backend: `POST /api/sync-catalog?full=true` implementado com `music-metadata` via import ESM dinâmico (compatível com CommonJS). Limite de 20 faixas por execução; retorno inclui `durationComputed` e `metadataFilled`.
+- ✅ Frontend (Admin): Botão "Sincronizar com Spaces (Completo)" no `admin.html`. Desabilita durante execução, mostra resumo e atualiza lista/totais.
+- ✅ Deploys: Backend e Frontend operando em staging.
+- ⚠️ Ajuste temporário: chamada do Admin usa URL direta do backend (DO App Platform) para evitar 405 no domínio do frontend. Manter até consolidarmos uma camada de config única.
+- 🧊 iPhone PWA: Estratégia `IOSPWAStrategy.ts` permanece IMUTÁVEL e é usada apenas como fallback (sem alterações).
+- ⏳ Pendência pequena (F1.1): `data/metadata-cache.json` ainda não persistido; hoje o enriquecimento atualiza apenas `data/catalog.json`.
+
+Staging
+- Frontend Admin: https://radio-importante-frontend-stagin-6rjzv.ondigitalocean.app/admin.html
+- Backend API:    https://radio-importante-pwa-backend-skg2w.ondigitalocean.app
+
+---
+
 Objetivo: Ao clicar no botão "Sincronizar com Spaces", executar:
 - Já implementado hoje (mantemos):
   - 📁 Escanear o bucket do DigitalOcean Spaces (prefixo `audio/`)
@@ -13,7 +30,7 @@ Objetivo: Ao clicar no botão "Sincronizar com Spaces", executar:
   - ⏱️ Recalcular duração faltante (ou zero) usando leitura de metadados do arquivo
   - 🏷️ Reprocessar metadados básicos (title/artist) apenas quando faltarem
   - 🎛️ Opcional: Gerar um MP3 contínuo simples (“mix”) no servidor – fase posterior
-  - 💡 Alternativa: “Continuous mode” client-side no PWA (sem gerar arquivo)
+  - 💡 Alternativa: “Continuous mode” client-side no PWA (sem gerar arquivo) — lembrando que a estratégia `IOSPWAStrategy.ts` já provê fallback contínuo no iPhone PWA sem alterar este plano
 
 ---
 
@@ -21,7 +38,7 @@ Objetivo: Ao clicar no botão "Sincronizar com Spaces", executar:
 
 - `audio/` – arquivos originais `.mp3` (já em uso)
 - `data/catalog.json` – catálogo canônico (já em uso)
-- `data/metadata-cache.json` – cache incremental de metadados e duração (NOVO)
+- `data/metadata-cache.json` – cache incremental de metadados e duração (NOVO – pendente F1.1)
 - `generated/mixes/latest.mp3` – mix contínuo mais recente (OPCIONAL)
 - `generated/mixes/latest.json` – ordem das faixas do mix e timestamp (OPCIONAL)
 - `generated/status/sync-status.json` – status da última sincronização (OPCIONAL)
@@ -49,8 +66,9 @@ Fluxo proposto (full=false → só o que já existe; full=true → inclui enriqu
 4. [NOVO – full=true] Enriquecer metadados minimamente:
    - Para cada faixa com `duration` ausente/zero → calcular duração
    - Para cada faixa sem `title/artist` → tentar extrair ID3, senão usar filename
+   - Implementado com `music-metadata` via `await import('music-metadata')` e `parseNodeStream()` sobre stream S3/Spaces.
 5. Salvar catálogo atualizado em `data/catalog.json`
-6. [NOVO] Salvar/atualizar `data/metadata-cache.json` (apenas deltas)
+6. [NOVO – F1.1] Salvar/atualizar `data/metadata-cache.json` (apenas deltas) — pendente
 7. [OPCIONAL – fase 2] Se `mix=true` → gerar `generated/mixes/latest.mp3`
 8. Retornar JSON com resumo e métricas
 

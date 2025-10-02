@@ -2,8 +2,28 @@
 
 > **Projeto**: PWA Music Player "Radio Importante"  
 > **Data de criação**: 29/08/2025  
-> **Última atualização**: 29/09/2025 - Sistema Debug/Admin UI + Gesto Secreto iPhone PWA  
-> **Status**: ✅ **SISTEMA TOTALMENTE OPERACIONAL + DEBUG/ADMIN UI COMPLETO**
+> **Última atualização**: 02/10/2025 - F1 (Sync + Metadados) concluída em staging  
+> **Status**: ✅ SISTEMA OPERACIONAL + F1 ENTREGUE (staging)
+
+---
+
+## 🆕 Atualização 02/10/2025 — F1 Concluída
+
+- ✅ Backend: Endpoint `POST /api/sync-catalog?full=true` com `music-metadata` (ESM dinâmico) e limite de 20 faixas.
+- ✅ Frontend (Admin): Botão "Sincronizar com Spaces (Completo)" no `admin.html` com feedback e atualização de lista/totais.
+- ✅ Deploys OK: Staging funcionando para frontend e backend.
+- ⚠️ Nota: Admin chama backend por URL direta do DO App Platform para evitar 405; consolidaremos config única depois.
+- 🧊 IOSPWAStrategy.ts permanece IMUTÁVEL (fallback only).
+
+Links Staging:
+- Frontend Admin: https://radio-importante-frontend-stagin-6rjzv.ondigitalocean.app/admin.html
+- Backend API:    https://radio-importante-pwa-backend-skg2w.ondigitalocean.app
+
+Próximas fases:
+- F1.1: `data/metadata-cache.json` (cache incremental de metadados)  
+- F2: HLS VOD  
+- F3: HLS Rotativo (publicação atômica)  
+- F4: Switch automático em background no iPhone PWA (opt-in)
 
 ---
 
@@ -1226,244 +1246,4 @@ SIGNIFICADO: Catálogo carregando e retornando dados corretamente
 - PWA funcionando corretamente
 - Comunicação frontend-backend segura
 - Service Worker operacional
-```
-
----
-
-## 📈 **MONITORAMENTO E PERFORMANCE DETALHADO**
-
-### **✅ Métricas Atuais (13/09/2025)**
-```bash
-UPTIME:
-- Backend: 100% (desde migração às 20:57 UTC)
-- Frontend: 100% (não alterado)
-- Downtime total: 0 minutos
-
-RESPONSE TIME:
-- Health check: ~50ms
-- Upload API: ~200ms (varia com tamanho do arquivo)
-- File serving: ~100ms (dependendo do arquivo)
-- Catalog API: ~30ms
-
-SUCCESS RATES:
-- Upload success: 100% (testado com múltiplos arquivos)
-- File serving: 100% (resolvido problema das múltiplas instâncias)  
-- API calls: 100% (todas as rotas funcionando)
-- Deploy success: 100% (após correção)
-
-ERROR RATES:
-- Backend errors: 0% (zero erros nos logs)
-- Frontend errors: 0% (não alterado)
-- Deploy errors: 0% (workflow funcionando)
-```
-
-### **🔍 Monitoramento Configurado**
-
-#### **DigitalOcean Built-in Monitoring**
-```bash
-O QUE MONITORA:
-- CPU usage do container
-- Memory usage
-- Request count
-- Response time
-- Error rate
-- Deployment status
-
-ALERTAS CONFIGURADOS:
-- Failed deployment → Email notification
-- High error rate → Dashboard alert
-- Resource usage → Platform monitoring
-
-ACESSO: DigitalOcean Dashboard > Apps > radio-importante-pwa-backend
-```
-
-#### **Application Health Monitoring**
-```bash
-ENDPOINT: /health
-FREQUÊNCIA: Cada request (on-demand)
-RESPOSTA: JSON com status, service, version, timestamp
-USO: Para check automatizado ou manual
-
-EXEMPLO DE RESPOSTA:
-{
-  "status": "healthy",
-  "service": "radio-importante-backend",
-  "version": "2.2.4", 
-  "timestamp": "2025-09-13T22:25:19.219Z"
-}
-```
-
-#### **Logs Centralizados**
-```bash
-ACESSO: DigitalOcean Dashboard > Apps > Runtime Logs
-CONTEÚDO:
-- Startup logs (server initialization)
-- Request logs (API calls)
-- Error logs (se houver)
-- Deploy logs (build e deployment)
-
-EXEMPLO DE LOG SAUDÁVEL:
-🎵 Radio Importante Backend v2.2.4 running on port 8080
-📊 Environment: production
-🔗 Health check: http://localhost:8080/health
-📁 Catalog tracks: 1
-📁 Upload path: /app/public/audio
-```
-
-#### **Deploy Monitoring** 
-```bash
-TRIGGER: Push para branch main
-NOTIFICAÇÃO: Email automático para conta DigitalOcean
-STATUS: Visível no dashboard em tempo real
-ROLLBACK: Automático se deploy falha
-
-HISTÓRICO: Visible na aba "Activity" do app
-```
-
----
-
-## 🔮 **PRÓXIMOS PASSOS E MELHORIAS FUTURAS**
-
-### **🎛️ ADMIN PANEL - MELHORIAS EM DESENVOLVIMENTO (Branch: feature/admin-improvements)**
-
-#### **Funcionalidades Implementadas (16/09/2025):**
-```yaml
-✅ Health Check automático (produção + local)
-✅ Upload de arquivos com drag & drop
-✅ Interface responsiva com tabs
-✅ Tratamento de erros robusto
-✅ Progress bar para uploads
-✅ TypeScript completo
-✅ Backend integration funcionando
-```
-
-#### **Próximas Melhorias Planejadas:**
-```yaml
-🔧 PRIORIDADE ALTA:
-  ├── 📂 Gerenciador de Arquivos
-  │   ├── Lista de arquivos no servidor
-  │   ├── Preview de áudio/vídeo
-  │   ├── Exclusão de arquivos
-  │   └── Renomeação de arquivos
-  ├── 📊 Analytics Dashboard
-  │   ├── Estatísticas de uploads
-  │   ├── Uso de storage
-  │   ├── Logs de atividade
-  │   └── Performance metrics
-  └── 🔍 Sistema de Busca
-      ├── Busca por nome/tipo
-      ├── Filtros avançados
-      └── Ordenação personalizada
-
-🎨 PRIORIDADE MÉDIA:
-  ├── 🎵 Metadata Editor
-  │   ├── Tags ID3 (título, artista, etc)
-  │   ├── Capas de álbum
-  │   └── Descrições customizadas
-  ├── 📱 PWA Admin Features
-  │   ├── Notificações push
-  │   ├── Offline editing
-  │   └── App icon dedicado
-  └── 🔐 Sistema de Autenticação
-      ├── Login seguro
-      ├── Sessões com timeout
-      └── Diferentes níveis de acesso
-
-⚡ PRIORIDADE BAIXA:
-  ├── 🔄 Batch Operations
-  │   ├── Upload múltiplo
-  │   ├── Conversão de formato
-  │   └── Backup automático
-  └── 📈 Advanced Analytics
-      ├── Dashboards personalizados
-      ├── Relatórios exportáveis
-      └── Integração com Google Analytics
-```
-
-### **Melhorias Opcionais (Para Quando Precisar)**
-
-#### **1. DigitalOcean Spaces Integration (Para Scaling)**
-```bash
-QUANDO IMPLEMENTAR: Se precisar de múltiplas instâncias
-BENEFÍCIO: Storage persistente e redundante
-IMPACTO: Permite auto-scaling sem perder arquivos
-
-IMPLEMENTAÇÃO:
-1. Criar DigitalOcean Space (S3-compatible)
-2. Instalar AWS SDK: npm install aws-sdk
-3. Configurar credentials via environment variables
-4. Modificar upload para salvar no Space
-5. Modificar serving para apontar para Space URLs
-
-ESTIMATIVA: 2-3 horas de desenvolvimento
-CUSTO ADICIONAL: ~$5/mês para 250GB
-```
-
-#### **2. Database Integration (Para Catálogo Grande)**
-```bash
-QUANDO IMPLEMENTAR: Se catálogo > 1000 tracks ou precisar de queries complexas
-BENEFÍCIO: Backup automático, queries SQL, relationships
-
-OPÇÕES:
-- DigitalOcean Managed PostgreSQL
-- DigitalOcean Managed MySQL  
-- MongoDB Atlas (if prefer NoSQL)
-
-IMPLEMENTAÇÃO:
-1. Criar managed database
-2. Instalar ORM: npm install sequelize postgres
-3. Criar models para Track, Artist, Album
-4. Migrar dados do JSON para DB
-5. Atualizar APIs para usar DB
-
-ESTIMATIVA: 4-6 horas de desenvolvimento
-CUSTO ADICIONAL: ~$15/mês para DB básico
-```
-
-#### **3. CDN e Caching (Para Performance Global)**
-```bash
-QUANDO IMPLEMENTAR: Se tráfego internacional aumentar
-BENEFÍCIO: Latência reduzida globalmente
-
-IMPLEMENTAÇÃO:
-- DigitalOcean CDN para arquivos de áudio
-- Cache headers otimizados
-- Compressão de assets
-
-ESTIMATIVA: 1-2 horas de configuração
-CUSTO ADICIONAL: ~$10/mês dependendo do tráfego
-```
-
-#### **4. Backup e Disaster Recovery**
-```bash
-IMPLEMENTAÇÃO FUTURA:
-- Backup automático de arquivos para Spaces
-- Backup de catálogo para database
-- Monitoring de uptime externo
-- Recovery procedures documentadas
-
-QUANDO: Se o sistema se tornar crítico para o negócio
-```
-
-### **Melhorias de Desenvolvimento (Opcionais)**
-
-#### **1. Testing Suite**
-```bash
-IMPLEMENTAR: Jest + Supertest para API testing
-BENEFÍCIO: Catch regressions before deploy
-SCRIPT: npm test antes de cada deploy
-```
-
-#### **2. Logging Melhorado**
-```bash
-IMPLEMENTAR: Winston para structured logging
-BENEFÍCIO: Debugging mais fácil em produção
-FEATURES: Log levels, file rotation, JSON format
-```
-
-#### **3. API Documentation**
-```bash
-IMPLEMENTAR: Swagger/OpenAPI documentation
-BENEFÍCIO: Documentação automática da API
-ACESSO: /docs endpoint
 ```
