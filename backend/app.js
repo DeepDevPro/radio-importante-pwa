@@ -1299,6 +1299,432 @@ async function uploadToSpaces(localPath, spacesKey) {
   }
 }
 
+// ========== F2 HLS VOD GENERATION ENDPOINTS ==========
+
+// Endpoint para gerar HLS VOD (assíncrono)
+app.post('/api/generate-hls', async (req, res) => {
+  try {
+    console.log('🎬 [HLS] Iniciando geração de HLS VOD');
+    
+    // Configurações padrão
+    const config = {
+      shuffle: req.body.shuffle || true,
+      limit: req.body.limit || 5,
+      bitrate: req.body.bitrate || '128k',
+      segment: req.body.segment || 6,
+      mode: req.body.mode || 'latest' // 'latest' ou 'rolling'
+    };
+    
+    console.log(`🎬 [HLS] Configuração: ${JSON.stringify(config)}`);
+    
+    // Validação básica
+    if (config.limit > 20) {
+      return res.status(400).json({ 
+        error: 'Limite máximo de 20 faixas para evitar sobrecarga do servidor',
+        limit: config.limit
+      });
+    }
+    
+    // Gerar ID único para o job
+    const jobId = `hls_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Iniciar job assíncrono
+    setImmediate(() => generateHLSJob(jobId, config));
+    
+    // Resposta imediata
+    res.json({
+      success: true,
+      message: 'Job de geração HLS iniciado',
+      jobId: jobId,
+      config: config,
+      statusUrl: `/api/hls-status?jobId=${jobId}`,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ [HLS] Erro ao iniciar job:', error);
+    res.status(500).json({ 
+      error: 'Erro ao iniciar geração HLS',
+      details: error.message 
+    });
+  }
+});
+
+// Endpoint para verificar status do HLS
+app.get('/api/hls-status', async (req, res) => {
+  try {
+    const jobId = req.query.jobId;
+    
+    if (!jobId) {
+      // Retornar status geral se não especificar jobId
+      return res.json({
+        latest: await getHLSStatus('latest'),
+        rolling: await getHLSStatus('rolling')
+      });
+    }
+    
+    const status = await getHLSStatus(jobId);
+    res.json(status);
+    
+  } catch (error) {
+    console.error('❌ [HLS] Erro ao verificar status:', error);
+    res.status(500).json({ 
+      error: 'Erro ao verificar status HLS',
+      details: error.message 
+    });
+  }
+});
+
+// Proxy para servir playlist HLS
+app.get('/hls/latest/index.m3u8', async (req, res) => {
+  try {
+    console.log('📺 [HLS] Servindo playlist HLS latest');
+    
+    const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
+    const endpoint = process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com';
+    const spacesUrl = `https://${bucket}.${endpoint}/generated/hls/latest/index.m3u8`;
+    
+    // Fazer proxy para o Spaces
+    const https = require('https');
+    const request = https.get(spacesUrl, (spacesRes) => {
+      res.set({
+        'Content-Type': 'application/vnd.apple.mpegurl',
+        'Content-Length': spacesRes.headers['content-length'],
+        'Cache-Control': 'public, max-age=300',
+        'Access-Control-Allow-Origin': '*'
+      });
+      
+      res.status(spacesRes.statusCode);
+      spacesRes.pipe(res);
+    });
+    
+    request.on('error', (error) => {
+      console.error(`❌ [HLS] Erro ao acessar playlist: ${error.message}`);
+      res.status(404).json({ error: 'Playlist HLS não encontrada' });
+    });
+    
+  } catch (error) {
+    console.error('❌ [HLS] Erro na rota de playlist:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// ========== F2 HLS GENERATION LOGIC ==========
+
+async function generateHLSJob(jobId, config) {
+  console.log(`🎬 [HLS] Job ${jobId} iniciado`);
+  
+  try {
+    // Salvar status inicial
+    await saveHLSStatus(jobId, {
+      status: 'processing',
+      progress: 0,
+      message: 'Iniciando geração HLS',
+      config: config,
+      startTime: new Date().toISOString()
+    });
+    
+    // Importar ffmpeg dinamicamente
+    const ffmpegStatic = require('ffmpeg-static');
+    const ffmpeg = require('fluent-ffmpeg');
+    ffmpeg.setFfmpegPath(ffmpegStatic);
+    
+    console.log(`🎬 [HLS] FFmpeg path: ${ffmpegStatic}`);
+    
+    // 1. Obter lista de faixas do catálogo
+    await saveHLSStatus(jobId, {
+      status: 'processing',
+      progress: 10,
+      message: 'Carregando catálogo de músicas'
+    });
+    
+    const tracks = catalog.tracks || [];
+    if (tracks.length === 0) {
+      throw new Error('Nenhuma faixa encontrada no catálogo');
+    }
+    
+    // 2. Selecionar e embaralhar faixas
+    let selectedTracks = [...tracks];
+    if (config.shuffle) {
+      selectedTracks = selectedTracks.sort(() => Math.random() - 0.5);
+    }
+    selectedTracks = selectedTracks.slice(0, config.limit);
+    
+    console.log(`🎬 [HLS] Faixas selecionadas: ${selectedTracks.length}`);
+    
+    // 3. Baixar arquivos MP3 temporariamente
+    await saveHLSStatus(jobId, {
+      status: 'processing',
+      progress: 20,
+      message: `Baixando ${selectedTracks.length} faixas`
+    });
+    
+    const tempDir = `/tmp/hls_${jobId}`;
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
+    }
+    
+    const tempFiles = [];
+    for (let i = 0; i < selectedTracks.length; i++) {
+      const track = selectedTracks[i];
+      const tempFile = path.join(tempDir, `track_${i}.mp3`);
+      
+      await downloadTrackToTemp(track.filename, tempFile);
+      tempFiles.push(tempFile);
+      
+      const progress = 20 + (i / selectedTracks.length) * 20;
+      await saveHLSStatus(jobId, {
+        status: 'processing',
+        progress: Math.round(progress),
+        message: `Baixando: ${track.title || track.filename}`
+      });
+    }
+    
+    // 4. Gerar HLS usando FFmpeg
+    await saveHLSStatus(jobId, {
+      status: 'processing',
+      progress: 50,
+      message: 'Processando áudio para HLS'
+    });
+    
+    const outputDir = path.join(tempDir, 'output');
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir, { recursive: true });
+    }
+    
+    await generateHLSFromFiles(tempFiles, outputDir, config);
+    
+    // 5. Upload para Spaces
+    await saveHLSStatus(jobId, {
+      status: 'processing',
+      progress: 80,
+      message: 'Fazendo upload para Spaces'
+    });
+    
+    const targetPath = config.mode === 'rolling' ? 'generated/hls/rolling' : 'generated/hls/latest';
+    await uploadHLSToSpaces(outputDir, targetPath);
+    
+    // 6. Salvar manifesto
+    const manifest = {
+      jobId: jobId,
+      tracks: selectedTracks.map(t => ({
+        title: t.title,
+        artist: t.artist,
+        filename: t.filename,
+        duration: t.duration
+      })),
+      config: config,
+      createdAt: new Date().toISOString(),
+      totalDuration: selectedTracks.reduce((sum, t) => sum + (t.duration || 0), 0)
+    };
+    
+    await saveManifestToSpaces(manifest, `${targetPath}/manifest.json`);
+    
+    // 7. Status final
+    await saveHLSStatus(jobId, {
+      status: 'completed',
+      progress: 100,
+      message: 'HLS gerado com sucesso',
+      manifest: manifest,
+      playlistUrl: `/${targetPath.replace('generated/', '')}/index.m3u8`,
+      endTime: new Date().toISOString()
+    });
+    
+    // Limpar arquivos temporários
+    fs.rmSync(tempDir, { recursive: true, force: true });
+    
+    console.log(`✅ [HLS] Job ${jobId} concluído com sucesso`);
+    
+  } catch (error) {
+    console.error(`❌ [HLS] Job ${jobId} falhou:`, error);
+    
+    await saveHLSStatus(jobId, {
+      status: 'failed',
+      progress: 0,
+      message: `Erro: ${error.message}`,
+      error: error.message,
+      endTime: new Date().toISOString()
+    });
+  }
+}
+
+// ========== F2 HELPER FUNCTIONS ==========
+
+async function downloadTrackToTemp(filename, tempFile) {
+  const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
+  const spacesEndpoint = new AWS.Endpoint(process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com');
+  const s3 = new AWS.S3({
+    endpoint: spacesEndpoint,
+    accessKeyId: process.env.DO_SPACES_KEY,
+    secretAccessKey: process.env.DO_SPACES_SECRET,
+    region: process.env.DO_SPACES_REGION || 'nyc3'
+  });
+  
+  const params = {
+    Bucket: bucket,
+    Key: `audio/${filename}`
+  };
+  
+  const readStream = s3.getObject(params).createReadStream();
+  const writeStream = fs.createWriteStream(tempFile);
+  
+  return new Promise((resolve, reject) => {
+    readStream.pipe(writeStream);
+    writeStream.on('finish', resolve);
+    writeStream.on('error', reject);
+    readStream.on('error', reject);
+  });
+}
+
+async function generateHLSFromFiles(inputFiles, outputDir, config) {
+  const ffmpeg = require('fluent-ffmpeg');
+  
+  return new Promise((resolve, reject) => {
+    let command = ffmpeg();
+    
+    // Adicionar todos os arquivos de entrada
+    inputFiles.forEach(file => {
+      command = command.input(file);
+    });
+    
+    // Concatenar e configurar HLS
+    command
+      .complexFilter(`concat=n=${inputFiles.length}:v=0:a=1[a]`)
+      .map('[a]')
+      .audioCodec('aac')
+      .audioBitrate(config.bitrate)
+      .audioFrequency(44100)
+      .format('hls')
+      .outputOptions([
+        `-hls_time ${config.segment}`,
+        '-hls_list_size 0',
+        '-hls_segment_filename ' + path.join(outputDir, 'segment_%03d.ts')
+      ])
+      .output(path.join(outputDir, 'index.m3u8'))
+      .on('end', () => {
+        console.log('✅ [HLS] FFmpeg processamento concluído');
+        resolve();
+      })
+      .on('error', (err) => {
+        console.error('❌ [HLS] FFmpeg erro:', err);
+        reject(err);
+      })
+      .on('progress', (progress) => {
+        console.log(`🎬 [HLS] FFmpeg progresso: ${Math.round(progress.percent || 0)}%`);
+      })
+      .run();
+  });
+}
+
+async function uploadHLSToSpaces(localDir, targetPath) {
+  const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
+  const spacesEndpoint = new AWS.Endpoint(process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com');
+  const s3 = new AWS.S3({
+    endpoint: spacesEndpoint,
+    accessKeyId: process.env.DO_SPACES_KEY,
+    secretAccessKey: process.env.DO_SPACES_SECRET,
+    region: process.env.DO_SPACES_REGION || 'nyc3'
+  });
+  
+  const files = fs.readdirSync(localDir);
+  
+  for (const file of files) {
+    const localFile = path.join(localDir, file);
+    const key = `${targetPath}/${file}`;
+    
+    let contentType = 'application/octet-stream';
+    if (file.endsWith('.m3u8')) {
+      contentType = 'application/vnd.apple.mpegurl';
+    } else if (file.endsWith('.ts')) {
+      contentType = 'video/MP2T';
+    }
+    
+    const fileContent = fs.readFileSync(localFile);
+    
+    await s3.upload({
+      Bucket: bucket,
+      Key: key,
+      Body: fileContent,
+      ContentType: contentType,
+      ACL: 'public-read'
+    }).promise();
+    
+    console.log(`📤 [HLS] Upload: ${key}`);
+  }
+}
+
+async function saveManifestToSpaces(manifest, key) {
+  const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
+  const spacesEndpoint = new AWS.Endpoint(process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com');
+  const s3 = new AWS.S3({
+    endpoint: spacesEndpoint,
+    accessKeyId: process.env.DO_SPACES_KEY,
+    secretAccessKey: process.env.DO_SPACES_SECRET,
+    region: process.env.DO_SPACES_REGION || 'nyc3'
+  });
+  
+  await s3.upload({
+    Bucket: bucket,
+    Key: key,
+    Body: JSON.stringify(manifest, null, 2),
+    ContentType: 'application/json',
+    ACL: 'public-read'
+  }).promise();
+  
+  console.log(`📄 [HLS] Manifesto salvo: ${key}`);
+}
+
+async function saveHLSStatus(jobId, status) {
+  const key = `generated/status/hls-${jobId}.json`;
+  
+  const fullStatus = {
+    jobId: jobId,
+    ...status,
+    updatedAt: new Date().toISOString()
+  };
+  
+  try {
+    await saveManifestToSpaces(fullStatus, key);
+  } catch (error) {
+    console.error(`❌ [HLS] Erro ao salvar status ${jobId}:`, error);
+  }
+}
+
+async function getHLSStatus(jobIdOrMode) {
+  try {
+    const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
+    const spacesEndpoint = new AWS.Endpoint(process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com');
+    const s3 = new AWS.S3({
+      endpoint: spacesEndpoint,
+      accessKeyId: process.env.DO_SPACES_KEY,
+      secretAccessKey: process.env.DO_SPACES_SECRET,
+      region: process.env.DO_SPACES_REGION || 'nyc3'
+    });
+    
+    let key;
+    if (jobIdOrMode === 'latest' || jobIdOrMode === 'rolling') {
+      key = `generated/status/hls-${jobIdOrMode}-status.json`;
+    } else {
+      key = `generated/status/hls-${jobIdOrMode}.json`;
+    }
+    
+    const data = await s3.getObject({
+      Bucket: bucket,
+      Key: key
+    }).promise();
+    
+    return JSON.parse(data.Body.toString());
+    
+  } catch (error) {
+    return {
+      status: 'not_found',
+      message: `Status não encontrado para: ${jobIdOrMode}`
+    };
+  }
+}
+
+// ===========================================================
+
 // 404 Handler
 app.use('*', (req, res) => {
   res.status(404).json({ 
