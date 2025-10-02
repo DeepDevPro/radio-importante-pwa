@@ -1,3 +1,5 @@
+// Backend do Radio Importante - F1 Support (music-metadata)
+// Updated: 2025-10-01 - Added metadata enrichment support
 /* eslint-env node */
 // Only load dotenv in development
 if (process.env.NODE_ENV !== 'production') {
