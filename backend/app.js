@@ -11,6 +11,7 @@ const storageConfig = require('./storage-config');
 const { execSync } = require('child_process');
 const os = require('os');
 const https = require('https');
+const { parseNodeStream } = require('music-metadata');
 let AWS;
 try {
   AWS = require('aws-sdk');
@@ -634,6 +635,10 @@ app.post('/api/sync-catalog', async (req, res) => {
   try {
     console.log('🔄 [sync] Iniciando sincronização com DigitalOcean Spaces...');
     
+    // Detectar se é modo completo (com enriquecimento de metadados)
+    const fullMode = req.query.full === 'true' || req.body.full === true;
+    console.log(`📊 [sync] Modo: ${fullMode ? 'COMPLETO (com metadados)' : 'BÁSICO'}`);
+    
     if (!AWS) {
       throw new Error('AWS SDK não disponível');
     }
@@ -669,13 +674,32 @@ app.post('/api/sync-catalog', async (req, res) => {
     
     console.log(`🎵 [sync] Arquivos de áudio válidos: ${audioFiles.length}`);
     
+    // Carregar catálogo atual (se existir)
+    let existingTracks = [];
+    try {
+      existingTracks = catalog.tracks || [];
+    } catch (e) {
+      console.log('📋 [sync] Nenhum catálogo existente encontrado, criando novo');
+    }
+    
+    // Criar mapa de tracks existentes por filename para preservar metadados
+    const existingTrackMap = {};
+    existingTracks.forEach(track => {
+      if (track.filename) {
+        existingTrackMap[track.filename] = track;
+      }
+    });
+    
     // Criar novo catálogo baseado nos arquivos reais
     const newTracks = audioFiles.map((obj, index) => {
       const filename = (obj.Key || '').replace('audio/', '');
       const fileExtension = path.extname(filename).toLowerCase();
       
+      // Verificar se track já existe para preservar metadados
+      const existingTrack = existingTrackMap[filename];
+      
       // Gerar ID único baseado no timestamp e filename
-      const trackId = `track_${Date.now()}_${index}`;
+      const trackId = existingTrack?.id || `track_${Date.now()}_${index}`;
       
       // Extrair título do filename (remover extensão e limpar)
       let title = path.basename(filename, fileExtension);
@@ -687,30 +711,109 @@ app.post('/api/sync-catalog', async (req, res) => {
       
       return {
         id: trackId,
-        title: title || 'Título não definido',
-        artist: 'Artista não definido',
+        title: existingTrack?.title || title || 'Título não definido',
+        artist: existingTrack?.artist || 'Artista não definido',
         filename: filename,
-        duration: 0, // Será calculado posteriormente se necessário
-        format: fileExtension
+        duration: existingTrack?.duration || 0, // Preservar duração existente
+        format: fileExtension,
+        needsMetadata: !existingTrack || !existingTrack.duration || existingTrack.duration === 0 || 
+                      existingTrack.title === 'Título não definido' || existingTrack.artist === 'Artista não definido'
       };
     });
+    
+    let metadataStats = {
+      durationComputed: 0,
+      metadataFilled: 0,
+      errors: 0
+    };
+    
+    // [NOVO] Enriquecimento de metadados (apenas se fullMode=true)
+    if (fullMode) {
+      console.log('🏷️ [meta] Iniciando enriquecimento de metadados...');
+      
+      // Limitar processamento para performance (máximo 20 por vez)
+      const tracksNeedingMetadata = newTracks.filter(track => track.needsMetadata);
+      const limitedTracks = tracksNeedingMetadata.slice(0, 20);
+      
+      console.log(`📊 [meta] Processando ${limitedTracks.length} de ${tracksNeedingMetadata.length} tracks que precisam de metadados`);
+      
+      for (const track of limitedTracks) {
+        try {
+          console.log(`🎵 [meta] Processando: ${track.filename}`);
+          
+          // Stream do arquivo do Spaces
+          const stream = s3.getObject({ 
+            Bucket: process.env.DO_SPACES_BUCKET || 'radio-importante-audio', 
+            Key: `audio/${track.filename}` 
+          }).createReadStream();
+          
+          // Extrair metadados
+          const metadata = await parseNodeStream(stream);
+          
+          // Atualizar duração se necessário
+          if (metadata.format && metadata.format.duration && (!track.duration || track.duration === 0)) {
+            track.duration = Math.round(metadata.format.duration);
+            metadataStats.durationComputed++;
+            console.log(`⏱️ [meta] Duração calculada: ${track.duration}s`);
+          }
+          
+          // Atualizar título se necessário
+          if (metadata.common && metadata.common.title && track.title === 'Título não definido') {
+            track.title = metadata.common.title;
+            metadataStats.metadataFilled++;
+            console.log(`🏷️ [meta] Título extraído: ${track.title}`);
+          }
+          
+          // Atualizar artista se necessário
+          if (metadata.common && metadata.common.artist && track.artist === 'Artista não definido') {
+            track.artist = metadata.common.artist;
+            console.log(`👤 [meta] Artista extraído: ${track.artist}`);
+          }
+          
+          // Remover flag de necessidade de metadados
+          delete track.needsMetadata;
+          
+        } catch (error) {
+          console.error(`❌ [meta] Erro ao processar ${track.filename}:`, error.message);
+          metadataStats.errors++;
+          delete track.needsMetadata; // Remove flag mesmo com erro
+        }
+      }
+      
+      console.log(`✅ [meta] Enriquecimento concluído: ${metadataStats.durationComputed} durações, ${metadataStats.metadataFilled} metadados`);
+    } else {
+      // Remover flag de todas as tracks no modo básico
+      newTracks.forEach(track => delete track.needsMetadata);
+    }
     
     // Atualizar catálogo
     catalog.tracks = newTracks;
     catalog.metadata.totalTracks = newTracks.length;
-    catalog.metadata.totalDuration = 0; // Será calculado conforme necessário
+    catalog.metadata.totalDuration = newTracks.reduce((sum, track) => sum + (track.duration || 0), 0);
     
     // Salvar catálogo atualizado
     await saveCatalog();
     
     console.log(`✅ [sync] Catálogo sincronizado: ${newTracks.length} tracks`);
     
-    res.json({
+    const response = {
       success: true,
       message: `Catálogo sincronizado com sucesso! ${newTracks.length} arquivos encontrados no Spaces.`,
       tracksFound: newTracks.length,
-      catalog: catalog
-    });
+      added: newTracks.length - existingTracks.length, // Simplificado
+      removed: Math.max(0, existingTracks.length - newTracks.length), // Simplificado
+      updated: newTracks.length,
+      saved: true
+    };
+    
+    // Adicionar estatísticas de metadados se modo completo
+    if (fullMode) {
+      response.durationComputed = metadataStats.durationComputed;
+      response.metadataFilled = metadataStats.metadataFilled;
+      response.metadataErrors = metadataStats.errors;
+    }
+    
+    res.json(response);
     
   } catch (error) {
     console.error('❌ [sync] Erro na sincronização:', error);

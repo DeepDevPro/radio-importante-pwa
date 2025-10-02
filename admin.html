@@ -299,6 +299,16 @@
             <div class="section">
                 <h2>🎵 Gerenciar Biblioteca Musical</h2>
                 
+                <!-- Botão Sincronizar com Spaces -->
+                <div style="margin: 20px 0; padding: 15px; background: #f0f8ff; border-radius: 10px; border-left: 4px solid #667eea;">
+                    <button class="btn" id="sync-spaces-btn" onclick="syncWithSpaces()" style="margin-right: 10px;">
+                        🔄 Sincronizar com Spaces (Completo)
+                    </button>
+                    <span style="color: #666; font-size: 14px;">
+                        Escaneia arquivos, enriquece metadados (duração/título/artista) e atualiza catálogo
+                    </span>
+                </div>
+                
                 <div class="alert alert-info">
                     ✏️ <strong>Editor de Metadados:</strong> Clique nos campos editáveis (título, artista) para editá-los diretamente. A duração é calculada automaticamente pelo sistema. Use <kbd>Enter</kbd> para salvar ou <kbd>Escape</kbd> para cancelar.
                 </div>
@@ -386,6 +396,62 @@
             setTimeout(() => {
                 statusEl.innerHTML = '✅ Upload concluído! (placeholder)';
             }, 2000);
+        }
+        
+        // Função para sincronizar com Spaces (F1)
+        async function syncWithSpaces() {
+            const btn = document.getElementById('sync-spaces-btn');
+            const statusEl = document.getElementById('manage-status');
+            
+            try {
+                // Desabilita botão e mostra status
+                btn.disabled = true;
+                btn.textContent = '🔄 Sincronizando...';
+                statusEl.innerHTML = '<div style="color: #0066cc;">🔄 Iniciando sincronização completa com Spaces...</div>';
+                
+                // Chama a API com full=true
+                const response = await fetch('/api/sync-catalog?full=true', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Erro ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                
+                // Mostra resultado
+                statusEl.innerHTML = `
+                    <div style="color: #28a745; padding: 15px; background: #d4edda; border-radius: 8px; margin: 10px 0;">
+                        <strong>✅ Sincronização Concluída!</strong><br>
+                        📁 Arquivos encontrados: ${result.tracksFound}<br>
+                        ➕ Adicionados: ${result.added}<br>
+                        ➖ Removidos: ${result.removed}<br>
+                        🔄 Atualizados: ${result.updated}<br>
+                        ⏱️ Duração calculada: ${result.durationComputed}<br>
+                        🏷️ Metadados preenchidos: ${result.metadataFilled}
+                    </div>
+                `;
+                
+                // Recarrega lista
+                if (typeof loadMusicList === 'function') {
+                    loadMusicList();
+                }
+                
+            } catch (error) {
+                console.error('Erro na sincronização:', error);
+                statusEl.innerHTML = `
+                    <div style="color: #dc3545; padding: 15px; background: #f8d7da; border-radius: 8px; margin: 10px 0;">
+                        <strong>❌ Erro na Sincronização</strong><br>
+                        ${error.message}
+                    </div>
+                `;
+            } finally {
+                // Reabilita botão
+                btn.disabled = false;
+                btn.textContent = '🔄 Sincronizar com Spaces (Completo)';
+            }
         }
         
         // Event listeners serão gerenciados pelo admin.ts
