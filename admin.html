@@ -409,8 +409,14 @@
                 btn.textContent = '🔄 Sincronizando...';
                 statusEl.innerHTML = '<div style="color: #0066cc;">🔄 Iniciando sincronização completa com Spaces...</div>';
                 
+                // Importar configuração da API
+                const { getApiUrl } = await import('./src/config/api.js');
+                const apiUrl = getApiUrl('catalog').replace('/api/catalog', '/api/sync-catalog?full=true');
+                
+                console.log('🌐 [sync] Chamando API:', apiUrl);
+                
                 // Chama a API com full=true
-                const response = await fetch('/api/sync-catalog?full=true', {
+                const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 });
@@ -429,8 +435,8 @@
                         ➕ Adicionados: ${result.added}<br>
                         ➖ Removidos: ${result.removed}<br>
                         🔄 Atualizados: ${result.updated}<br>
-                        ⏱️ Duração calculada: ${result.durationComputed}<br>
-                        🏷️ Metadados preenchidos: ${result.metadataFilled}
+                        ⏱️ Duração calculada: ${result.durationComputed || 0}<br>
+                        🏷️ Metadados preenchidos: ${result.metadataFilled || 0}
                     </div>
                 `;
                 
