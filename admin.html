@@ -409,9 +409,11 @@
                 btn.textContent = '🔄 Sincronizando...';
                 statusEl.innerHTML = '<div style="color: #0066cc;">🔄 Iniciando sincronização completa com Spaces...</div>';
                 
-                // Importar configuração da API
-                const { getApiUrl } = await import('./src/config/api.js');
-                const apiUrl = getApiUrl('catalog').replace('/api/catalog', '/api/sync-catalog?full=true');
+                // Configuração direta da API (sem importação para evitar problemas de módulo)
+                const hostname = window.location.hostname;
+                const isStaging = hostname.includes('staging') || hostname.includes('stagin');
+                const backendUrl = 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app';
+                const apiUrl = `${backendUrl}/api/sync-catalog?full=true`;
                 
                 console.log('🌐 [sync] Chamando API:', apiUrl);
                 
