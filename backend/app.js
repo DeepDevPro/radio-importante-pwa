@@ -1453,17 +1453,30 @@ app.get('/hls/latest/:segment', async (req, res) => {
 
 // Proxy para servir playlist HLS Rolling
 app.get('/hls/rolling/index.m3u8', async (req, res) => {
+  const startTime = Date.now();
+  const clientIP = req.ip || req.connection.remoteAddress;
+  const userAgent = req.get('User-Agent') || 'Unknown';
+  
   try {
-    console.log('📺 [HLS] Servindo playlist HLS rolling');
+    console.log(`📺 [HLS Rolling] === REQUEST START ===`);
+    console.log(`📺 [HLS Rolling] Client: ${clientIP}`);
+    console.log(`📺 [HLS Rolling] User-Agent: ${userAgent.substring(0, 100)}...`);
+    console.log(`📺 [HLS Rolling] Timestamp: ${new Date().toISOString()}`);
     
     const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
     const endpoint = process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com';
     const spacesUrl = `https://${bucket}.${endpoint}/generated/hls/rolling/index.m3u8`;
     
+    console.log(`📺 [HLS Rolling] Fetching from: ${spacesUrl}`);
+    
     // Fazer proxy para o Spaces
     const https = require('https');
     const request = https.get(spacesUrl, (spacesRes) => {
-      res.set({
+      const responseTime = Date.now() - startTime;
+      console.log(`📺 [HLS Rolling] Spaces response status: ${spacesRes.statusCode} (${responseTime}ms)`);
+      console.log(`📺 [HLS Rolling] Spaces headers:`, JSON.stringify(spacesRes.headers, null, 2));
+      
+      const headers = {
         'Content-Type': 'application/vnd.apple.mpegurl',
         'Content-Length': spacesRes.headers['content-length'],
         'Cache-Control': 'no-cache, no-store, must-revalidate', // Safari HLS otimizado
@@ -1472,31 +1485,62 @@ app.get('/hls/rolling/index.m3u8', async (req, res) => {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': 'Range',
         'Accept-Ranges': 'bytes'
+      };
+      
+      console.log(`📺 [HLS Rolling] Response headers:`, JSON.stringify(headers, null, 2));
+      res.set(headers);
+      res.status(spacesRes.statusCode);
+      
+      let dataReceived = 0;
+      spacesRes.on('data', (chunk) => {
+        dataReceived += chunk.length;
       });
       
-      res.status(spacesRes.statusCode);
+      spacesRes.on('end', () => {
+        const totalTime = Date.now() - startTime;
+        console.log(`📺 [HLS Rolling] Transfer complete: ${dataReceived} bytes in ${totalTime}ms`);
+        console.log(`📺 [HLS Rolling] === REQUEST END ===`);
+      });
+      
       spacesRes.pipe(res);
     });
     
     request.on('error', (error) => {
-      console.error(`❌ [HLS] Erro ao acessar playlist rolling: ${error.message}`);
+      const errorTime = Date.now() - startTime;
+      console.error(`❌ [HLS Rolling] Request error after ${errorTime}ms: ${error.message}`);
+      console.error(`❌ [HLS Rolling] Error details:`, error);
       res.status(404).json({ error: 'Playlist HLS Rolling não encontrada' });
     });
     
+    request.setTimeout(10000, () => {
+      console.error(`❌ [HLS Rolling] Request timeout after 10s to Spaces`);
+      request.destroy();
+    });
+    
   } catch (error) {
-    console.error('❌ [HLS] Erro na rota de playlist rolling:', error);
+    const errorTime = Date.now() - startTime;
+    console.error(`❌ [HLS Rolling] Exception after ${errorTime}ms:`, error);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
 
 // Proxy para servir segmentos HLS Rolling
 app.get('/hls/rolling/:segment', async (req, res) => {
+  const startTime = Date.now();
+  const segment = req.params.segment;
+  const clientIP = req.ip || req.connection.remoteAddress;
+  const userAgent = req.get('User-Agent') || 'Unknown';
+  
   try {
-    const segment = req.params.segment;
-    console.log(`📺 [HLS] Servindo segmento rolling: ${segment}`);
+    console.log(`📺 [HLS Rolling Segment] === REQUEST START ===`);
+    console.log(`📺 [HLS Rolling Segment] Segment: ${segment}`);
+    console.log(`📺 [HLS Rolling Segment] Client: ${clientIP}`);
+    console.log(`📺 [HLS Rolling Segment] User-Agent: ${userAgent.substring(0, 100)}...`);
+    console.log(`📺 [HLS Rolling Segment] Timestamp: ${new Date().toISOString()}`);
     
     // Validar nome do segmento
     if (!segment.match(/^segment_\d{3}\.ts$/)) {
+      console.error(`📺 [HLS Rolling Segment] Invalid segment name: ${segment}`);
       return res.status(400).json({ error: 'Nome de segmento inválido' });
     }
     
@@ -1504,29 +1548,61 @@ app.get('/hls/rolling/:segment', async (req, res) => {
     const endpoint = process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com';
     const spacesUrl = `https://${bucket}.${endpoint}/generated/hls/rolling/${segment}`;
     
+    console.log(`📺 [HLS Rolling Segment] Fetching: ${spacesUrl}`);
+    
     // Fazer proxy para o Spaces
     const https = require('https');
     const request = https.get(spacesUrl, (spacesRes) => {
-      res.set({
+      const responseTime = Date.now() - startTime;
+      console.log(`📺 [HLS Rolling Segment] Spaces response: ${spacesRes.statusCode} (${responseTime}ms)`);
+      console.log(`📺 [HLS Rolling Segment] Content-Length: ${spacesRes.headers['content-length']}`);
+      
+      const headers = {
         'Content-Type': 'video/MP2T',
         'Content-Length': spacesRes.headers['content-length'],
         'Cache-Control': 'public, max-age=3600', // 1h cache para segmentos (não muda)
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': 'Range',
         'Accept-Ranges': 'bytes'
+      };
+      
+      console.log(`📺 [HLS Rolling Segment] Response headers:`, JSON.stringify(headers, null, 2));
+      res.set(headers);
+      res.status(spacesRes.statusCode);
+      
+      let dataReceived = 0;
+      spacesRes.on('data', (chunk) => {
+        dataReceived += chunk.length;
       });
       
-      res.status(spacesRes.statusCode);
+      spacesRes.on('end', () => {
+        const totalTime = Date.now() - startTime;
+        console.log(`📺 [HLS Rolling Segment] Transfer complete: ${dataReceived} bytes in ${totalTime}ms`);
+        console.log(`📺 [HLS Rolling Segment] === REQUEST END ===`);
+      });
+      
+      spacesRes.on('error', (error) => {
+        console.error(`📺 [HLS Rolling Segment] Stream error:`, error);
+      });
+      
       spacesRes.pipe(res);
     });
     
     request.on('error', (error) => {
-      console.error(`❌ [HLS] Erro ao acessar segmento rolling ${segment}: ${error.message}`);
+      const errorTime = Date.now() - startTime;
+      console.error(`❌ [HLS Rolling Segment] Request error after ${errorTime}ms: ${error.message}`);
+      console.error(`❌ [HLS Rolling Segment] Error details:`, error);
       res.status(404).json({ error: 'Segmento HLS Rolling não encontrado' });
     });
     
+    request.setTimeout(15000, () => {
+      console.error(`❌ [HLS Rolling Segment] Request timeout after 15s to Spaces for ${segment}`);
+      request.destroy();
+    });
+    
   } catch (error) {
-    console.error('❌ [HLS] Erro na rota de segmento rolling:', error);
+    const errorTime = Date.now() - startTime;
+    console.error(`❌ [HLS Rolling Segment] Exception after ${errorTime}ms:`, error);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
