@@ -1967,7 +1967,8 @@ async function publishRollingHLS(jobId) {
         Bucket: bucket,
         CopySource: `${bucket}/${sourceKey}`,
         Key: targetKey,
-        MetadataDirective: 'COPY'
+        MetadataDirective: 'COPY',
+        ACL: 'public-read'
       }).promise();
     });
     
