@@ -69,6 +69,26 @@ app.get('/health', (req, res) => {
 
 // ========== DEBUG LOGS ENDPOINTS ==========
 
+// Array em memória para logs automaticos (max 100 entradas)
+let autoLogs = [];
+const MAX_AUTO_LOGS = 100;
+
+function saveAutoLog(message, type = 'info') {
+  const timestamp = new Date().toISOString();
+  const logEntry = { timestamp, type, message };
+  
+  // Adicionar ao array
+  autoLogs.unshift(logEntry);
+  
+  // Manter apenas os últimos 100 logs
+  if (autoLogs.length > MAX_AUTO_LOGS) {
+    autoLogs = autoLogs.slice(0, MAX_AUTO_LOGS);
+  }
+  
+  // Console também (para logs do servidor)
+  console.log(`[${type.toUpperCase()}] ${message}`);
+}
+
 // Endpoint para receber logs de debug do iPhone
 app.post('/api/debug-logs', (req, res) => {
   try {
@@ -126,26 +146,29 @@ app.get('/api/debug-logs', (req, res) => {
   try {
     const logsDir = path.join(__dirname, 'debug-logs');
     
-    if (!fs.existsSync(logsDir)) {
-      return res.json({ logs: [] });
+    let files = [];
+    if (fs.existsSync(logsDir)) {
+      files = fs.readdirSync(logsDir)
+        .filter(file => file.endsWith('.txt'))
+        .map(file => {
+          const filePath = path.join(logsDir, file);
+          const stats = fs.statSync(filePath);
+          return {
+            filename: file,
+            size: stats.size,
+            created: stats.birthtime,
+            modified: stats.mtime,
+            downloadUrl: `/debug-logs/${file}`
+          };
+        })
+        .sort((a, b) => b.created - a.created); // Mais recentes primeiro
     }
     
-    const files = fs.readdirSync(logsDir)
-      .filter(file => file.endsWith('.txt'))
-      .map(file => {
-        const filePath = path.join(logsDir, file);
-        const stats = fs.statSync(filePath);
-        return {
-          filename: file,
-          size: stats.size,
-          created: stats.birthtime,
-          modified: stats.mtime,
-          downloadUrl: `/debug-logs/${file}`
-        };
-      })
-      .sort((a, b) => b.created - a.created); // Mais recentes primeiro
-    
-    res.json({ logs: files });
+    // Retornar logs automáticos + arquivos salvos
+    res.json({ 
+      logs: autoLogs, // Logs em tempo real
+      files: files    // Arquivos salvos
+    });
     
   } catch (error) {
     console.error('❌ [debug-logs] Erro ao listar logs:', error);
@@ -1458,23 +1481,23 @@ app.get('/hls/rolling/index.m3u8', async (req, res) => {
   const userAgent = req.get('User-Agent') || 'Unknown';
   
   try {
-    console.log(`📺 [HLS Rolling] === REQUEST START ===`);
-    console.log(`📺 [HLS Rolling] Client: ${clientIP}`);
-    console.log(`📺 [HLS Rolling] User-Agent: ${userAgent.substring(0, 100)}...`);
-    console.log(`📺 [HLS Rolling] Timestamp: ${new Date().toISOString()}`);
+    saveAutoLog(`📺 [HLS Rolling] === REQUEST START ===`);
+    saveAutoLog(`📺 [HLS Rolling] Client: ${clientIP}`);
+    saveAutoLog(`📺 [HLS Rolling] User-Agent: ${userAgent.substring(0, 100)}...`);
+    saveAutoLog(`📺 [HLS Rolling] Timestamp: ${new Date().toISOString()}`);
     
     const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
     const endpoint = process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com';
     const spacesUrl = `https://${bucket}.${endpoint}/generated/hls/rolling/index.m3u8`;
     
-    console.log(`📺 [HLS Rolling] Fetching from: ${spacesUrl}`);
+    saveAutoLog(`📺 [HLS Rolling] Fetching from: ${spacesUrl}`);
     
     // Fazer proxy para o Spaces
     const https = require('https');
     const request = https.get(spacesUrl, (spacesRes) => {
       const responseTime = Date.now() - startTime;
-      console.log(`📺 [HLS Rolling] Spaces response status: ${spacesRes.statusCode} (${responseTime}ms)`);
-      console.log(`📺 [HLS Rolling] Spaces headers:`, JSON.stringify(spacesRes.headers, null, 2));
+      saveAutoLog(`📺 [HLS Rolling] Spaces response status: ${spacesRes.statusCode} (${responseTime}ms)`);
+      saveAutoLog(`📺 [HLS Rolling] Spaces headers: ${JSON.stringify(spacesRes.headers)}`);
       
       const headers = {
         'Content-Type': 'application/vnd.apple.mpegurl',
@@ -1487,7 +1510,7 @@ app.get('/hls/rolling/index.m3u8', async (req, res) => {
         'Accept-Ranges': 'bytes'
       };
       
-      console.log(`📺 [HLS Rolling] Response headers:`, JSON.stringify(headers, null, 2));
+      saveAutoLog(`📺 [HLS Rolling] Response headers: ${JSON.stringify(headers)}`);
       res.set(headers);
       res.status(spacesRes.statusCode);
       
@@ -1498,8 +1521,8 @@ app.get('/hls/rolling/index.m3u8', async (req, res) => {
       
       spacesRes.on('end', () => {
         const totalTime = Date.now() - startTime;
-        console.log(`📺 [HLS Rolling] Transfer complete: ${dataReceived} bytes in ${totalTime}ms`);
-        console.log(`📺 [HLS Rolling] === REQUEST END ===`);
+        saveAutoLog(`📺 [HLS Rolling] Transfer complete: ${dataReceived} bytes in ${totalTime}ms`);
+        saveAutoLog(`📺 [HLS Rolling] === REQUEST END ===`);
       });
       
       spacesRes.pipe(res);
@@ -1507,19 +1530,19 @@ app.get('/hls/rolling/index.m3u8', async (req, res) => {
     
     request.on('error', (error) => {
       const errorTime = Date.now() - startTime;
-      console.error(`❌ [HLS Rolling] Request error after ${errorTime}ms: ${error.message}`);
-      console.error(`❌ [HLS Rolling] Error details:`, error);
+      saveAutoLog(`❌ [HLS Rolling] Request error after ${errorTime}ms: ${error.message}`, 'error');
+      saveAutoLog(`❌ [HLS Rolling] Error details: ${JSON.stringify(error)}`, 'error');
       res.status(404).json({ error: 'Playlist HLS Rolling não encontrada' });
     });
     
     request.setTimeout(10000, () => {
-      console.error(`❌ [HLS Rolling] Request timeout after 10s to Spaces`);
+      saveAutoLog(`❌ [HLS Rolling] Request timeout after 10s to Spaces`, 'error');
       request.destroy();
     });
     
   } catch (error) {
     const errorTime = Date.now() - startTime;
-    console.error(`❌ [HLS Rolling] Exception after ${errorTime}ms:`, error);
+    saveAutoLog(`❌ [HLS Rolling] Exception after ${errorTime}ms: ${error.message}`, 'error');
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
@@ -1532,15 +1555,15 @@ app.get('/hls/rolling/:segment', async (req, res) => {
   const userAgent = req.get('User-Agent') || 'Unknown';
   
   try {
-    console.log(`📺 [HLS Rolling Segment] === REQUEST START ===`);
-    console.log(`📺 [HLS Rolling Segment] Segment: ${segment}`);
-    console.log(`📺 [HLS Rolling Segment] Client: ${clientIP}`);
-    console.log(`📺 [HLS Rolling Segment] User-Agent: ${userAgent.substring(0, 100)}...`);
-    console.log(`📺 [HLS Rolling Segment] Timestamp: ${new Date().toISOString()}`);
+    saveAutoLog(`📺 [HLS Rolling Segment] === REQUEST START ===`);
+    saveAutoLog(`📺 [HLS Rolling Segment] Segment: ${segment}`);
+    saveAutoLog(`📺 [HLS Rolling Segment] Client: ${clientIP}`);
+    saveAutoLog(`📺 [HLS Rolling Segment] User-Agent: ${userAgent.substring(0, 100)}...`);
+    saveAutoLog(`📺 [HLS Rolling Segment] Timestamp: ${new Date().toISOString()}`);
     
     // Validar nome do segmento
     if (!segment.match(/^segment_\d{3}\.ts$/)) {
-      console.error(`📺 [HLS Rolling Segment] Invalid segment name: ${segment}`);
+      saveAutoLog(`📺 [HLS Rolling Segment] Invalid segment name: ${segment}`, 'error');
       return res.status(400).json({ error: 'Nome de segmento inválido' });
     }
     
@@ -1548,14 +1571,14 @@ app.get('/hls/rolling/:segment', async (req, res) => {
     const endpoint = process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com';
     const spacesUrl = `https://${bucket}.${endpoint}/generated/hls/rolling/${segment}`;
     
-    console.log(`📺 [HLS Rolling Segment] Fetching: ${spacesUrl}`);
+    saveAutoLog(`📺 [HLS Rolling Segment] Fetching: ${spacesUrl}`);
     
     // Fazer proxy para o Spaces
     const https = require('https');
     const request = https.get(spacesUrl, (spacesRes) => {
       const responseTime = Date.now() - startTime;
-      console.log(`📺 [HLS Rolling Segment] Spaces response: ${spacesRes.statusCode} (${responseTime}ms)`);
-      console.log(`📺 [HLS Rolling Segment] Content-Length: ${spacesRes.headers['content-length']}`);
+      saveAutoLog(`📺 [HLS Rolling Segment] Spaces response: ${spacesRes.statusCode} (${responseTime}ms)`);
+      saveAutoLog(`📺 [HLS Rolling Segment] Content-Length: ${spacesRes.headers['content-length']}`);
       
       const headers = {
         'Content-Type': 'video/MP2T',
@@ -1566,7 +1589,7 @@ app.get('/hls/rolling/:segment', async (req, res) => {
         'Accept-Ranges': 'bytes'
       };
       
-      console.log(`📺 [HLS Rolling Segment] Response headers:`, JSON.stringify(headers, null, 2));
+      saveAutoLog(`📺 [HLS Rolling Segment] Response headers: ${JSON.stringify(headers)}`);
       res.set(headers);
       res.status(spacesRes.statusCode);
       
@@ -1577,12 +1600,13 @@ app.get('/hls/rolling/:segment', async (req, res) => {
       
       spacesRes.on('end', () => {
         const totalTime = Date.now() - startTime;
-        console.log(`📺 [HLS Rolling Segment] Transfer complete: ${dataReceived} bytes in ${totalTime}ms`);
-        console.log(`📺 [HLS Rolling Segment] === REQUEST END ===`);
+        saveAutoLog(`📺 [HLS Rolling Segment] Transfer complete: ${dataReceived} bytes in ${totalTime}ms`);
+        saveAutoLog(`📺 [HLS Rolling Segment] === REQUEST END ===`);
       });
       
       spacesRes.on('error', (error) => {
-        console.error(`📺 [HLS Rolling Segment] Stream error:`, error);
+        const errorTime = Date.now() - startTime;
+        saveAutoLog(`📺 [HLS Rolling Segment] Stream error after ${errorTime}ms: ${error.message}`, 'error');
       });
       
       spacesRes.pipe(res);
@@ -1590,19 +1614,19 @@ app.get('/hls/rolling/:segment', async (req, res) => {
     
     request.on('error', (error) => {
       const errorTime = Date.now() - startTime;
-      console.error(`❌ [HLS Rolling Segment] Request error after ${errorTime}ms: ${error.message}`);
-      console.error(`❌ [HLS Rolling Segment] Error details:`, error);
+      saveAutoLog(`❌ [HLS Rolling Segment] Request error after ${errorTime}ms: ${error.message}`, 'error');
       res.status(404).json({ error: 'Segmento HLS Rolling não encontrado' });
     });
     
     request.setTimeout(15000, () => {
-      console.error(`❌ [HLS Rolling Segment] Request timeout after 15s to Spaces for ${segment}`);
+      const errorTime = Date.now() - startTime;
+      saveAutoLog(`❌ [HLS Rolling Segment] Request timeout after ${errorTime}ms for ${segment}`, 'error');
       request.destroy();
     });
     
   } catch (error) {
     const errorTime = Date.now() - startTime;
-    console.error(`❌ [HLS Rolling Segment] Exception after ${errorTime}ms:`, error);
+    saveAutoLog(`❌ [HLS Rolling Segment] Exception after ${errorTime}ms: ${error.message}`, 'error');
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
@@ -1623,16 +1647,56 @@ app.get('/api/hls-rolling-status', async (req, res) => {
   }
 });
 
+// Sistema de logs em tempo real para diagnóstico
+let hlsLogs = [];
+const MAX_LOGS = 100;
+
+function addHLSLog(type, message, data = null) {
+  const logEntry = {
+    timestamp: new Date().toISOString(),
+    type,
+    message,
+    data,
+    id: Date.now() + Math.random()
+  };
+  
+  hlsLogs.unshift(logEntry);
+  if (hlsLogs.length > MAX_LOGS) {
+    hlsLogs = hlsLogs.slice(0, MAX_LOGS);
+  }
+  
+  console.log(`📊 [HLS-LOG] ${type}: ${message}`, data || '');
+}
+
+// Endpoint para ver logs em tempo real
+app.get('/api/hls-logs', (req, res) => {
+  res.json({
+    timestamp: new Date().toISOString(),
+    totalLogs: hlsLogs.length,
+    logs: hlsLogs.slice(0, 50) // Últimos 50 logs
+  });
+});
+
+// Endpoint para limpar logs
+app.post('/api/hls-logs/clear', (req, res) => {
+  const previousCount = hlsLogs.length;
+  hlsLogs = [];
+  res.json({
+    message: `${previousCount} logs limpos`,
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Debug endpoint para diagnóstico HLS Rolling
 app.get('/api/hls-rolling-debug', async (req, res) => {
   try {
-    console.log('🔍 [DEBUG] HLS Rolling debug endpoint accessed');
+    addHLSLog('DEBUG', 'HLS Rolling debug endpoint accessed');
     
     const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
     const endpoint = process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com';
     const spacesUrl = `https://${bucket}.${endpoint}/generated/hls/rolling/index.m3u8`;
     
-    console.log('🔍 [DEBUG] Testing direct Spaces access:', spacesUrl);
+    addHLSLog('DEBUG', 'Testing direct Spaces access', { spacesUrl });
     
     // Testar acesso direto ao Spaces
     const https = require('https');
@@ -1640,13 +1704,13 @@ app.get('/api/hls-rolling-debug', async (req, res) => {
       const startTime = Date.now();
       const request = https.get(spacesUrl, (spacesRes) => {
         const responseTime = Date.now() - startTime;
-        console.log(`🔍 [DEBUG] Spaces direct response: ${spacesRes.statusCode} (${responseTime}ms)`);
+        addHLSLog('DEBUG', `Spaces direct response: ${spacesRes.statusCode}`, { responseTime });
         
         let data = '';
         spacesRes.on('data', chunk => data += chunk);
         spacesRes.on('end', () => {
           const totalTime = Date.now() - startTime;
-          console.log(`🔍 [DEBUG] Spaces response complete: ${data.length} bytes in ${totalTime}ms`);
+          addHLSLog('DEBUG', `Spaces response complete: ${data.length} bytes`, { totalTime });
           resolve({
             status: spacesRes.statusCode,
             responseTime: totalTime,
@@ -1658,12 +1722,12 @@ app.get('/api/hls-rolling-debug', async (req, res) => {
       });
       
       request.on('error', (error) => {
-        console.error('🔍 [DEBUG] Spaces request error:', error);
+        addHLSLog('ERROR', 'Spaces request error', { error: error.message });
         reject(error);
       });
       
       request.setTimeout(10000, () => {
-        console.error('🔍 [DEBUG] Spaces request timeout');
+        addHLSLog('ERROR', 'Spaces request timeout');
         request.destroy();
         reject(new Error('Timeout accessing Spaces'));
       });
@@ -1679,7 +1743,7 @@ app.get('/api/hls-rolling-debug', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('🔍 [DEBUG] Error in debug endpoint:', error);
+    addHLSLog('ERROR', 'Error in debug endpoint', { error: error.message });
     res.status(500).json({ 
       error: error.message,
       timestamp: new Date().toISOString()
