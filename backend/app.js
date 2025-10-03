@@ -1695,10 +1695,11 @@ async function generateHLSJob(jobId, config) {
     
     // 7. Status final
     const finalTargetPath = config.mode === 'rolling' ? 'generated/hls/rolling' : targetPath;
+    const finalStatus = config.mode === 'rolling' ? 'published' : 'completed';
     await updateHLSStatus({
-      status: 'completed',
+      status: finalStatus,
       progress: 100,
-      message: 'HLS gerado com sucesso',
+      message: config.mode === 'rolling' ? 'HLS Rolling publicado com sucesso' : 'HLS gerado com sucesso',
       manifest: manifest,
       playlistUrl: `/${finalTargetPath.replace('generated/', '')}/index.m3u8`,
       endTime: new Date().toISOString()
