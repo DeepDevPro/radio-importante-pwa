@@ -1623,6 +1623,70 @@ app.get('/api/hls-rolling-status', async (req, res) => {
   }
 });
 
+// Debug endpoint para diagnóstico HLS Rolling
+app.get('/api/hls-rolling-debug', async (req, res) => {
+  try {
+    console.log('🔍 [DEBUG] HLS Rolling debug endpoint accessed');
+    
+    const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
+    const endpoint = process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com';
+    const spacesUrl = `https://${bucket}.${endpoint}/generated/hls/rolling/index.m3u8`;
+    
+    console.log('🔍 [DEBUG] Testing direct Spaces access:', spacesUrl);
+    
+    // Testar acesso direto ao Spaces
+    const https = require('https');
+    const testPromise = new Promise((resolve, reject) => {
+      const startTime = Date.now();
+      const request = https.get(spacesUrl, (spacesRes) => {
+        const responseTime = Date.now() - startTime;
+        console.log(`🔍 [DEBUG] Spaces direct response: ${spacesRes.statusCode} (${responseTime}ms)`);
+        
+        let data = '';
+        spacesRes.on('data', chunk => data += chunk);
+        spacesRes.on('end', () => {
+          const totalTime = Date.now() - startTime;
+          console.log(`🔍 [DEBUG] Spaces response complete: ${data.length} bytes in ${totalTime}ms`);
+          resolve({
+            status: spacesRes.statusCode,
+            responseTime: totalTime,
+            contentLength: data.length,
+            headers: spacesRes.headers,
+            preview: data.substring(0, 200)
+          });
+        });
+      });
+      
+      request.on('error', (error) => {
+        console.error('🔍 [DEBUG] Spaces request error:', error);
+        reject(error);
+      });
+      
+      request.setTimeout(10000, () => {
+        console.error('🔍 [DEBUG] Spaces request timeout');
+        request.destroy();
+        reject(new Error('Timeout accessing Spaces'));
+      });
+    });
+    
+    const testResult = await testPromise;
+    
+    res.json({
+      timestamp: new Date().toISOString(),
+      spacesUrl,
+      testResult,
+      message: 'HLS Rolling debug successful'
+    });
+    
+  } catch (error) {
+    console.error('🔍 [DEBUG] Error in debug endpoint:', error);
+    res.status(500).json({ 
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // ========== F2 HLS GENERATION LOGIC ==========
 
 async function generateHLSJob(jobId, config) {
@@ -1857,70 +1921,6 @@ async function generateHLSFromFiles(inputFiles, outputDir, config) {
       .audioCodec('aac')
       .audioBitrate(config.bitrate)
       .audioFrequency(44100)
-      .format('hls')
-      .outputOptions([
-        `-hls_time ${config.segment}`,
-        '-hls_list_size 0',
-        '-hls_segment_filename ' + path.join(outputDir, 'segment_%03d.ts')
-      ])
-      .output(path.join(outputDir, 'index.m3u8'))
-      .on('end', () => {
-        console.log('✅ [HLS] FFmpeg processamento concluído');
-        resolve();
-      })
-      .on('error', (err) => {
-        console.error('❌ [HLS] FFmpeg erro:', err);
-        reject(err);
-      })
-      .on('progress', (progress) => {
-        console.log(`🎬 [HLS] FFmpeg progresso: ${Math.round(progress.percent || 0)}%`);
-      })
-      .run();
-  });
-}
-
-async function uploadHLSToSpaces(localDir, targetPath) {
-  const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
-  const spacesEndpoint = new AWS.Endpoint(process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com');
-  const s3 = new AWS.S3({
-    endpoint: spacesEndpoint,
-    accessKeyId: process.env.DO_SPACES_KEY,
-    secretAccessKey: process.env.DO_SPACES_SECRET,
-    region: process.env.DO_SPACES_REGION || 'nyc3'
-  });
-  
-  const files = fs.readdirSync(localDir);
-  
-  for (const file of files) {
-    const localFile = path.join(localDir, file);
-    const key = `${targetPath}/${file}`;
-    
-    let contentType = 'application/octet-stream';
-    if (file.endsWith('.m3u8')) {
-      contentType = 'application/vnd.apple.mpegurl';
-    } else if (file.endsWith('.ts')) {
-      contentType = 'video/MP2T';
-    }
-    
-    const fileContent = fs.readFileSync(localFile);
-    
-    await s3.upload({
-      Bucket: bucket,
-      Key: key,
-      Body: fileContent,
-      ContentType: contentType,
-      ACL: 'public-read'
-    }).promise();
-    
-    console.log(`📤 [HLS] Upload: ${key}`);
-  }
-}
-
-async function saveManifestToSpaces(manifest, key) {
-  const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
-  const spacesEndpoint = new AWS.Endpoint(process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com');
-  const s3 = new AWS.S3({
-    endpoint: spacesEndpoint,
     accessKeyId: process.env.DO_SPACES_KEY,
     secretAccessKey: process.env.DO_SPACES_SECRET,
     region: process.env.DO_SPACES_REGION || 'nyc3'
