@@ -1449,6 +1449,98 @@ app.get('/hls/latest/:segment', async (req, res) => {
   }
 });
 
+// ========== F3 HLS ROLLING ROUTES ==========
+
+// Proxy para servir playlist HLS Rolling
+app.get('/hls/rolling/index.m3u8', async (req, res) => {
+  try {
+    console.log('📺 [HLS] Servindo playlist HLS rolling');
+    
+    const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
+    const endpoint = process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com';
+    const spacesUrl = `https://${bucket}.${endpoint}/generated/hls/rolling/index.m3u8`;
+    
+    // Fazer proxy para o Spaces
+    const https = require('https');
+    const request = https.get(spacesUrl, (spacesRes) => {
+      res.set({
+        'Content-Type': 'application/vnd.apple.mpegurl',
+        'Content-Length': spacesRes.headers['content-length'],
+        'Cache-Control': 'public, max-age=300',
+        'Access-Control-Allow-Origin': '*'
+      });
+      
+      res.status(spacesRes.statusCode);
+      spacesRes.pipe(res);
+    });
+    
+    request.on('error', (error) => {
+      console.error(`❌ [HLS] Erro ao acessar playlist rolling: ${error.message}`);
+      res.status(404).json({ error: 'Playlist HLS Rolling não encontrada' });
+    });
+    
+  } catch (error) {
+    console.error('❌ [HLS] Erro na rota de playlist rolling:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// Proxy para servir segmentos HLS Rolling
+app.get('/hls/rolling/:segment', async (req, res) => {
+  try {
+    const segment = req.params.segment;
+    console.log(`📺 [HLS] Servindo segmento rolling: ${segment}`);
+    
+    // Validar nome do segmento
+    if (!segment.match(/^segment_\d{3}\.ts$/)) {
+      return res.status(400).json({ error: 'Nome de segmento inválido' });
+    }
+    
+    const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
+    const endpoint = process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com';
+    const spacesUrl = `https://${bucket}.${endpoint}/generated/hls/rolling/${segment}`;
+    
+    // Fazer proxy para o Spaces
+    const https = require('https');
+    const request = https.get(spacesUrl, (spacesRes) => {
+      res.set({
+        'Content-Type': 'video/MP2T',
+        'Content-Length': spacesRes.headers['content-length'],
+        'Cache-Control': 'public, max-age=86400', // 24h cache para segmentos
+        'Access-Control-Allow-Origin': '*'
+      });
+      
+      res.status(spacesRes.statusCode);
+      spacesRes.pipe(res);
+    });
+    
+    request.on('error', (error) => {
+      console.error(`❌ [HLS] Erro ao acessar segmento rolling ${segment}: ${error.message}`);
+      res.status(404).json({ error: 'Segmento HLS Rolling não encontrado' });
+    });
+    
+  } catch (error) {
+    console.error('❌ [HLS] Erro na rota de segmento rolling:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// Status HLS Rolling
+app.get('/api/hls-rolling-status', async (req, res) => {
+  try {
+    console.log('📊 [HLS] Consultando status rolling');
+    
+    const status = await getHLSStatus('rolling');
+    res.json({
+      rolling: status
+    });
+    
+  } catch (error) {
+    console.error('❌ [HLS] Erro ao consultar status rolling:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
 // ========== F2 HLS GENERATION LOGIC ==========
 
 async function generateHLSJob(jobId, config) {
@@ -1534,14 +1626,23 @@ async function generateHLSJob(jobId, config) {
     
     await generateHLSFromFiles(tempFiles, outputDir, config);
     
-    // 5. Upload para Spaces
+    // 5. Upload para Spaces (com publicação atômica para rolling)
     await saveHLSStatus(jobId, {
       status: 'processing',
       progress: 80,
       message: 'Fazendo upload para Spaces'
     });
     
-    const targetPath = config.mode === 'rolling' ? 'generated/hls/rolling' : 'generated/hls/latest';
+    let targetPath;
+    if (config.mode === 'rolling') {
+      // F3: Publicação atômica - upload para tmp primeiro
+      targetPath = `generated/hls/tmp/${jobId}`;
+      console.log(`🎬 [HLS] Rolling mode: upload atômico para ${targetPath}`);
+    } else {
+      // F2: Upload direto para latest
+      targetPath = 'generated/hls/latest';
+    }
+    
     await uploadHLSToSpaces(outputDir, targetPath);
     
     // 6. Salvar manifesto
@@ -1560,13 +1661,26 @@ async function generateHLSJob(jobId, config) {
     
     await saveManifestToSpaces(manifest, `${targetPath}/manifest.json`);
     
+    // F3: Publicação atômica para rolling mode
+    if (config.mode === 'rolling') {
+      await saveHLSStatus(jobId, {
+        status: 'processing',
+        progress: 95,
+        message: 'Publicando atomicamente para rolling'
+      });
+      
+      console.log(`🎬 [HLS] Iniciando publicação atômica de tmp/${jobId} para rolling`);
+      await publishRollingHLS(jobId);
+    }
+    
     // 7. Status final
+    const finalTargetPath = config.mode === 'rolling' ? 'generated/hls/rolling' : targetPath;
     await saveHLSStatus(jobId, {
       status: 'completed',
       progress: 100,
       message: 'HLS gerado com sucesso',
       manifest: manifest,
-      playlistUrl: `/${targetPath.replace('generated/', '')}/index.m3u8`,
+      playlistUrl: `/${finalTargetPath.replace('generated/', '')}/index.m3u8`,
       endTime: new Date().toISOString()
     });
     
@@ -1780,6 +1894,82 @@ app.use((err, req, res, next) => {
     error: 'Erro interno do servidor'
   });
 });
+
+// ========== F3 ATOMIC PUBLISHING ==========
+
+async function publishRollingHLS(jobId) {
+  console.log(`🔄 [HLS] Publicação atômica: tmp/${jobId} → rolling`);
+  
+  const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
+  const spacesEndpoint = new AWS.Endpoint(process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com');
+  const s3 = new AWS.S3({
+    endpoint: spacesEndpoint,
+    accessKeyId: process.env.DO_SPACES_KEY,
+    secretAccessKey: process.env.DO_SPACES_SECRET,
+    region: process.env.DO_SPACES_REGION || 'nyc3'
+  });
+  
+  try {
+    // 1. Listar arquivos do tmp
+    const tmpPrefix = `generated/hls/tmp/${jobId}/`;
+    const tmpObjects = await s3.listObjectsV2({
+      Bucket: bucket,
+      Prefix: tmpPrefix
+    }).promise();
+    
+    if (!tmpObjects.Contents || tmpObjects.Contents.length === 0) {
+      throw new Error(`Nenhum arquivo encontrado em ${tmpPrefix}`);
+    }
+    
+    console.log(`📁 [HLS] Encontrados ${tmpObjects.Contents.length} arquivos para publicar`);
+    
+    // 2. Copiar arquivos de tmp para rolling (operação atômica)
+    const copyPromises = tmpObjects.Contents.map(async (obj) => {
+      const sourceKey = obj.Key;
+      const targetKey = sourceKey.replace(`generated/hls/tmp/${jobId}/`, 'generated/hls/rolling/');
+      
+      console.log(`📋 [HLS] Copiando: ${sourceKey} → ${targetKey}`);
+      
+      return s3.copyObject({
+        Bucket: bucket,
+        CopySource: `${bucket}/${sourceKey}`,
+        Key: targetKey,
+        MetadataDirective: 'COPY'
+      }).promise();
+    });
+    
+    await Promise.all(copyPromises);
+    console.log(`✅ [HLS] Publicação atômica concluída: ${copyPromises.length} arquivos`);
+    
+    // 3. Limpar diretório tmp
+    const deletePromises = tmpObjects.Contents.map(obj => ({
+      Key: obj.Key
+    }));
+    
+    if (deletePromises.length > 0) {
+      await s3.deleteObjects({
+        Bucket: bucket,
+        Delete: {
+          Objects: deletePromises
+        }
+      }).promise();
+      console.log(`🗑️ [HLS] Limpeza tmp concluída: ${deletePromises.length} arquivos removidos`);
+    }
+    
+    // 4. Salvar status rolling
+    await saveHLSStatus('rolling', {
+      status: 'published',
+      progress: 100,
+      message: 'HLS Rolling publicado com sucesso',
+      publishedFrom: jobId,
+      publishedAt: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error(`❌ [HLS] Erro na publicação atômica:`, error);
+    throw error;
+  }
+}
 
 // Start server
 const PORT = process.env.PORT || 8080;

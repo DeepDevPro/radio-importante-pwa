@@ -358,6 +358,9 @@
                             <button class="btn" onclick="generateHLS()" style="background: linear-gradient(135deg, #4caf50, #66bb6a); color: white; padding: 8px 20px; font-size: 14px;">
                                 ✅ Confirmar e Gerar HLS
                             </button>
+                            <button class="btn" onclick="generateHLSRolling()" style="background: linear-gradient(135deg, #ff9800, #ffa726); color: white; padding: 8px 20px; font-size: 14px; margin-left: 10px;">
+                                🔄 Gerar HLS Rolling
+                            </button>
                             <button class="btn" onclick="document.getElementById('hls-config').style.display='none'" style="background: #666; color: white; padding: 8px 15px; font-size: 14px; margin-left: 10px;">
                                 ❌ Cancelar
                             </button>
@@ -676,6 +679,142 @@
                 setTimeout(() => {
                     btn.disabled = false;
                     btn.textContent = '🎬 Gerar HLS (VOD)';
+                }, 3000);
+            }
+        }
+        
+        // Função para gerar HLS Rolling (F3)
+        async function generateHLSRolling() {
+            const btn = event.target;
+            const configEl = document.getElementById('hls-config');
+            const statusEl = document.getElementById('hls-status');
+            const progressText = document.getElementById('hls-progress-text');
+            const progressBar = document.getElementById('hls-progress-bar');
+            const resultEl = document.getElementById('hls-result');
+            const testLink = document.getElementById('hls-test-link');
+            const tracksInfo = document.getElementById('hls-tracks-info');
+            
+            try {
+                // Coletar configurações
+                const limit = parseInt(document.getElementById('hls-limit').value);
+                const bitrate = document.getElementById('hls-bitrate').value;
+                const segment = parseInt(document.getElementById('hls-segment').value);
+                const shuffle = document.getElementById('hls-shuffle').checked;
+                
+                // Desabilitar botão e mostrar status
+                btn.disabled = true;
+                btn.textContent = '🔄 Gerando Rolling...';
+                configEl.style.display = 'none';
+                statusEl.style.display = 'block';
+                resultEl.style.display = 'none';
+                
+                // Resetar progresso
+                progressBar.style.width = '0%';
+                progressText.textContent = 'Iniciando geração HLS Rolling (Publicação Atômica)...';
+                
+                // Configuração da API
+                const backendUrl = 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app';
+                const apiUrl = `${backendUrl}/api/generate-hls`;
+                
+                console.log('🔄 [HLS Rolling] Iniciando geração:', { limit, bitrate, segment, shuffle });
+                
+                // Chamada para gerar HLS Rolling
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        mode: 'rolling',  // F3: modo rolling
+                        limit: limit,
+                        bitrate: bitrate,
+                        segmentDuration: segment,
+                        shuffle: shuffle
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('🔄 [HLS Rolling] Job iniciado:', data);
+                
+                if (!data.jobId) {
+                    throw new Error('Job ID não retornado pela API');
+                }
+                
+                // Monitorar progresso usando endpoint rolling
+                const statusUrl = `${backendUrl}/api/hls-rolling-status`;
+                let attempts = 0;
+                const maxAttempts = 30; // 60 segundos (2s * 30)
+                
+                const checkStatus = async () => {
+                    attempts++;
+                    
+                    try {
+                        const statusResponse = await fetch(statusUrl);
+                        if (!statusResponse.ok) {
+                            throw new Error(`Status HTTP ${statusResponse.status}`);
+                        }
+                        
+                        const status = await statusResponse.json();
+                        console.log(`🔄 [HLS Rolling] Status check ${attempts}:`, status);
+                        
+                        // Atualizar progresso
+                        const progress = status.progress || 0;
+                        progressBar.style.width = `${progress}%`;
+                        progressText.textContent = status.message || `Processando... ${progress}%`;
+                        
+                        if (status.status === 'published') {
+                            // Sucesso - atualizar UI
+                            progressBar.style.width = '100%';
+                            progressText.textContent = '✅ HLS Rolling publicado com sucesso!';
+                            progressBar.style.background = '#4caf50';
+                            
+                            // Mostrar link para teste (rolling endpoint)
+                            const manifest = status.manifest || {};
+                            const tracks = manifest.tracks || [];
+                            const totalDuration = manifest.totalDuration || 0;
+                            
+                            testLink.href = `${backendUrl}/hls/rolling/index.m3u8`;
+                            tracksInfo.textContent = `${tracks.length} faixas, ${Math.round(totalDuration/60)}min total (Rolling)`;
+                            resultEl.style.display = 'block';
+                            
+                            console.log('✅ [HLS Rolling] Publicação concluída:', manifest);
+                            
+                        } else if (status.status === 'failed') {
+                            throw new Error(status.message || 'Falha na geração HLS Rolling');
+                            
+                        } else if (attempts >= maxAttempts) {
+                            throw new Error('Timeout: geração demorou mais que 60 segundos');
+                            
+                        } else {
+                            // Continuar verificando
+                            setTimeout(checkStatus, 2000);
+                        }
+                        
+                    } catch (error) {
+                        console.error('Erro ao verificar status rolling:', error);
+                        progressText.textContent = `Erro: ${error.message}`;
+                        progressBar.style.background = '#f44336';
+                    }
+                };
+                
+                // Iniciar verificação
+                setTimeout(checkStatus, 1000);
+                
+            } catch (error) {
+                console.error('Erro na geração HLS Rolling:', error);
+                progressText.textContent = `Erro: ${error.message}`;
+                progressBar.style.background = '#f44336';
+                progressBar.style.width = '100%';
+                
+            } finally {
+                // Reabilitar botão após 3 segundos
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.textContent = '🔄 Gerar HLS Rolling';
                 }, 3000);
             }
         }

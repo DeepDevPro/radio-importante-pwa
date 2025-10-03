@@ -189,10 +189,11 @@ Nota: `metadata-cache.json` ficará para uma subfase F1.1 (sem impacto no fluxo 
 
 ## F3 – Backend: HLS Rotativo (publicação atômica) – Opt-in
 
-- [ ] Estender `POST /api/generate-hls` para `mode:"rolling"` (VOD longo)
-- [ ] Gerar em `generated/hls/tmp/<jobId>/...` e, ao finalizar, publicar em `generated/hls/rolling/` (cópia/movimentação)
-- [ ] Salvar `generated/hls/rolling/manifest.json` e `generated/status/hls-rolling-status.json`
-- [ ] Implementar `GET /api/hls-rolling-status` e proxy `GET /hls/rolling/index.m3u8`
+- [x] Estender `POST /api/generate-hls` para `mode:"rolling"` (VOD longo)
+- [x] Gerar em `generated/hls/tmp/<jobId>/...` e, ao finalizar, publicar em `generated/hls/rolling/` (cópia/movimentação)
+- [x] Salvar `generated/hls/rolling/manifest.json` e `generated/status/hls-rolling-status.json`
+- [x] Implementar `GET /api/hls-rolling-status` e proxy `GET /hls/rolling/index.m3u8`
+- [x] Implementar função `publishRollingHLS()` para publicação atômica S3
 - [ ] Deploy staging
 - [ ] Teste iPhone PWA: reprodução estável via `/hls/rolling/index.m3u8`
 - [!] Aceite F3: publicação atômica; HLS rotativo disponível; sem afetar `latest/`
@@ -201,8 +202,9 @@ Nota: `metadata-cache.json` ficará para uma subfase F1.1 (sem impacto no fluxo 
 
 ## F3 – Frontend (Admin): Botão opcional "Gerar/Atualizar HLS Rotativo"
 
-- [ ] Adicionar botão (opcional) que chama `POST /api/generate-hls` com `{ mode:"rolling" }`
-- [ ] Feedback: iniciou job + link de status
+- [x] Adicionar botão (opcional) que chama `POST /api/generate-hls` com `{ mode:"rolling" }`
+- [x] Feedback: iniciou job + link de status
+- [x] Interface completa para HLS Rolling com monitoramento via `/api/hls-rolling-status`
 - [ ] Deploy staging e validar execução
 - [!] Aceite F3-Front: botão opera job rotativo sem mudar outras áreas
 
