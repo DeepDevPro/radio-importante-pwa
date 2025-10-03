@@ -1556,6 +1556,26 @@ async function generateHLSJob(jobId, config) {
       startTime: new Date().toISOString()
     });
     
+    // F3: Para rolling mode, salvar status também no endpoint rolling
+    if (config.mode === 'rolling') {
+      await saveHLSStatus('rolling', {
+        status: 'processing',
+        progress: 0,
+        message: 'Iniciando geração HLS Rolling',
+        jobId: jobId,
+        config: config,
+        startTime: new Date().toISOString()
+      });
+    }
+    
+    // Helper para atualizar status em ambos os lugares quando rolling
+    const updateHLSStatus = async (status) => {
+      await saveHLSStatus(jobId, status);
+      if (config.mode === 'rolling') {
+        await saveHLSStatus('rolling', { ...status, jobId: jobId });
+      }
+    };
+    
     // Importar ffmpeg dinamicamente
     const ffmpegStatic = require('ffmpeg-static');
     const ffmpeg = require('fluent-ffmpeg');
@@ -1585,7 +1605,7 @@ async function generateHLSJob(jobId, config) {
     console.log(`🎬 [HLS] Faixas selecionadas: ${selectedTracks.length}`);
     
     // 3. Baixar arquivos MP3 temporariamente
-    await saveHLSStatus(jobId, {
+    await updateHLSStatus({
       status: 'processing',
       progress: 20,
       message: `Baixando ${selectedTracks.length} faixas`
@@ -1829,7 +1849,12 @@ async function saveManifestToSpaces(manifest, key) {
 }
 
 async function saveHLSStatus(jobId, status) {
-  const key = `generated/status/hls-${jobId}.json`;
+  let key;
+  if (jobId === 'latest' || jobId === 'rolling') {
+    key = `generated/status/hls-${jobId}-status.json`;
+  } else {
+    key = `generated/status/hls-${jobId}.json`;
+  }
   
   const fullStatus = {
     jobId: jobId,
@@ -1839,6 +1864,7 @@ async function saveHLSStatus(jobId, status) {
   
   try {
     await saveManifestToSpaces(fullStatus, key);
+    console.log(`💾 [HLS] Status salvo: ${key}`);
   } catch (error) {
     console.error(`❌ [HLS] Erro ao salvar status ${jobId}:`, error);
   }
