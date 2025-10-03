@@ -1921,6 +1921,70 @@ async function generateHLSFromFiles(inputFiles, outputDir, config) {
       .audioCodec('aac')
       .audioBitrate(config.bitrate)
       .audioFrequency(44100)
+      .format('hls')
+      .outputOptions([
+        `-hls_time ${config.segment}`,
+        '-hls_list_size 0',
+        '-hls_segment_filename ' + path.join(outputDir, 'segment_%03d.ts')
+      ])
+      .output(path.join(outputDir, 'index.m3u8'))
+      .on('end', () => {
+        console.log('✅ [HLS] FFmpeg processamento concluído');
+        resolve();
+      })
+      .on('error', (err) => {
+        console.error('❌ [HLS] FFmpeg erro:', err);
+        reject(err);
+      })
+      .on('progress', (progress) => {
+        console.log(`🎬 [HLS] FFmpeg progresso: ${Math.round(progress.percent || 0)}%`);
+      })
+      .run();
+  });
+}
+
+async function uploadHLSToSpaces(localDir, targetPath) {
+  const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
+  const spacesEndpoint = new AWS.Endpoint(process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com');
+  const s3 = new AWS.S3({
+    endpoint: spacesEndpoint,
+    accessKeyId: process.env.DO_SPACES_KEY,
+    secretAccessKey: process.env.DO_SPACES_SECRET,
+    region: process.env.DO_SPACES_REGION || 'nyc3'
+  });
+  
+  const files = fs.readdirSync(localDir);
+  
+  for (const file of files) {
+    const localFile = path.join(localDir, file);
+    const key = `${targetPath}/${file}`;
+    
+    let contentType = 'application/octet-stream';
+    if (file.endsWith('.m3u8')) {
+      contentType = 'application/vnd.apple.mpegurl';
+    } else if (file.endsWith('.ts')) {
+      contentType = 'video/MP2T';
+    }
+    
+    const fileContent = fs.readFileSync(localFile);
+    
+    await s3.upload({
+      Bucket: bucket,
+      Key: key,
+      Body: fileContent,
+      ContentType: contentType,
+      ACL: 'public-read'
+    }).promise();
+    
+    console.log(`📤 [HLS] Upload: ${key}`);
+  }
+}
+
+async function saveManifestToSpaces(manifest, key) {
+  const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
+  const spacesEndpoint = new AWS.Endpoint(process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com');
+  const s3 = new AWS.S3({
+    endpoint: spacesEndpoint,
     accessKeyId: process.env.DO_SPACES_KEY,
     secretAccessKey: process.env.DO_SPACES_SECRET,
     region: process.env.DO_SPACES_REGION || 'nyc3'
