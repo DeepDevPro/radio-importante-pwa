@@ -47,16 +47,16 @@ backend/
 
 ## Ordem Cronológica das Etapas
 
-### ETAPA 0 – Preparação e Segurança
-- [ ] Confirmar branch ativa: `safepoint/pre-refactor-f3`
-- [ ] Criar branch de trabalho: `refactor/appjs-step1` (a partir de `safepoint/pre-refactor-f3`)
-- [ ] Verificar último commit hash de referência
-- [ ] Deploy staging (baseline) e validar endpoints principais:
-  - [ ] `/health`
-  - [ ] `/api/hls-rolling-status`
-  - [ ] `/hls/rolling/index.m3u8` (se existir)
-  - [ ] `/api/debug-logs`
-- [ ] Registrar baseline de tamanho atual de `app.js`
+### ETAPA 0 – Preparação e Segurança ✅
+- [x] Confirmar branch ativa: `safepoint/pre-refactor-f3`
+- [x] Criar branch de trabalho: `refactor/appjs-step1` (a partir de `safepoint/pre-refactor-f3`)
+- [x] Verificar último commit hash de referência: `36d5b51`
+- [x] Deploy staging (baseline) e validar endpoints principais:
+  - [x] `/health` → 200 OK
+  - [x] `/api/hls-rolling-status` → 200 OK
+  - [x] `/hls/rolling/index.m3u8` → 200 OK (playlist exists)
+  - [x] `/api/debug-logs` → 200 OK
+- [x] Registrar baseline de tamanho atual de `app.js`: **2386 linhas**
 
 Commit sugerido (após criação da branch):
 `chore(refactor): start app.js refactor plan baseline`
