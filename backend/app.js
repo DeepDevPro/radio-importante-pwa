@@ -1466,8 +1466,12 @@ app.get('/hls/rolling/index.m3u8', async (req, res) => {
       res.set({
         'Content-Type': 'application/vnd.apple.mpegurl',
         'Content-Length': spacesRes.headers['content-length'],
-        'Cache-Control': 'public, max-age=300',
-        'Access-Control-Allow-Origin': '*'
+        'Cache-Control': 'no-cache, no-store, must-revalidate', // Safari HLS otimizado
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Range',
+        'Accept-Ranges': 'bytes'
       });
       
       res.status(spacesRes.statusCode);
@@ -1506,8 +1510,10 @@ app.get('/hls/rolling/:segment', async (req, res) => {
       res.set({
         'Content-Type': 'video/MP2T',
         'Content-Length': spacesRes.headers['content-length'],
-        'Cache-Control': 'public, max-age=86400', // 24h cache para segmentos
-        'Access-Control-Allow-Origin': '*'
+        'Cache-Control': 'public, max-age=3600', // 1h cache para segmentos (não muda)
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Range',
+        'Accept-Ranges': 'bytes'
       });
       
       res.status(spacesRes.statusCode);
