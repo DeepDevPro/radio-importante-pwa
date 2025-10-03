@@ -1963,13 +1963,22 @@ async function publishRollingHLS(jobId) {
       
       console.log(`📋 [HLS] Copiando: ${sourceKey} → ${targetKey}`);
       
-      return s3.copyObject({
+      // Primeiro copia o arquivo
+      await s3.copyObject({
         Bucket: bucket,
         CopySource: `${bucket}/${sourceKey}`,
         Key: targetKey,
-        MetadataDirective: 'COPY',
+        MetadataDirective: 'COPY'
+      }).promise();
+      
+      // Depois aplica ACL público separadamente
+      await s3.putObjectAcl({
+        Bucket: bucket,
+        Key: targetKey,
         ACL: 'public-read'
       }).promise();
+      
+      console.log(`🔓 [HLS] ACL aplicado: ${targetKey}`);
     });
     
     await Promise.all(copyPromises);
