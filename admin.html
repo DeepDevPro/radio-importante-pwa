@@ -758,22 +758,24 @@
                             throw new Error(`Status HTTP ${statusResponse.status}`);
                         }
                         
-                        const status = await statusResponse.json();
-                        console.log(`🔄 [HLS Rolling] Status check ${attempts}:`, status);
+                        // A API retorna { rolling: {...} }, então descompactamos corretamente
+                        const apiStatus = await statusResponse.json();
+                        const rolling = apiStatus.rolling || apiStatus;
+                        console.log(`🔄 [HLS Rolling] Status check ${attempts}:`, apiStatus);
                         
-                        // Atualizar progresso
-                        const progress = status.progress || 0;
+                        // Atualizar progresso a partir de rolling
+                        const progress = (rolling.progress ?? 0);
                         progressBar.style.width = `${progress}%`;
-                        progressText.textContent = status.message || `Processando... ${progress}%`;
+                        progressText.textContent = rolling.message || `Processando... ${progress}%`;
                         
-                        if (status.status === 'published') {
+                        if (rolling.status === 'published') {
                             // Sucesso - atualizar UI
                             progressBar.style.width = '100%';
                             progressText.textContent = '✅ HLS Rolling publicado com sucesso!';
                             progressBar.style.background = '#4caf50';
                             
                             // Mostrar link para teste (rolling endpoint)
-                            const manifest = status.manifest || {};
+                            const manifest = rolling.manifest || {};
                             const tracks = manifest.tracks || [];
                             const totalDuration = manifest.totalDuration || 0;
                             
@@ -783,8 +785,8 @@
                             
                             console.log('✅ [HLS Rolling] Publicação concluída:', manifest);
                             
-                        } else if (status.status === 'failed') {
-                            throw new Error(status.message || 'Falha na geração HLS Rolling');
+                        } else if (rolling.status === 'failed') {
+                            throw new Error(rolling.message || 'Falha na geração HLS Rolling');
                             
                         } else if (attempts >= maxAttempts) {
                             throw new Error('Timeout: geração demorou mais que 60 segundos');
