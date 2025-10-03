@@ -1625,7 +1625,7 @@ async function generateHLSJob(jobId, config) {
       tempFiles.push(tempFile);
       
       const progress = 20 + (i / selectedTracks.length) * 20;
-      await saveHLSStatus(jobId, {
+      await updateHLSStatus({
         status: 'processing',
         progress: Math.round(progress),
         message: `Baixando: ${track.title || track.filename}`
@@ -1633,7 +1633,7 @@ async function generateHLSJob(jobId, config) {
     }
     
     // 4. Gerar HLS usando FFmpeg
-    await saveHLSStatus(jobId, {
+    await updateHLSStatus({
       status: 'processing',
       progress: 50,
       message: 'Processando áudio para HLS'
@@ -1647,7 +1647,7 @@ async function generateHLSJob(jobId, config) {
     await generateHLSFromFiles(tempFiles, outputDir, config);
     
     // 5. Upload para Spaces (com publicação atômica para rolling)
-    await saveHLSStatus(jobId, {
+    await updateHLSStatus({
       status: 'processing',
       progress: 80,
       message: 'Fazendo upload para Spaces'
@@ -1683,7 +1683,7 @@ async function generateHLSJob(jobId, config) {
     
     // F3: Publicação atômica para rolling mode
     if (config.mode === 'rolling') {
-      await saveHLSStatus(jobId, {
+      await updateHLSStatus({
         status: 'processing',
         progress: 95,
         message: 'Publicando atomicamente para rolling'
@@ -1695,7 +1695,7 @@ async function generateHLSJob(jobId, config) {
     
     // 7. Status final
     const finalTargetPath = config.mode === 'rolling' ? 'generated/hls/rolling' : targetPath;
-    await saveHLSStatus(jobId, {
+    await updateHLSStatus({
       status: 'completed',
       progress: 100,
       message: 'HLS gerado com sucesso',
@@ -1712,13 +1712,19 @@ async function generateHLSJob(jobId, config) {
   } catch (error) {
     console.error(`❌ [HLS] Job ${jobId} falhou:`, error);
     
-    await saveHLSStatus(jobId, {
+    // Para erro, salvar tanto no jobId quanto no rolling se aplicável
+    const errorStatus = {
       status: 'failed',
       progress: 0,
       message: `Erro: ${error.message}`,
       error: error.message,
       endTime: new Date().toISOString()
-    });
+    };
+    
+    await saveHLSStatus(jobId, errorStatus);
+    if (config.mode === 'rolling') {
+      await saveHLSStatus('rolling', { ...errorStatus, jobId: jobId });
+    }
   }
 }
 
