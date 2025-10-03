@@ -95,7 +95,17 @@
   </div>
 
   <div class="debug-section">
-    <h2>📋 Exportar Logs Completos</h2>
+    <h2>� HLS Rolling Debug</h2>
+    <button class="debug-button" onclick="testHLSRolling()">🎬 Testar HLS Rolling</button>
+    <button class="debug-button" onclick="checkHLSRollingStatus()">📊 Status Rolling</button>
+    <button class="debug-button" onclick="fetchBackendLogs()">📝 Logs do Backend</button>
+    <button class="debug-button" onclick="simulateSafariHLS()">🍎 Simular Safari HLS</button>
+    <button class="debug-button" onclick="copyLogs('hls-output')" style="background: #28a745;">📋 Copiar Logs</button>
+    <div id="hls-output" class="debug-output"></div>
+  </div>
+
+  <div class="debug-section">
+    <h2>�📋 Exportar Logs Completos</h2>
     <button class="debug-button" onclick="copyAllLogs()" style="background: #fd7e14; font-size: 16px; padding: 12px 24px;">📋 Copiar TODOS os Logs</button>
     <button class="debug-button" onclick="sendLogsToBackend()" style="background: #28a745; font-size: 16px; padding: 12px 24px;">📤 Enviar para Desenvolvedor</button>
     <button class="debug-button" onclick="clearAllLogs()" style="background: #dc3545;">🗑️ Limpar Todos</button>
@@ -932,6 +942,196 @@ Online: ${deviceInfo.onLine}
         setTimeout(() => {
           statusDiv.style.display = 'none';
         }, 8000);
+      }
+    }
+
+    // ========== FUNÇÕES HLS ROLLING DEBUG ==========
+    
+    async function testHLSRolling() {
+      log('hls-output', '🔄 Iniciando teste completo do HLS Rolling...', 'info');
+      
+      try {
+        const backendUrl = 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app';
+        
+        // 1. Verificar se já existe HLS Rolling
+        log('hls-output', '📋 Verificando playlist HLS Rolling existente...', 'info');
+        
+        const testResponse = await fetch(`${backendUrl}/hls/rolling/index.m3u8`, {
+          method: 'HEAD'
+        });
+        
+        if (testResponse.ok) {
+          log('hls-output', `✅ Playlist HLS Rolling encontrada (${testResponse.status})`, 'info');
+          log('hls-output', `📊 Content-Type: ${testResponse.headers.get('content-type')}`, 'info');
+          log('hls-output', `📏 Content-Length: ${testResponse.headers.get('content-length')} bytes`, 'info');
+          
+          // Testar primeiro segmento
+          log('hls-output', '🎬 Testando acesso ao primeiro segmento...', 'info');
+          const segmentResponse = await fetch(`${backendUrl}/hls/rolling/segment_000.ts`, {
+            method: 'HEAD'
+          });
+          
+          if (segmentResponse.ok) {
+            log('hls-output', `✅ Primeiro segmento acessível (${segmentResponse.status})`, 'info');
+          } else {
+            log('hls-output', `❌ Erro no primeiro segmento: ${segmentResponse.status}`, 'error');
+          }
+          
+        } else {
+          log('hls-output', `❌ Playlist HLS Rolling não encontrada (${testResponse.status})`, 'error');
+        }
+        
+        // 2. Testar timeout específico (17 segundos)
+        log('hls-output', '⏱️ Testando timeout em segment_003.ts...', 'info');
+        const startTime = Date.now();
+        
+        try {
+          const segment3Response = await fetch(`${backendUrl}/hls/rolling/segment_003.ts`, {
+            method: 'HEAD'
+          });
+          
+          const responseTime = Date.now() - startTime;
+          log('hls-output', `📊 Segment_003.ts: ${segment3Response.status} em ${responseTime}ms`, 'info');
+          
+          if (responseTime > 15000) {
+            log('hls-output', `⚠️ TIMEOUT DETECTADO! Segment_003 demorou ${responseTime}ms`, 'warn');
+          }
+          
+        } catch (error) {
+          const responseTime = Date.now() - startTime;
+          log('hls-output', `❌ ERRO em segment_003.ts após ${responseTime}ms: ${error.message}`, 'error');
+        }
+        
+      } catch (error) {
+        log('hls-output', `❌ Erro no teste HLS Rolling: ${error.message}`, 'error');
+      }
+    }
+    
+    async function checkHLSRollingStatus() {
+      log('hls-output', '📊 Verificando status do HLS Rolling...', 'info');
+      
+      try {
+        const backendUrl = 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app';
+        const response = await fetch(`${backendUrl}/api/hls-rolling-status`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const status = await response.json();
+        log('hls-output', `✅ Status obtido com sucesso`, 'info');
+        log('hls-output', `📋 Raw response: ${JSON.stringify(status, null, 2)}`, 'info');
+        
+        // Analisar status
+        const rolling = status.rolling || status;
+        log('hls-output', `🔄 Status: ${rolling.status || 'indefinido'}`, 'info');
+        log('hls-output', `📊 Progresso: ${rolling.progress || 0}%`, 'info');
+        log('hls-output', `💬 Mensagem: ${rolling.message || 'nenhuma'}`, 'info');
+        
+        if (rolling.manifest) {
+          const tracks = rolling.manifest.tracks || [];
+          const duration = rolling.manifest.totalDuration || 0;
+          log('hls-output', `🎵 Tracks: ${tracks.length}, Duração: ${Math.round(duration/60)}min`, 'info');
+        }
+        
+      } catch (error) {
+        log('hls-output', `❌ Erro ao verificar status: ${error.message}`, 'error');
+      }
+    }
+    
+    async function fetchBackendLogs() {
+      log('hls-output', '📝 Buscando logs do backend...', 'info');
+      
+      try {
+        const backendUrl = 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app';
+        const response = await fetch(`${backendUrl}/api/debug-logs`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        const logs = data.logs || [];
+        
+        log('hls-output', `📋 ${logs.length} logs encontrados no backend`, 'info');
+        
+        if (logs.length === 0) {
+          log('hls-output', '⚠️ Nenhum log no backend - sistema de logging pode não estar ativo', 'warn');
+          return;
+        }
+        
+        // Mostrar últimos 10 logs
+        const recentLogs = logs.slice(-10);
+        log('hls-output', '📝 Últimos logs do backend:', 'info');
+        
+        recentLogs.forEach((logEntry, index) => {
+          const timestamp = logEntry.timestamp || 'sem timestamp';
+          const message = logEntry.message || logEntry;
+          log('hls-output', `${index + 1}. [${timestamp}] ${message}`, 'info');
+        });
+        
+      } catch (error) {
+        log('hls-output', `❌ Erro ao buscar logs: ${error.message}`, 'error');
+      }
+    }
+    
+    async function simulateSafariHLS() {
+      log('hls-output', '🍎 Simulando comportamento do Safari com HLS...', 'info');
+      
+      try {
+        const backendUrl = 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app';
+        const safariUA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
+        
+        // Simular requisição do Safari
+        log('hls-output', '📱 Fazendo requisição com User-Agent do Safari...', 'info');
+        
+        const startTime = Date.now();
+        const response = await fetch(`${backendUrl}/hls/rolling/index.m3u8`, {
+          headers: {
+            'User-Agent': safariUA,
+            'Accept': 'application/vnd.apple.mpegurl, application/x-mpegURL, */*'
+          }
+        });
+        
+        const responseTime = Date.now() - startTime;
+        
+        if (response.ok) {
+          const content = await response.text();
+          log('hls-output', `✅ Playlist carregada em ${responseTime}ms`, 'info');
+          log('hls-output', `📏 Tamanho: ${content.length} caracteres`, 'info');
+          
+          // Mostrar primeiras linhas
+          const lines = content.split('\\n').slice(0, 5);
+          log('hls-output', `📋 Primeiras linhas: ${lines.join(' | ')}`, 'info');
+          
+          // Tentar simular timeout no segment_003
+          log('hls-output', '⏱️ Testando segment_003.ts com timeout de 17s...', 'info');
+          
+          const segmentStart = Date.now();
+          setTimeout(async () => {
+            try {
+              const segResponse = await fetch(`${backendUrl}/hls/rolling/segment_003.ts`, {
+                headers: {
+                  'User-Agent': safariUA,
+                  'Range': 'bytes=0-'
+                }
+              });
+              
+              const segTime = Date.now() - segmentStart;
+              log('hls-output', `📊 Segment_003 response: ${segResponse.status} em ${segTime}ms`, 'info');
+              
+            } catch (segError) {
+              const segTime = Date.now() - segmentStart;
+              log('hls-output', `❌ TIMEOUT em segment_003 após ${segTime}ms: ${segError.message}`, 'error');
+            }
+          }, 17000); // Aguardar 17 segundos como no erro real
+          
+        } else {
+          log('hls-output', `❌ Erro na playlist: ${response.status} em ${responseTime}ms`, 'error');
+        }
+        
+      } catch (error) {
+        log('hls-output', `❌ Erro na simulação Safari: ${error.message}`, 'error');
       }
     }
 
