@@ -1076,7 +1076,8 @@ Online: ${deviceInfo.onLine}
     }
     
     async function simulateSafariHLS() {
-      const output = 'hls-debug-output';
+      console.log('🔬 simulateSafariHLS() iniciado'); // Debug
+      const output = 'hls-output';
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
       const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
       
@@ -1105,9 +1106,7 @@ Online: ${deviceInfo.onLine}
         for (const segment of segmentTests) {
           const startTime = Date.now();
           try {
-            const response = await fetch(`/api/hls/rolling/${segment}?t=${Date.now()}`, {
-              signal: AbortController.prototype && new AbortController().signal
-            });
+            const response = await fetch(`/api/hls/rolling/${segment}?t=${Date.now()}`);
             const duration = Date.now() - startTime;
             
             if (response.ok) {
