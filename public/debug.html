@@ -1090,7 +1090,7 @@ Online: ${deviceInfo.onLine}
         log(output, '📋 1/4 - Testando playlist múltiplas vezes...');
         for (let i = 1; i <= 3; i++) {
           const startTime = Date.now();
-          const response = await fetch('/api/hls/rolling/index.m3u8?t=' + Date.now());
+          const response = await fetch('https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/api/hls/rolling/index.m3u8?t=' + Date.now());
           const duration = Date.now() - startTime;
           log(output, `📋 Tentativa ${i}: ${response.status} em ${duration}ms`);
           
@@ -1106,7 +1106,7 @@ Online: ${deviceInfo.onLine}
         for (const segment of segmentTests) {
           const startTime = Date.now();
           try {
-            const response = await fetch(`/api/hls/rolling/${segment}?t=${Date.now()}`);
+            const response = await fetch(`https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/api/hls/rolling/${segment}?t=${Date.now()}`);
             const duration = Date.now() - startTime;
             
             if (response.ok) {
@@ -1139,7 +1139,7 @@ Online: ${deviceInfo.onLine}
           audio.crossOrigin = 'anonymous';
         }
         
-        const hlsUrl = '/api/hls/rolling/index.m3u8';
+        const hlsUrl = 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/api/hls/rolling/index.m3u8';
         audio.src = hlsUrl;
         
         let timeoutReached = false;
