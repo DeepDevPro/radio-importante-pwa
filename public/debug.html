@@ -1076,62 +1076,171 @@ Online: ${deviceInfo.onLine}
     }
     
     async function simulateSafariHLS() {
-      log('hls-output', '🍎 Simulando comportamento do Safari com HLS...', 'info');
+      const output = 'hls-debug-output';
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+      
+      log(output, '🔬 === TESTE INTENSIVO HLS ROLLING (Safari Simulation) ===');
+      log(output, `📱 iOS: ${isIOS} | Safari: ${isSafari}`);
+      log(output, `🕐 ${new Date().toLocaleTimeString()} - Iniciando teste stress`);
       
       try {
-        const backendUrl = 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app';
-        const safariUA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
+        // 1. Teste de playlist múltiplas vezes
+        log(output, '📋 1/4 - Testando playlist múltiplas vezes...');
+        for (let i = 1; i <= 3; i++) {
+          const startTime = Date.now();
+          const response = await fetch('/api/hls/rolling/index.m3u8?t=' + Date.now());
+          const duration = Date.now() - startTime;
+          log(output, `📋 Tentativa ${i}: ${response.status} em ${duration}ms`);
+          
+          if (duration > 5000) {
+            log(output, `⚠️ Playlist lenta: ${duration}ms (>5s)`, 'warning');
+          }
+        }
         
-        // Simular requisição do Safari
-        log('hls-output', '📱 Fazendo requisição com User-Agent do Safari...', 'info');
+        // 2. Teste de segmentos em sequência (simular playback)
+        log(output, '🎬 2/4 - Testando segmentos em sequência...');
+        const segmentTests = ['segment_001.ts', 'segment_002.ts', 'segment_003.ts', 'segment_004.ts', 'segment_005.ts'];
         
-        const startTime = Date.now();
-        const response = await fetch(`${backendUrl}/hls/rolling/index.m3u8`, {
-          headers: {
-            'User-Agent': safariUA,
-            'Accept': 'application/vnd.apple.mpegurl, application/x-mpegURL, */*'
+        for (const segment of segmentTests) {
+          const startTime = Date.now();
+          try {
+            const response = await fetch(`/api/hls/rolling/${segment}?t=${Date.now()}`, {
+              signal: AbortController.prototype && new AbortController().signal
+            });
+            const duration = Date.now() - startTime;
+            
+            if (response.ok) {
+              const blob = await response.blob();
+              log(output, `✅ ${segment}: ${response.status} em ${duration}ms (${blob.size} bytes)`);
+              
+              if (duration > 10000) {
+                log(output, `� TIMEOUT DETECTADO em ${segment}: ${duration}ms`, 'error');
+              }
+            } else {
+              log(output, `❌ ${segment}: ${response.status} em ${duration}ms`, 'error');
+            }
+          } catch (error) {
+            const duration = Date.now() - startTime;
+            log(output, `� ${segment}: ERRO após ${duration}ms - ${error.message}`, 'error');
+          }
+          
+          // Pequena pausa entre segmentos (simular playback natural)
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+        
+        // 3. Teste de player HTML5 real
+        log(output, '🎵 3/4 - Testando player HTML5 com HLS Rolling...');
+        const audio = new Audio();
+        
+        // Configurar headers específicos do Safari
+        if (isSafari) {
+          log(output, '🍎 Aplicando configurações Safari');
+          audio.preload = 'none';
+          audio.crossOrigin = 'anonymous';
+        }
+        
+        const hlsUrl = '/api/hls/rolling/index.m3u8';
+        audio.src = hlsUrl;
+        
+        let timeoutReached = false;
+        let playerStartTime = Date.now();
+        
+        // Monitor de timeout específico para Safari
+        const timeoutMonitor = setTimeout(() => {
+          timeoutReached = true;
+          log(output, '🚨 TIMEOUT do player Safari aos 17s detectado!', 'error');
+          audio.pause();
+        }, 17000);
+        
+        audio.addEventListener('loadstart', () => {
+          log(output, '🔄 Player: Carregamento iniciado');
+        });
+        
+        audio.addEventListener('loadedmetadata', () => {
+          const elapsed = Date.now() - playerStartTime;
+          log(output, `✅ Player: Metadata carregada em ${elapsed}ms`);
+        });
+        
+        audio.addEventListener('canplay', () => {
+          const elapsed = Date.now() - playerStartTime;
+          log(output, `✅ Player: Pronto para tocar em ${elapsed}ms`);
+          
+          if (!timeoutReached) {
+            log(output, '▶️ Iniciando reprodução...');
+            audio.play().catch(e => {
+              log(output, `❌ Erro no play: ${e.message}`, 'error');
+            });
           }
         });
         
-        const responseTime = Date.now() - startTime;
-        
-        if (response.ok) {
-          const content = await response.text();
-          log('hls-output', `✅ Playlist carregada em ${responseTime}ms`, 'info');
-          log('hls-output', `📏 Tamanho: ${content.length} caracteres`, 'info');
-          
-          // Mostrar primeiras linhas
-          const lines = content.split('\\n').slice(0, 5);
-          log('hls-output', `📋 Primeiras linhas: ${lines.join(' | ')}`, 'info');
-          
-          // Tentar simular timeout no segment_003
-          log('hls-output', '⏱️ Testando segment_003.ts com timeout de 17s...', 'info');
-          
-          const segmentStart = Date.now();
-          setTimeout(async () => {
-            try {
-              const segResponse = await fetch(`${backendUrl}/hls/rolling/segment_003.ts`, {
-                headers: {
-                  'User-Agent': safariUA,
-                  'Range': 'bytes=0-'
-                }
-              });
-              
-              const segTime = Date.now() - segmentStart;
-              log('hls-output', `📊 Segment_003 response: ${segResponse.status} em ${segTime}ms`, 'info');
-              
-            } catch (segError) {
-              const segTime = Date.now() - segmentStart;
-              log('hls-output', `❌ TIMEOUT em segment_003 após ${segTime}ms: ${segError.message}`, 'error');
+        audio.addEventListener('timeupdate', () => {
+          if (audio.currentTime > 0) {
+            const elapsed = Date.now() - playerStartTime;
+            log(output, `⏰ Reproduzindo: ${audio.currentTime.toFixed(1)}s (${elapsed}ms decorridos)`);
+            
+            // Parar após alguns segundos ou se timeout
+            if (audio.currentTime > 20 || timeoutReached) {
+              clearTimeout(timeoutMonitor);
+              audio.pause();
+              log(output, '⏹️ Teste de reprodução finalizado');
             }
-          }, 17000); // Aguardar 17 segundos como no erro real
+          }
+        });
+        
+        audio.addEventListener('error', () => {
+          clearTimeout(timeoutMonitor);
+          const elapsed = Date.now() - playerStartTime;
+          const error = audio.error;
+          log(output, `💥 ERRO no player após ${elapsed}ms: ${error.code} - ${error.message}`, 'error');
+        });
+        
+        audio.addEventListener('stalled', () => {
+          const elapsed = Date.now() - playerStartTime;
+          log(output, `⚠️ Player STALLED após ${elapsed}ms`, 'warning');
+        });
+        
+        audio.addEventListener('waiting', () => {
+          const elapsed = Date.now() - playerStartTime;
+          log(output, `⏳ Player WAITING após ${elapsed}ms`, 'warning');
+        });
+        
+        // 4. Aguardar teste completar ou timeout
+        log(output, '⏰ 4/4 - Aguardando conclusão do teste (max 25s)...');
+        await new Promise(resolve => {
+          const maxTestTime = setTimeout(() => {
+            clearTimeout(timeoutMonitor);
+            audio.pause();
+            log(output, '🏁 Teste finalizado por timeout máximo');
+            resolve();
+          }, 25000);
           
-        } else {
-          log('hls-output', `❌ Erro na playlist: ${response.status} em ${responseTime}ms`, 'error');
-        }
+          audio.addEventListener('ended', () => {
+            clearTimeout(maxTestTime);
+            clearTimeout(timeoutMonitor);
+            log(output, '🏁 Teste finalizado - audio ended');
+            resolve();
+          });
+          
+          audio.addEventListener('error', () => {
+            clearTimeout(maxTestTime);
+            clearTimeout(timeoutMonitor);
+            resolve();
+          });
+        });
+        
+        log(output, '✅ Teste intensivo Safari HLS Rolling concluído');
         
       } catch (error) {
-        log('hls-output', `❌ Erro na simulação Safari: ${error.message}`, 'error');
+        log(output, `❌ ERRO no teste intensivo: ${error.message}`, 'error');
+      }
+    }
+
+    function clearLogs(outputId = 'hls-debug-output') {
+      const output = document.getElementById(outputId);
+      if (output) {
+        output.innerHTML = '';
+        log(outputId, '🗑️ Logs limpos', 'info');
       }
     }
 
