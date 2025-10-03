@@ -61,11 +61,11 @@ backend/
 Commit sugerido (após criação da branch):
 `chore(refactor): start app.js refactor plan baseline`
 
-### ETAPA 1 – Scaffold de Diretórios e README
-- [ ] Criar diretórios: `routes/`, `services/`, `utils/`, `state/`, `middleware/`
-- [ ] Criar arquivo `backend/REFATORACAO_README.md` explicando a estrutura (curto)
-- [ ] Garantir que `app.js` permanece inalterado (apenas novos diretórios)
-- [ ] Deploy staging (sem mudanças funcionais) para confirmar integridade
+### ETAPA 1 – Scaffold de Diretórios e README ✅
+- [x] Criar diretórios: `routes/`, `services/`, `utils/`, `state/`, `middleware/`
+- [x] Criar arquivo `backend/REFATORACAO_README.md` explicando a estrutura (curto)
+- [x] Garantir que `app.js` permanece inalterado (apenas novos diretórios)
+- [x] Deploy staging (sem mudanças funcionais) para confirmar integridade
 
 Commit sugerido:
 `refactor(step1): scaffold backend modular folders (no functional changes)`

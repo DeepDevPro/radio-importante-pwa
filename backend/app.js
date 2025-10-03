@@ -24,28 +24,17 @@ try {
 
 const app = express();
 
+// Import middlewares
+const corsMiddleware = require('./middleware/cors');
+const errorHandler = require('./middleware/errorHandler');
+const notFoundHandler = require('./middleware/notFound');
+
 // Configuração básica
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// CORS para desenvolvimento
-app.use((req, res, next) => {
-  const corsOrigins = process.env.CORS_ORIGINS || 'https://radio.importantestudio.com';
-  const allowedOrigins = corsOrigins.split(',').map(origin => origin.trim());
-  const requestOrigin = req.headers.origin;
-  
-  if (allowedOrigins.includes(requestOrigin)) {
-    res.header('Access-Control-Allow-Origin', requestOrigin);
-  }
-  
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
-  next();
-});
+// CORS middleware
+app.use(corsMiddleware);
 
 // Health check endpoints
 app.get('/', (req, res) => {
@@ -2249,20 +2238,10 @@ async function getHLSStatus(jobIdOrMode) {
 // ===========================================================
 
 // 404 Handler
-app.use('*', (req, res) => {
-  res.status(404).json({ 
-    error: 'Endpoint não encontrado',
-    path: req.originalUrl
-  });
-});
+app.use('*', notFoundHandler);
 
 // Error Handler
-app.use((err, req, res, next) => {
-  console.error('Error:', err);
-  res.status(500).json({ 
-    error: 'Erro interno do servidor'
-  });
-});
+app.use(errorHandler);
 
 // ========== F3 ATOMIC PUBLISHING ==========
 
