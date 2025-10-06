@@ -1,9 +1,27 @@
 // HLS Capabilities and Generation Routes
-// R3: Bootstrap FFmpeg + Endpoint Unificado (Capacidade + Simulate)
+// R3: Bootstrap FFmpeg + Endpoint Unificado (Versão Simplificada)
 
 const express = require('express');
 const router = express.Router();
 const { saveAutoLog } = require('../state/hlsState');
+const https = require('https');
+
+/**
+ * Simple HEAD check for URL existence
+ */
+function headCheck(url) {
+  return new Promise((resolve) => {
+    const request = https.request(url, { method: 'HEAD' }, (response) => {
+      resolve(response.statusCode === 200);
+    });
+    request.on('error', () => resolve(false));
+    request.setTimeout(3000, () => {
+      request.destroy();
+      resolve(false);
+    });
+    request.end();
+  });
+}
 
 /**
  * GET /capabilities
@@ -13,12 +31,23 @@ router.get('/capabilities', async (req, res) => {
   const startTime = Date.now();
   
   try {
-    // Basic capability detection without external modules for now
+    // Basic capability detection without external modules
+    let hasFfmpeg = false;
+    let ffmpegPath = null;
+    
+    try {
+      const ffmpegStatic = require('ffmpeg-static');
+      hasFfmpeg = true;
+      ffmpegPath = ffmpegStatic;
+    } catch (e) {
+      // ffmpeg-static not available
+    }
+    
     const capability = {
-      hasFfmpegStatic: false,
-      ffmpegPath: null,
-      canSpawn: false,
-      error: 'ffmpeg-static not yet integrated'
+      hasFfmpegStatic: hasFfmpeg,
+      ffmpegPath: ffmpegPath,
+      canSpawn: false, // Will test spawn separately later
+      error: hasFfmpeg ? null : 'ffmpeg-static not available'
     };
     
     const durationMs = Date.now() - startTime;
@@ -71,22 +100,35 @@ router.post('/generate-hls', async (req, res) => {
       });
     }
 
-    // Basic capability (hardcoded for now)
+    // Simple capability check
+    let hasFfmpeg = false;
+    try {
+      require('ffmpeg-static');
+      hasFfmpeg = true;
+    } catch (e) {
+      // Not available
+    }
+    
     const capability = {
-      hasFfmpegStatic: false,
-      ffmpegPath: null,
-      canSpawn: false,
-      error: 'ffmpeg-static not yet integrated'
+      hasFfmpegStatic: hasFfmpeg,
+      canSpawn: false, // Conservative for now
+      ffmpegPath: hasFfmpeg ? 'available' : null
     };
     
     // Auto-determine simulate mode if not specified
     const shouldSimulate = simulate !== undefined ? simulate : !capability.canSpawn;
 
-    // Basic scan (hardcoded for now)
-    const detected = {
-      playlistExists: true, // assume exists from previous generation
-      firstSegmentExists: true
-    };
+    // Quick scan of Spaces
+    const bucketUrl = `https://${process.env.DO_SPACES_BUCKET}.${process.env.DO_SPACES_ENDPOINT}`;
+    const playlistUrl = `${bucketUrl}/generated/hls/${mode}/index.m3u8`;
+    const segmentUrl = `${bucketUrl}/generated/hls/${mode}/segment_000.ts`;
+    
+    const [playlistExists, firstSegmentExists] = await Promise.all([
+      headCheck(playlistUrl),
+      headCheck(segmentUrl)
+    ]);
+    
+    const detected = { playlistExists, firstSegmentExists };
 
     let action;
     if (shouldSimulate) {
