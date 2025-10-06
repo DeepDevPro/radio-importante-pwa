@@ -64,6 +64,10 @@ app.get('/health', (req, res) => {
 // Etapa 4.1: Rotas de debug logs extraídas para routes/debugLogs.routes.js
 app.use('/', require('./routes/debugLogs.routes'));
 
+// ========== HLS PROXY ROUTES ==========
+// R1: Rotas de proxy para HLS (latest e rolling)
+app.use('/', require('./routes/hlsProxy.routes'));
+
 // Rota para servir track-cues.json (necessário para iPhone PWA)
 app.get('/audio/hls/track-cues.json', async (req, res) => {
   try {
