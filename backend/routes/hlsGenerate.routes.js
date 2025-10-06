@@ -232,20 +232,8 @@ router.post('/generate-hls', async (req, res) => {
       });
     }
 
-    // Simple capability check
-    let hasFfmpeg = false;
-    try {
-      require('ffmpeg-static');
-      hasFfmpeg = true;
-    } catch (e) {
-      // Not available
-    }
-    
-    const capability = {
-      hasFfmpegStatic: hasFfmpeg,
-      canSpawn: false, // Conservative for now
-      ffmpegPath: hasFfmpeg ? 'available' : null
-    };
+    // Simple capability check with real detection
+    const capability = await detectCapability();
     
     // Auto-determine simulate mode if not specified
     const shouldSimulate = simulate !== undefined ? simulate : !capability.canSpawn;
@@ -263,8 +251,17 @@ router.post('/generate-hls', async (req, res) => {
     const detected = { playlistExists, firstSegmentExists };
 
     let action;
+    let segmentCount = 0;
+    let transcodeFallback = false;
+    let downloadCount = 0;
+    let errorSummary = null;
+    let downloadDurationMs = 0;
+    let ffmpegDurationMs = 0;
+    let uploadDurationMs = 0;
+    let totalDurationApprox = 0;
+
     if (shouldSimulate) {
-      // Simulate mode logic
+      // Simulate mode logic (R4-11 fallback)
       if (detected.playlistExists) {
         action = 'reused';
       } else if (detected.firstSegmentExists) {
@@ -272,17 +269,94 @@ router.post('/generate-hls', async (req, res) => {
       } else {
         action = 'empty';
       }
+    } else if (capability.canSpawn && mode === 'latest') {
+      // R4-9: Execute real pipeline
+      let workspaceDir = null;
+      try {
+        await saveAutoLog(`Starting real HLS generation for ${mode}`, 'HLS_GEN');
+
+        // Phase 1: Create workspace
+        const workspaceResult = await createTempWorkspace();
+        if (!workspaceResult.success) {
+          throw new Error(`Workspace creation failed: ${workspaceResult.error}`);
+        }
+        workspaceDir = workspaceResult.workspaceDir;
+
+        // Phase 2: Download tracks (default 3 tracks for main endpoint)
+        const downloadResult = await downloadTrackList(workspaceDir, 3);
+        if (!downloadResult.success) {
+          throw new Error(`Download failed: ${downloadResult.error}`);
+        }
+        downloadCount = downloadResult.downloadedTracks.length;
+        downloadDurationMs = downloadResult.downloadDurationMs;
+
+        // Phase 3: Generate HLS VOD with upload
+        const vodResult = await generateVodLatest(workspaceDir, downloadResult.downloadedTracks, {
+          forceTranscode: true, // Default to transcode for compatibility
+          uploadToSpaces: true, // Always upload in production
+          ffmpegPath: capability.ffmpegPath
+        });
+
+        if (!vodResult.success) {
+          throw new Error(`VOD generation failed: ${vodResult.error}`);
+        }
+
+        action = 'generated';
+        segmentCount = vodResult.segmentCount;
+        totalDurationApprox = vodResult.totalDurationApprox;
+        transcodeFallback = vodResult.transcodeFallback;
+        ffmpegDurationMs = vodResult.ffmpegDurationMs;
+        uploadDurationMs = vodResult.uploadDurationMs || 0;
+
+        // Cleanup workspace on success
+        await cleanupTempWorkspace(workspaceDir);
+        workspaceDir = null;
+
+        await saveAutoLog(`Real HLS generation successful: ${segmentCount} segments, ${Math.round(totalDurationApprox)}s`, 'HLS_GEN');
+
+      } catch (error) {
+        // R4-11: Fallback to simulate on error (no 500)
+        action = 'generation_failed';
+        errorSummary = error.message.split('\n')[0]; // First line only
+        
+        // Cleanup workspace on failure
+        if (workspaceDir) {
+          try {
+            await cleanupTempWorkspace(workspaceDir);
+          } catch (cleanupError) {
+            // Log but don't fail
+            await saveAutoLog(`Workspace cleanup failed: ${cleanupError.message}`, 'HLS_GEN');
+          }
+        }
+
+        await saveAutoLog(`Real HLS generation failed, falling back to simulate: ${errorSummary}`, 'HLS_GEN');
+      }
     } else {
-      // Real generation capability available
+      // Real generation not available or mode not supported
       action = 'ready_for_real_generation';
     }
 
     const durationMs = Date.now() - startTime;
 
-    // Log generation attempt
-    await saveAutoLog(`Generate ${mode}: ${action} (simulate:${shouldSimulate})`, 'HLS_GEN');
+    // R4-10: Log generation with metrics
+    const logMetrics = {
+      segmentCount,
+      totalDurationApprox: Math.round(totalDurationApprox),
+      ffmpegDurationMs,
+      uploadDurationMs,
+      downloadDurationMs,
+      transcodeFallback,
+      downloadCount
+    };
+    
+    if (action === 'generated') {
+      await saveAutoLog(`Generate ${mode}: ${action} - ${logMetrics.segmentCount} segments, ${logMetrics.totalDurationApprox}s in ${durationMs}ms`, 'HLS_GEN');
+    } else {
+      await saveAutoLog(`Generate ${mode}: ${action} (simulate:${shouldSimulate})`, 'HLS_GEN');
+    }
 
-    res.json({
+    // Build response with all available metrics
+    const response = {
       success: true,
       mode,
       simulate: shouldSimulate,
@@ -290,17 +364,40 @@ router.post('/generate-hls', async (req, res) => {
       action,
       detected,
       durationMs
-    });
+    };
+
+    // Add metrics for real generation
+    if (action === 'generated') {
+      response.segmentCount = segmentCount;
+      response.totalDurationApprox = Math.round(totalDurationApprox);
+      response.downloadCount = downloadCount;
+      response.transcodeFallback = transcodeFallback;
+      response.downloadDurationMs = downloadDurationMs;
+      response.ffmpegDurationMs = ffmpegDurationMs;
+      response.uploadDurationMs = uploadDurationMs;
+    }
+
+    // Add error summary for failed generation
+    if (action === 'generation_failed') {
+      response.errorSummary = errorSummary;
+    }
+
+    res.json(response);
 
   } catch (error) {
     const durationMs = Date.now() - startTime;
     
     await saveAutoLog(`Generate error ${mode}: ${error.message}`, 'HLS_GEN');
 
-    res.status(500).json({
-      success: false,
+    // R4-11: Never return 500, always fallback gracefully
+    res.json({
+      success: true, // Keep success true for UI compatibility
       mode,
-      error: error.message,
+      simulate: true, // Force simulate on error
+      capability: { canSpawn: false, error: error.message },
+      action: 'generation_failed',
+      detected: { playlistExists: false, firstSegmentExists: false },
+      errorSummary: error.message.split('\n')[0],
       durationMs
     });
   }
