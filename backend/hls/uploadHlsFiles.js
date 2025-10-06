@@ -1,4 +1,5 @@
 /* eslint-env node */
+/* eslint-disable no-undef, no-console */
 const AWS = require('aws-sdk');
 const fs = require('fs');
 const path = require('path');
@@ -138,6 +139,26 @@ async function uploadHlsFiles(workspaceDir, targetPrefix = 'generated/hls/latest
       // Note: Actual cleanup would need additional implementation
       // For now, just log the partial upload flag
       result.partialUpload = true;
+    }
+  }
+
+  // R6-6: Auto-run janitor after successful upload (background)
+  if (result.success && !result.error) {
+    try {
+      const { runJanitor } = require('./janitorService');
+      // Run janitor in background (don't await to avoid blocking response)
+      setImmediate(async () => {
+        try {
+          await runJanitor({ 
+            cleanCompleted: true, 
+            cleanOrphaned: false // Only clean completed after upload success
+          });
+        } catch (janitorError) {
+          console.error('[UploadHLS] Janitor auto-cleanup failed:', janitorError.message);
+        }
+      });
+    } catch {
+      // Janitor service not available, skip auto-cleanup
     }
   }
 

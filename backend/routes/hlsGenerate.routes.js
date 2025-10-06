@@ -828,4 +828,70 @@ router.get('/rollback-info/:mode', async (req, res) => {
   }
 });
 
+// R6-6: Janitor Endpoints
+const { runJanitor, getJanitorStatus } = require('../hls/janitorService');
+
+/**
+ * POST /janitor
+ * R6-6: Run intelligent janitor cleanup
+ */
+router.post('/janitor', async (req, res) => {
+  const startTime = Date.now();
+  const { dryRun = false, cleanCompleted = true, cleanOrphaned = true } = req.body;
+  
+  try {
+    await saveAutoLog(`[Janitor] Manual cleanup request (dryRun: ${dryRun})`, 'HLS_GEN');
+    
+    const result = await runJanitor({
+      dryRun,
+      cleanCompleted,
+      cleanOrphaned
+    });
+    
+    const response = {
+      success: !result.error,
+      ...result,
+      durationMs: Date.now() - startTime
+    };
+    
+    res.json(response);
+    
+  } catch (error) {
+    await saveAutoLog(`[Janitor] Manual cleanup error: ${error.message}`, 'HLS_GEN');
+    
+    res.json({
+      success: false,
+      error: error.message,
+      durationMs: Date.now() - startTime
+    });
+  }
+});
+
+/**
+ * GET /janitor/status
+ * R6-6: Get janitor status and metrics
+ */
+router.get('/janitor/status', async (req, res) => {
+  const startTime = Date.now();
+  
+  try {
+    const status = await getJanitorStatus();
+    
+    const response = {
+      success: !status.error,
+      status,
+      durationMs: Date.now() - startTime
+    };
+    
+    res.json(response);
+    
+  } catch (error) {
+    res.json({
+      success: false,
+      error: error.message,
+      durationMs: Date.now() - startTime
+    });
+  }
+});
+
 module.exports = router;
