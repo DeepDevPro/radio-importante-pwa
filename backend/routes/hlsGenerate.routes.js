@@ -685,7 +685,7 @@ router.get('/:mode/diagnostics', async (req, res) => {
 
     // Build Spaces URL
     const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
-    const endpoint = process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com';
+    const endpoint = process.env.DO_SPACES_ENDPOINT || 'atl1.digitaloceanspaces.com';
     const spacesUrl = `https://${bucket}.${endpoint}`;
 
     // Execute diagnostics

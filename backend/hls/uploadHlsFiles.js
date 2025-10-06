@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Configure Digital Ocean Spaces (reusing existing config pattern)
-const spacesEndpoint = new AWS.Endpoint(process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com');
+const spacesEndpoint = new AWS.Endpoint(process.env.DO_SPACES_ENDPOINT || 'atl1.digitaloceanspaces.com');
 const s3 = new AWS.S3({
   endpoint: spacesEndpoint,
   accessKeyId: process.env.DO_SPACES_KEY,

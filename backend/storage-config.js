@@ -3,7 +3,7 @@ const AWS = require('aws-sdk');
 const multerS3 = require('multer-s3');
 
 // Configure Digital Ocean Spaces (S3-compatible)
-const spacesEndpoint = new AWS.Endpoint(process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com');
+const spacesEndpoint = new AWS.Endpoint(process.env.DO_SPACES_ENDPOINT || 'atl1.digitaloceanspaces.com');
 const s3 = new AWS.S3({
   endpoint: spacesEndpoint,
   accessKeyId: process.env.DO_SPACES_KEY,
