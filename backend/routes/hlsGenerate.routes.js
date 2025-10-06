@@ -1,9 +1,10 @@
 // HLS Capabilities and Generation Routes
-// R3: Bootstrap FFmpeg + Endpoint Unificado (Versão Simplificada)
+// R4-1: Enhanced capability detection with real spawn test
 
 const express = require('express');
 const router = express.Router();
 const { saveAutoLog } = require('../state/hlsState');
+const { detectCapability } = require('../hls/ffmpegCapability');
 const https = require('https');
 
 /**
@@ -25,24 +26,19 @@ function headCheck(url) {
 
 /**
  * GET /capabilities
- * Reports current FFmpeg capability status
+ * Reports current FFmpeg capability status with real spawn test
  */
 router.get('/capabilities', async (req, res) => {
   const startTime = Date.now();
   
   try {
-    // Very basic capability detection without any external requires
-    const capability = {
-      hasFfmpegStatic: false,
-      ffmpegPath: null,
-      canSpawn: false,
-      error: 'Capability detection not implemented yet'
-    };
+    // Real capability detection with spawn test
+    const capability = await detectCapability();
     
     const durationMs = Date.now() - startTime;
 
-    // Log capability check
-    await saveAutoLog(`Capability check: ${JSON.stringify(capability)}`, 'HLS_GEN');
+    // Log capability check with detailed info
+    await saveAutoLog(`Capability check: canSpawn=${capability.canSpawn}, version=${capability.ffmpegVersion}, latency=${capability.spawnLatencyMs}ms`, 'HLS_GEN');
 
     res.json({
       success: true,
@@ -55,9 +51,16 @@ router.get('/capabilities', async (req, res) => {
     
     await saveAutoLog(`Capability error: ${error.message}`, 'HLS_GEN');
 
-    res.status(500).json({
-      success: false,
-      error: error.message,
+    res.json({
+      success: true,
+      capability: {
+        hasFfmpegStatic: false,
+        ffmpegPath: null,
+        canSpawn: false,
+        ffmpegVersion: null,
+        spawnLatencyMs: null,
+        error: error.message
+      },
       durationMs
     });
   }
