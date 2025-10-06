@@ -207,7 +207,7 @@ df -h /tmp
 - [x] (R6-3) **Diagnostics Real + Thresholds**: Implementar diagnostics real (substituir debug endpoints por análise completa HLS com HEAD requests, parsing de playlists, e métricas de performance). WARN se `segmentCount < 3` ou `totalDurationApprox < 12s`; WARN se `ffmpegDurationMs >= 90000`; fallback simulate se `ffmpegDurationMs >= 150000`. Base: atual smoke test + análise real de segments no Spaces.
 - [x] (R6-4) **Rollback Snapshot**: antes de publicar nova `latest/index.m3u8` salvar `index.prev.m3u8` + doc de restauração + (opcional) endpoint `/api/hls/rollback-latest`. Registrar baseline storage atual antes do janitor. Critério: preservar playlist funcional anterior.
 - [x] (R6-5) **Validação Cadeia Fallback**: forçar falha geração (simulada) e confirmar reprodução MP3 + IOSPWAStrategy intacta; testar rollback automático em cenário de falha; registrar resultado no RUN-LOG. Validar isolação completa entre HLS e fallback MP3.
-- [ ] (R6-6) **Janitor `/tmp/hls-work/*` Inteligente**: remover diretórios concluídos após sucesso; varrer >24h órfãos e deletar (log `HLS_GEN` tipo `janitor`). Métricas: total freed bytes + count removidos. Critério: registrar baseline storage antes cleanup.
+- [x] (R6-6) **Janitor `/tmp/hls-work/*` Inteligente**: remover diretórios concluídos após sucesso; varrer >24h órfãos e deletar (log `HLS_GEN` tipo `janitor`). Métricas: total freed bytes + count removidos. Critério: registrar baseline storage antes cleanup.
 - [ ] (R6-7) **Estabilidade 24h + Smoke Automation**: executar smoke em intervalo (sugestão: 30min) por 24h agregando: total runs, passes, falhas 500, p95 diagnostics; gerar sumário final (JSON + markdown). Critério: <5% falhas em 48 execuções.
 - [ ] (R6-8) **Playback Rolling iPhone + Métricas**: validar lockscreen/background sem stall (~17s); registrar métricas (tFirstAudio, stallCount, longestGap, continuity ok). Correlacionar com dados de diagnostics para otimização específica iOS.
 - [ ] (R6-9) **Debug UI Integration**: (Opcional) Expor JSON curto `GET /api/hls/last-diagnostics` + `GET /api/hls/last-hypothesis` para Admin/Debug UI. Usar snapshot em memória + TTL para evitar locks. Dependência: R6-3 diagnostics real.
@@ -269,7 +269,7 @@ FASE 1 - FOUNDATION:
 
 FASE 2 - PARALLEL TASKS (após R6-3):
 ✅ R6-4: Rollback snapshot (CONCLUÍDO - sistema ativo e funcional)
-🔄 R6-6: Janitor inteligente (independente, registrar baseline)
+✅ R6-6: Janitor inteligente (CONCLUÍDO - auto-cleanup funcional)
 
 FASE 3 - INTEGRATION:
 ✅ R6-5: Validação fallback (CONCLUÍDO - isolação HLS/MP3 confirmada)
