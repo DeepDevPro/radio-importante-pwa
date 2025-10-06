@@ -257,3 +257,127 @@ GET /api/hls/capabilities → HTTP 200
 **Próximo:** R4-2 (diretório temporário e workspace preparation)
 
 ---
+
+## R6-BASELINE-STORAGE (06/10/2025 - Pré R6-3)
+
+### Baseline Storage Atual ✅
+**Data/Hora:** 06/10/2025 18:53 UTC  
+**Branch:** staging  
+**Comando:** `du -sh /tmp/hls-work/* 2>/dev/null || echo "No temp directories found"`
+
+**Resultado:**
+```bash
+No temp directories found
+```
+
+**Espaço disponível /tmp:**
+```bash
+Filesystem      Size    Used   Avail Capacity iused ifree %iused  Mounted on
+/dev/disk3s1   228Gi   182Gi    12Gi    94%    1.9M  128M    1%   /System/Volumes/Data
+```
+
+**Análise:**
+- Diretórios temporários HLS: 0 bytes (limpo)
+- Espaço disponível: 12Gi (suficiente para operação)
+- Capacidade: 94% (monitorar durante janitor)
+
+**Gate R6-3:** Baseline registrado ✅ - Prosseguir com Diagnostics Real
+
+---
+
+## R6-3 - Diagnostics Real + Thresholds (06/10/2025)
+
+### R6-3 Implementação Diagnostics Real 🔄
+**Objetivo:** Substituir debug endpoints por análise completa HLS com HEAD requests, parsing de playlists, e métricas de performance.
+**Base:** Atual smoke test + análise real de segments no Spaces.
+
+### R6-3-1: Diagnostics Real Implementation ✅
+**Commit:** 4043317 - feat(hls): implement real diagnostics with thresholds (R6-3)  
+**Deploy:** 06/10/2025 19:12 UTC (DigitalOcean auto-deploy)  
+
+**Implementado:**
+- ✅ Substituído debug endpoints por análise completa HLS
+- ✅ Integração com módulo `hlsDiagnostics` existente
+- ✅ Threshold warnings: `segmentCount < 3`, `totalDurationApprox < 12s`
+- ✅ Suporte a params: timeout, cacheBust, probeSegments
+- ✅ Response estruturado com array de warnings
+
+**Teste Latest (19:18 UTC):**
+```json
+{
+  "success": true,
+  "mode": "latest",
+  "status": "ok",
+  "playlist": {
+    "declaredCount": 16,
+    "hasEndlist": true,
+    "totalDurationApprox": 91.437646,
+    "averageExtinf": 5.714852875
+  },
+  "segments": {
+    "headOkCount": 3,
+    "totalProbes": 3,
+    "timings": [20, 22, 22]
+  },
+  "durationMs": 54,
+  "thresholds": {
+    "warnings": [],
+    "hasWarnings": false
+  }
+}
+```
+
+**Teste Rolling (19:18 UTC):**
+```json
+{
+  "success": true,
+  "mode": "rolling",
+  "status": "ok",
+  "playlist": {
+    "declaredCount": 10,
+    "hasEndlist": false,
+    "totalDurationApprox": 55.435079,
+    "averageExtinf": 5.5435079
+  },
+  "segments": {
+    "headOkCount": 3,
+    "totalProbes": 3,
+    "timings": [17, 17, 21]
+  },
+  "durationMs": 43,
+  "thresholds": {
+    "warnings": [],
+    "hasWarnings": false
+  }
+}
+```
+
+**Smoke Test Final (19:18 UTC):**
+- ✅ CAPABILITIES: canSpawn=true, version=6.0-static (582ms)
+- ✅ GENERATE_LATEST: action=generated, segments=16, duration=91s (4407ms)
+- ✅ GENERATE_ROLLING: action=rolling_published (263ms)
+- ✅ DIAGNOSTICS_LATEST: status=ok (211ms)
+- ✅ DIAGNOSTICS_ROLLING: status=ok (222ms)
+- ✅ SAFARI_HYPOTHESIS: functional (179ms)
+- 🎉 **RESULTADO: 6/6 TESTS PASSED**
+
+**Performance Metrics:**
+- Diagnostics latest: 54ms (< 3000ms target)
+- Diagnostics rolling: 43ms (< 3000ms target)  
+- Segment HEAD requests: 17-22ms (excellent)
+- Total smoke test: ~6s (within tolerance)
+
+**Status:** ✅ **R6-3 CONCLUÍDO COM SUCESSO!**
+
+**Próximo:** R6-4 (Rollback Snapshot) - pode executar em paralelo
+
+---
+
+=== R6-BASELINE-STORAGE (before R6-4) ===
+Data: Mon Oct  6 16:33:38 -03 2025
+```bash
+No temp directories
+Filesystem      Size    Used   Avail Capacity iused ifree %iused  Mounted on
+/dev/disk3s1   228Gi   182Gi    11Gi    95%    1.9M  119M    2%   /System/Volumes/Data
+```
+

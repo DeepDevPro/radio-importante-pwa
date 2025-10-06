@@ -743,4 +743,89 @@ router.post('/safari-hypothesis', handleSafariHypothesisRequest);
 // R5-13: R5 Gate Validation Endpoint
 router.post('/r5-gate-validation', handleR5GateValidationRequest);
 
+// R6-4: Rollback Snapshot Routes
+const { restoreFromSnapshot, getSnapshotInfo } = require('../hls/rollbackSnapshot');
+
+/**
+ * POST /rollback-latest
+ * R6-4: Restore latest playlist from snapshot
+ */
+router.post('/rollback-latest', async (req, res) => {
+  const startTime = Date.now();
+  
+  try {
+    saveAutoLog('[Rollback] Latest restore request initiated', 'HLS_GEN');
+    
+    const result = await restoreFromSnapshot('latest');
+    
+    const response = {
+      success: result.success,
+      mode: 'latest',
+      action: result.restored ? 'restored' : 'restore_failed',
+      snapshotExists: result.snapshotExists,
+      restored: result.restored,
+      error: result.error,
+      durationMs: Date.now() - startTime
+    };
+    
+    if (result.success) {
+      saveAutoLog(`[Rollback] Latest playlist restored successfully`, 'HLS_GEN');
+    } else {
+      saveAutoLog(`[Rollback] Latest restore failed: ${result.error}`, 'HLS_GEN');
+    }
+    
+    res.json(response);
+    
+  } catch (error) {
+    const response = {
+      success: false,
+      mode: 'latest',
+      action: 'restore_error',
+      error: error.message,
+      durationMs: Date.now() - startTime
+    };
+    
+    saveAutoLog(`[Rollback] Latest restore error: ${error.message}`, 'HLS_GEN');
+    res.json(response);
+  }
+});
+
+/**
+ * GET /rollback-info/:mode
+ * R6-4: Get rollback snapshot information
+ */
+router.get('/rollback-info/:mode', async (req, res) => {
+  const { mode } = req.params;
+  const startTime = Date.now();
+  
+  try {
+    if (!['latest', 'rolling'].includes(mode)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Mode must be latest or rolling'
+      });
+    }
+    
+    const result = await getSnapshotInfo(mode);
+    
+    const response = {
+      success: result.success,
+      mode,
+      snapshots: result.snapshots,
+      error: result.error,
+      durationMs: Date.now() - startTime
+    };
+    
+    res.json(response);
+    
+  } catch (error) {
+    res.json({
+      success: false,
+      mode,
+      error: error.message,
+      durationMs: Date.now() - startTime
+    });
+  }
+});
+
 module.exports = router;

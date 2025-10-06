@@ -2,6 +2,7 @@
 const AWS = require('aws-sdk');
 const fs = require('fs');
 const path = require('path');
+const { createPlaylistSnapshot } = require('./rollbackSnapshot');
 
 // Configure Digital Ocean Spaces (reusing existing config pattern)
 const spacesEndpoint = new AWS.Endpoint(process.env.DO_SPACES_ENDPOINT || 'atl1.digitaloceanspaces.com');
@@ -95,6 +96,14 @@ async function uploadHlsFiles(workspaceDir, targetPrefix = 'generated/hls/latest
     }
 
     result.segmentCount = uploadedSegments;
+
+    // R6-4 ROLLBACK: Create snapshot before playlist upload
+    const mode = targetPrefix.includes('/latest/') ? 'latest' : 'rolling';
+    const snapshotResult = await createPlaylistSnapshot(mode);
+    if (!snapshotResult.success && snapshotResult.error) {
+      console.log(`[UploadHLS] Snapshot warning: ${snapshotResult.error}`);
+      // Continue with upload - snapshot failure shouldn't block generation
+    }
 
     // Upload playlist last (atomic switch)
     for (const playlistFile of playlistFiles) {
