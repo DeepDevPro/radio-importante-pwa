@@ -96,14 +96,14 @@ function proxyHLSFile(spacesPath, isPlaylist = false) {
 
 // Rotas para HLS Latest
 router.get('/hls/latest/index.m3u8', proxyHLSFile('generated/hls/latest/index.m3u8', true));
-router.get('/hls/latest/:segment', (req, res) => {
+router.get('/hls/latest/:segment(*.ts|*.m3u8)', (req, res) => {
   const segment = req.params.segment;
   proxyHLSFile(`generated/hls/latest/${segment}`, false)(req, res);
 });
 
 // Rotas para HLS Rolling
 router.get('/hls/rolling/index.m3u8', proxyHLSFile('generated/hls/rolling/index.m3u8', true));
-router.get('/hls/rolling/:segment', (req, res) => {
+router.get('/hls/rolling/:segment(*.ts|*.m3u8)', (req, res) => {
   const segment = req.params.segment;
   proxyHLSFile(`generated/hls/rolling/${segment}`, false)(req, res);
 });
@@ -113,14 +113,14 @@ router.get('/hls/rolling/:segment', (req, res) => {
 
 // Aliases para HLS Latest
 router.get('/api/hls/latest/index.m3u8', proxyHLSFile('generated/hls/latest/index.m3u8', true));
-router.get('/api/hls/latest/:segment', (req, res) => {
+router.get('/api/hls/latest/:segment(*.ts|*.m3u8)', (req, res) => {
   const segment = req.params.segment;
   proxyHLSFile(`generated/hls/latest/${segment}`, false)(req, res);
 });
 
 // Aliases para HLS Rolling
 router.get('/api/hls/rolling/index.m3u8', proxyHLSFile('generated/hls/rolling/index.m3u8', true));
-router.get('/api/hls/rolling/:segment', (req, res) => {
+router.get('/api/hls/rolling/:segment(*.ts|*.m3u8)', (req, res) => {
   const segment = req.params.segment;
   proxyHLSFile(`generated/hls/rolling/${segment}`, false)(req, res);
 });
