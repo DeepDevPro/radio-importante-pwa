@@ -4,6 +4,7 @@
 const ffmpeg = require('fluent-ffmpeg');
 const fs = require('fs');
 const path = require('path');
+const { uploadHlsFiles } = require('./uploadHlsFiles');
 
 /**
  * Generates HLS VOD playlist from downloaded MP3 tracks
@@ -11,8 +12,9 @@ const path = require('path');
  * @param {Array} downloadedTracks - Array of track metadata from download
  * @param {Object} options - Generation options
  * @param {boolean} options.forceTranscode - Force AAC transcoding instead of trying copy
+ * @param {boolean} options.uploadToSpaces - Upload files to Spaces after generation (R4-7)
  * @param {string} options.ffmpegPath - Path to ffmpeg binary
- * @returns {Promise<{success: boolean, segmentCount: number, playlistPath: string, totalDurationApprox: number, ffmpegDurationMs: number, transcodeFallback: boolean, error?: string}>}
+ * @returns {Promise<{success: boolean, segmentCount: number, playlistPath: string, totalDurationApprox: number, ffmpegDurationMs: number, uploadDurationMs?: number, transcodeFallback: boolean, error?: string}>}
  */
 async function generateVodLatest(workspaceDir, downloadedTracks, options = {}) {
   const startTime = Date.now();
@@ -90,6 +92,22 @@ async function generateVodLatest(workspaceDir, downloadedTracks, options = {}) {
     result.ffmpegDurationMs = Date.now() - startTime;
 
     console.log(`[GenerateVOD] Success: ${result.segmentCount} segments, ${result.totalDurationApprox}s duration in ${result.ffmpegDurationMs}ms`);
+
+    // R4-7: Upload to Spaces if requested
+    if (options.uploadToSpaces) {
+      console.log('[GenerateVOD] Starting upload to Spaces...');
+      const uploadResult = await uploadHlsFiles(workspaceDir, 'generated/hls/latest/');
+      
+      if (uploadResult.success) {
+        result.uploadDurationMs = uploadResult.uploadDurationMs;
+        console.log(`[GenerateVOD] Upload complete: ${uploadResult.segmentCount} segments in ${uploadResult.uploadDurationMs}ms`);
+      } else {
+        // Upload failure doesn't fail the generation - files are still valid locally
+        result.uploadError = uploadResult.error;
+        result.uploadDurationMs = uploadResult.uploadDurationMs;
+        console.log(`[GenerateVOD] Upload failed: ${uploadResult.error}`);
+      }
+    }
 
   } catch (error) {
     result.error = error.message;

@@ -308,7 +308,8 @@ router.post('/generate-hls', async (req, res) => {
 
 /**
  * GET /vod-test
- * Tests complete VOD generation pipeline (R4-4 + R4-5)
+ * Tests complete VOD generation pipeline (R4-4 + R4-5 + R4-7)
+ * Query params: ?tracks=3&forceTranscode=true&upload=true
  */
 router.get('/vod-test', async (req, res) => {
   const startTime = Date.now();
@@ -317,6 +318,7 @@ router.get('/vod-test', async (req, res) => {
   try {
     const maxTracks = parseInt(req.query.tracks) || 3;
     const forceTranscode = req.query.forceTranscode === 'true';
+    const uploadToSpaces = req.query.upload === 'true';
     
     // Get FFmpeg capability
     const capability = await detectCapability();
@@ -330,7 +332,7 @@ router.get('/vod-test', async (req, res) => {
       });
     }
     
-    await saveAutoLog(`VOD test starting: ${maxTracks} tracks, forceTranscode: ${forceTranscode}, ffmpeg: ${capability.ffmpegVersion}`, 'HLS_GEN');
+    await saveAutoLog(`VOD test starting: ${maxTracks} tracks, forceTranscode: ${forceTranscode}, upload: ${uploadToSpaces}, ffmpeg: ${capability.ffmpegVersion}`, 'HLS_GEN');
     
     // Phase 1: Create workspace
     const workspaceResult = await createTempWorkspace();
@@ -360,6 +362,7 @@ router.get('/vod-test', async (req, res) => {
     // Phase 3: Generate HLS VOD
     const vodResult = await generateVodLatest(workspaceDir, downloadResult.downloadedTracks, {
       forceTranscode,
+      uploadToSpaces,
       ffmpegPath: capability.ffmpegPath
     });
     
@@ -389,7 +392,10 @@ router.get('/vod-test', async (req, res) => {
       downloadedCount: downloadResult.downloadedTracks.length,
       downloadDurationMs: downloadResult.downloadDurationMs,
       ffmpegDurationMs: vodResult.ffmpegDurationMs,
+      uploadDurationMs: vodResult.uploadDurationMs,
+      uploadError: vodResult.uploadError,
       transcodeFallback: vodResult.transcodeFallback,
+      uploaded: uploadToSpaces,
       totalBytes: downloadResult.totalBytes,
       capability: {
         ffmpegVersion: capability.ffmpegVersion,
@@ -414,6 +420,70 @@ router.get('/vod-test', async (req, res) => {
     res.json({
       success: false,
       phase: 'unknown',
+      error: error.message,
+      durationMs
+    });
+  }
+});
+
+/**
+ * GET /upload-test  
+ * Tests HLS upload functionality (R4-7) using mock files
+ */
+router.get('/upload-test', async (req, res) => {
+  const startTime = Date.now();
+  const { uploadHlsFiles } = require('../hls/uploadHlsFiles');
+  
+  try {
+    // Create a mock HLS workspace to test upload
+    const mockWorkspace = '/tmp/mock-hls-test';
+    const fs = require('fs');
+    
+    // Create mock files
+    if (!fs.existsSync(mockWorkspace)) {
+      fs.mkdirSync(mockWorkspace, { recursive: true });
+    }
+    
+    // Create mock playlist
+    const mockPlaylist = `#EXTM3U
+#EXT-X-VERSION:3
+#EXT-X-TARGETDURATION:7
+#EXT-X-PLAYLIST-TYPE:VOD
+#EXTINF:6.000000,
+segment_000.ts
+#EXTINF:6.000000,
+segment_001.ts
+#EXT-X-ENDLIST`;
+    
+    fs.writeFileSync(`${mockWorkspace}/index.m3u8`, mockPlaylist);
+    
+    // Create mock segments (small dummy files)
+    fs.writeFileSync(`${mockWorkspace}/segment_000.ts`, Buffer.alloc(1024, 0));
+    fs.writeFileSync(`${mockWorkspace}/segment_001.ts`, Buffer.alloc(1024, 0));
+    
+    // Test upload
+    const uploadResult = await uploadHlsFiles(mockWorkspace, 'generated/hls/test/');
+    
+    // Cleanup
+    fs.rmSync(mockWorkspace, { recursive: true, force: true });
+    
+    const durationMs = Date.now() - startTime;
+    await saveAutoLog(`Upload test: ${uploadResult.success ? 'success' : 'failed'} - ${uploadResult.segmentCount} segments in ${uploadResult.uploadDurationMs}ms`, 'HLS_GEN');
+    
+    res.json({
+      success: uploadResult.success,
+      segmentCount: uploadResult.segmentCount,
+      uploadDurationMs: uploadResult.uploadDurationMs,
+      error: uploadResult.error,
+      durationMs
+    });
+    
+  } catch (error) {
+    const durationMs = Date.now() - startTime;
+    await saveAutoLog(`Upload test error: ${error.message}`, 'HLS_GEN');
+    
+    res.json({
+      success: false,
       error: error.message,
       durationMs
     });
