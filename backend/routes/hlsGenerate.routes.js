@@ -1,5 +1,5 @@
 // HLS Capabilities and Generation Routes
-// R4-3: Track download integration
+// R4-4: FFmpeg pipeline integration
 
 const express = require('express');
 const router = express.Router();
@@ -7,6 +7,7 @@ const { saveAutoLog } = require('../state/hlsState');
 const { detectCapability } = require('../hls/ffmpegCapability');
 const { createTempWorkspace, cleanupTempWorkspace } = require('../hls/tempWorkspace');
 const { downloadTrackList } = require('../hls/downloadTrackList');
+const { generateVodLatest } = require('../hls/generateVodLatest');
 const https = require('https');
 
 /**
@@ -299,6 +300,120 @@ router.post('/generate-hls', async (req, res) => {
     res.status(500).json({
       success: false,
       mode,
+      error: error.message,
+      durationMs
+    });
+  }
+});
+
+/**
+ * GET /vod-test
+ * Tests complete VOD generation pipeline (R4-4 + R4-5)
+ */
+router.get('/vod-test', async (req, res) => {
+  const startTime = Date.now();
+  let workspaceDir = null;
+  
+  try {
+    const maxTracks = parseInt(req.query.tracks) || 3;
+    const forceTranscode = req.query.forceTranscode === 'true';
+    
+    // Get FFmpeg capability
+    const capability = await detectCapability();
+    if (!capability.canSpawn) {
+      return res.json({
+        success: false,
+        phase: 'capability',
+        error: 'FFmpeg not available for VOD generation',
+        capability,
+        durationMs: Date.now() - startTime
+      });
+    }
+    
+    await saveAutoLog(`VOD test starting: ${maxTracks} tracks, forceTranscode: ${forceTranscode}, ffmpeg: ${capability.ffmpegVersion}`, 'HLS_GEN');
+    
+    // Phase 1: Create workspace
+    const workspaceResult = await createTempWorkspace();
+    if (!workspaceResult.success) {
+      return res.json({
+        success: false,
+        phase: 'workspace',
+        error: workspaceResult.error,
+        durationMs: Date.now() - startTime
+      });
+    }
+    
+    workspaceDir = workspaceResult.workspaceDir;
+    
+    // Phase 2: Download tracks
+    const downloadResult = await downloadTrackList(workspaceDir, maxTracks);
+    if (!downloadResult.success) {
+      return res.json({
+        success: false,
+        phase: 'download',
+        error: downloadResult.error,
+        downloadDurationMs: downloadResult.downloadDurationMs,
+        durationMs: Date.now() - startTime
+      });
+    }
+    
+    // Phase 3: Generate HLS VOD
+    const vodResult = await generateVodLatest(workspaceDir, downloadResult.downloadedTracks, {
+      forceTranscode,
+      ffmpegPath: capability.ffmpegPath
+    });
+    
+    if (!vodResult.success) {
+      return res.json({
+        success: false,
+        phase: 'vod_generation',
+        error: vodResult.error,
+        downloadDurationMs: downloadResult.downloadDurationMs,
+        ffmpegDurationMs: vodResult.ffmpegDurationMs,
+        transcodeFallback: vodResult.transcodeFallback,
+        durationMs: Date.now() - startTime
+      });
+    }
+    
+    const durationMs = Date.now() - startTime;
+    await saveAutoLog(`VOD test successful: ${vodResult.segmentCount} segments, ${Math.round(vodResult.totalDurationApprox)}s, ${downloadResult.downloadedTracks.length} tracks in ${durationMs}ms`, 'HLS_GEN');
+    
+    // Clean up after successful test
+    await cleanupTempWorkspace(workspaceDir);
+    workspaceDir = null;
+    
+    res.json({
+      success: true,
+      segmentCount: vodResult.segmentCount,
+      totalDurationApprox: Math.round(vodResult.totalDurationApprox),
+      downloadedCount: downloadResult.downloadedTracks.length,
+      downloadDurationMs: downloadResult.downloadDurationMs,
+      ffmpegDurationMs: vodResult.ffmpegDurationMs,
+      transcodeFallback: vodResult.transcodeFallback,
+      totalBytes: downloadResult.totalBytes,
+      capability: {
+        ffmpegVersion: capability.ffmpegVersion,
+        spawnLatencyMs: capability.spawnLatencyMs
+      },
+      durationMs
+    });
+    
+  } catch (error) {
+    const durationMs = Date.now() - startTime;
+    await saveAutoLog(`VOD test error: ${error.message}`, 'HLS_GEN');
+    
+    // Clean up workspace on error
+    if (workspaceDir) {
+      try {
+        await cleanupTempWorkspace(workspaceDir);
+      } catch (cleanupError) {
+        // Best effort cleanup
+      }
+    }
+    
+    res.json({
+      success: false,
+      phase: 'unknown',
       error: error.message,
       durationMs
     });
