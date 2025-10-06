@@ -78,10 +78,9 @@ app.get('/audio/hls/track-cues.json', async (req, res) => {
     console.log('🍎 [iPhone PWA] Solicitação de track-cues.json');
     
     // Construir URL do arquivo no Spaces
-    try {
     const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
     const endpoint = process.env.DO_SPACES_ENDPOINT || 'atl1.digitaloceanspaces.com';
-    const url = `https://${bucket}.${endpoint}/generated/hls/latest/index.m3u8`;
+    const spacesUrl = `https://${bucket}.${endpoint}/generated/hls/latest/index.m3u8`;
     
     console.log(`🎯 [track-cues] Proxy request: ${spacesUrl}`);
     
