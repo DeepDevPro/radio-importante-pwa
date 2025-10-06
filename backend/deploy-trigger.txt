@@ -1,9 +1,1 @@
-Deploy #11: CORS ENABLED - Fixed frontend integration
-
-- Added CORS headers to allow frontend requests
-- Updated /health endpoint with more info (timestamp, cors status)
-- Updated / endpoint with version and cors status  
-- Fixed encoding issue in test page (UTF-8 meta tag)
-- Backend now accepts requests from any origin (*)
-- This should resolve CORS errors from frontend
-# Deploy Mon Sep  8 16:48:50 -03 2025
+Triggering backend redeploy with new debug routes
