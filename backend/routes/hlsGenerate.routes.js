@@ -1,5 +1,7 @@
 // HLS Capabilities and Generation Routes
 // R4-4: FFmpeg pipeline integration
+/* eslint-env node */
+/* eslint-disable no-undef */
 
 const express = require('express');
 const router = express.Router();
@@ -8,7 +10,9 @@ const { detectCapability } = require('../hls/ffmpegCapability');
 const { createTempWorkspace, cleanupTempWorkspace } = require('../hls/tempWorkspace');
 const { downloadTrackList } = require('../hls/downloadTrackList');
 const { generateVodLatest } = require('../hls/generateVodLatest');
+const { publishRollingPlaylist } = require('../hls/publishRollingPlaylist');
 const https = require('https');
+const AWS = require('aws-sdk');
 
 /**
  * Simple HEAD check for URL existence
@@ -331,6 +335,54 @@ router.post('/generate-hls', async (req, res) => {
 
         await saveAutoLog(`Real HLS generation failed, falling back to simulate: ${errorSummary}`, 'HLS_GEN');
       }
+    } else if (mode === 'rolling') {
+      // R5-4: Rolling playlist generation (reuses latest segments)
+      try {
+        await saveAutoLog(`Starting rolling playlist generation`, 'HLS_GEN');
+
+        // Configure S3 client for rolling publish
+        const spacesEndpoint = new AWS.Endpoint(process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com');
+        const s3Client = new AWS.S3({
+          endpoint: spacesEndpoint,
+          accessKeyId: process.env.DO_SPACES_KEY,
+          secretAccessKey: process.env.DO_SPACES_SECRET,
+          region: process.env.DO_SPACES_REGION || 'nyc3'
+        });
+
+        const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
+        const spacesUrl = `https://${bucket}.${spacesEndpoint.hostname}`;
+
+        // Publish rolling playlist (integrates R5-1+R5-2+R5-3)
+        const rollingResult = await publishRollingPlaylist({
+          s3Client,
+          bucket,
+          spacesUrl,
+          windowSize: 10, // Default rolling window size
+          simulate: shouldSimulate
+        });
+
+        if (rollingResult.success) {
+          action = rollingResult.action;
+          
+          // Extract metrics when available
+          if (rollingResult.info) {
+            segmentCount = rollingResult.info.windowSegments || 0;
+            totalDurationApprox = rollingResult.info.totalLatestSegments || 0; // Use total from latest
+            uploadDurationMs = rollingResult.info.uploadDurationMs || 0;
+          }
+
+          await saveAutoLog(`Rolling generation ${action}: ${segmentCount} window segments`, 'HLS_GEN');
+        } else {
+          throw new Error(`Rolling generation failed: ${rollingResult.error}`);
+        }
+
+      } catch (error) {
+        // Fallback to simulate_missing_latest on rolling error
+        action = 'simulate_missing_latest';
+        errorSummary = error.message.split('\n')[0];
+        
+        await saveAutoLog(`Rolling generation failed, falling back: ${errorSummary}`, 'HLS_GEN');
+      }
     } else {
       // Real generation not available or mode not supported
       action = 'ready_for_real_generation';
@@ -375,6 +427,14 @@ router.post('/generate-hls', async (req, res) => {
       response.downloadDurationMs = downloadDurationMs;
       response.ffmpegDurationMs = ffmpegDurationMs;
       response.uploadDurationMs = uploadDurationMs;
+    }
+
+    // Add metrics for rolling generation (R5-4)
+    if (mode === 'rolling' && ['rolling_published', 'simulate_missing_latest'].includes(action)) {
+      response.windowSegments = segmentCount;
+      if (uploadDurationMs > 0) {
+        response.uploadDurationMs = uploadDurationMs;
+      }
     }
 
     // Add error summary for failed generation
