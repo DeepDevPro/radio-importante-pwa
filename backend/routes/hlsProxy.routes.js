@@ -108,4 +108,21 @@ router.get('/hls/rolling/:segment', (req, res) => {
   proxyHLSFile(`generated/hls/rolling/${segment}`, false)(req, res);
 });
 
+// ========== R2: ALIASES /api/hls/* ==========
+// Rotas alias para compatibilidade com versões anteriores
+
+// Aliases para HLS Latest
+router.get('/api/hls/latest/index.m3u8', proxyHLSFile('generated/hls/latest/index.m3u8', true));
+router.get('/api/hls/latest/:segment', (req, res) => {
+  const segment = req.params.segment;
+  proxyHLSFile(`generated/hls/latest/${segment}`, false)(req, res);
+});
+
+// Aliases para HLS Rolling
+router.get('/api/hls/rolling/index.m3u8', proxyHLSFile('generated/hls/rolling/index.m3u8', true));
+router.get('/api/hls/rolling/:segment', (req, res) => {
+  const segment = req.params.segment;
+  proxyHLSFile(`generated/hls/rolling/${segment}`, false)(req, res);
+});
+
 module.exports = router;

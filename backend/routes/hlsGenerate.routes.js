@@ -20,10 +20,7 @@ router.post('/api/generate-hls', async (req, res) => {
   
   try {
     // Log início
-    saveAutoLog(`HLS_GEN: Iniciando geração modo=${mode}`, {
-      mode,
-      timestamp: new Date().toISOString()
-    });
+    saveAutoLog(`Iniciando geração HLS modo=${mode}`, 'HLS_GEN');
 
     // Validar modo
     if (!['latest', 'rolling'].includes(mode)) {
@@ -41,12 +38,7 @@ router.post('/api/generate-hls', async (req, res) => {
     const duration = Date.now() - startTime;
     
     // Log fim com sucesso
-    saveAutoLog(`HLS_GEN: Concluído modo=${mode} em ${duration}ms`, {
-      mode,
-      duration,
-      success: true,
-      outputLines: result.outputLines
-    });
+    saveAutoLog(`Concluído modo=${mode} em ${duration}ms`, 'HLS_GEN');
 
     res.json({
       success: true,
@@ -60,13 +52,7 @@ router.post('/api/generate-hls', async (req, res) => {
     const duration = Date.now() - startTime;
     
     // Log erro
-    saveAutoLog(`HLS_GEN: ERRO modo=${mode} em ${duration}ms: ${error.message}`, {
-      mode,
-      duration,
-      success: false,
-      error: error.message,
-      stderr: error.stderr
-    });
+    saveAutoLog(`ERRO modo=${mode} em ${duration}ms: ${error.message}`, 'HLS_GEN');
 
     res.status(500).json({
       success: false,
