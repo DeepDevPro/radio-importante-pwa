@@ -1,11 +1,12 @@
 // HLS Capabilities and Generation Routes
-// R4-2: Workspace management integration
+// R4-3: Track download integration
 
 const express = require('express');
 const router = express.Router();
 const { saveAutoLog } = require('../state/hlsState');
 const { detectCapability } = require('../hls/ffmpegCapability');
 const { createTempWorkspace, cleanupTempWorkspace } = require('../hls/tempWorkspace');
+const { downloadTrackList } = require('../hls/downloadTrackList');
 const https = require('https');
 
 /**
@@ -119,6 +120,89 @@ router.get('/workspace-test', async (req, res) => {
   } catch (error) {
     const durationMs = Date.now() - startTime;
     await saveAutoLog(`Workspace test error: ${error.message}`, 'HLS_GEN');
+    
+    res.json({
+      success: false,
+      phase: 'unknown',
+      error: error.message,
+      durationMs
+    });
+  }
+});
+
+/**
+ * GET /download-test
+ * Tests track download functionality (R4-3)
+ */
+router.get('/download-test', async (req, res) => {
+  const startTime = Date.now();
+  let workspaceDir = null;
+  
+  try {
+    const maxTracks = parseInt(req.query.tracks) || 3; // Default 3 tracks for testing
+    
+    // Create workspace for download test
+    const workspaceResult = await createTempWorkspace();
+    if (!workspaceResult.success) {
+      return res.json({
+        success: false,
+        phase: 'workspace',
+        error: workspaceResult.error,
+        durationMs: Date.now() - startTime
+      });
+    }
+    
+    workspaceDir = workspaceResult.workspaceDir;
+    await saveAutoLog(`Download test workspace: ${workspaceDir}`, 'HLS_GEN');
+    
+    // Test track download
+    const downloadResult = await downloadTrackList(workspaceDir, maxTracks);
+    
+    if (!downloadResult.success) {
+      await saveAutoLog(`Download test failed: ${downloadResult.error}`, 'HLS_GEN');
+      return res.json({
+        success: false,
+        phase: 'download',
+        error: downloadResult.error,
+        durationMs: Date.now() - startTime
+      });
+    }
+    
+    const durationMs = Date.now() - startTime;
+    await saveAutoLog(`Download test successful: ${downloadResult.downloadedTracks.length} tracks, ${Math.round(downloadResult.totalBytes / 1024 / 1024)}MB in ${downloadResult.downloadDurationMs}ms`, 'HLS_GEN');
+    
+    // Clean up after successful test
+    await cleanupTempWorkspace(workspaceDir);
+    workspaceDir = null; // Prevent cleanup in catch block
+    
+    res.json({
+      success: true,
+      downloadedCount: downloadResult.downloadedTracks.length,
+      totalBytes: downloadResult.totalBytes,
+      totalMB: Math.round(downloadResult.totalBytes / 1024 / 1024),
+      downloadDurationMs: downloadResult.downloadDurationMs,
+      tracks: downloadResult.downloadedTracks.map(t => ({
+        filename: t.filename,
+        bytes: t.bytes,
+        durationMs: t.durationMs,
+        md5: t.md5,
+        title: t.originalTrack?.title
+      })),
+      durationMs
+    });
+    
+  } catch (error) {
+    const durationMs = Date.now() - startTime;
+    await saveAutoLog(`Download test error: ${error.message}`, 'HLS_GEN');
+    
+    // Clean up workspace on error
+    if (workspaceDir) {
+      try {
+        await cleanupTempWorkspace(workspaceDir);
+      } catch (cleanupError) {
+        // Best effort cleanup
+      }
+    }
     
     res.json({
       success: false,
