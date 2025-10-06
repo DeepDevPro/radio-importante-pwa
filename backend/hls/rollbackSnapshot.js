@@ -2,7 +2,7 @@
 // R6-4: Before publishing new latest/index.m3u8, save index.prev.m3u8
 
 const storageConfig = require('../storage-config');
-const { saveAutoLog } = require('../utils/autoLog');
+const { saveAutoLog } = require('../state/hlsState');
 
 /**
  * Creates a snapshot of current playlist before publishing new version
