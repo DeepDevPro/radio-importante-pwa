@@ -174,7 +174,9 @@ function determineFinalHypothesis(safariAnalysis, correlation) {
   }
 
   // Evidência 7: Fatores de risco iOS
-  const iosRisks = correlation.riskFactors?.filter(r => r.factor.includes('IOS')) || [];
+  const iosRisks = correlation.riskFactors?.filter(r => 
+    (typeof r === 'string' ? r : r.factor)?.includes('IOS')
+  ) || [];
   if (iosRisks.length > 0) {
     evidenceScore.PLAYER_STRATEGY_MISMATCH += iosRisks.length * 2;
   }
