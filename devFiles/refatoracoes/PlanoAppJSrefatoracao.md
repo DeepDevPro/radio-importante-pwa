@@ -70,13 +70,14 @@ Commit sugerido (após criação da branch):
 Commit sugerido:
 `refactor(step1): scaffold backend modular folders (no functional changes)`
 
-### ETAPA 2 – Middlewares Básicos
-- [ ] Extrair CORS inline para `middleware/cors.js`
-- [ ] Criar `middleware/errorHandler.js` (copiar lógica atual) e `middleware/notFound.js`
-- [ ] Ajustar `app.js` para usar `require('./middleware/cors')` etc.
-- [ ] Remover blocos originais do `app.js`
-- [ ] Deploy staging
-- [ ] Testar `/health` e rota inexistente para validar 404 + error handler
+### ETAPA 2 – Middlewares Básicos ✅
+- [x] Extrair CORS inline para `middleware/cors.js`
+- [x] Criar `middleware/errorHandler.js` (copiar lógica atual) e `middleware/notFound.js`
+- [x] Ajustar `app.js` para usar `require('./middleware/cors')` etc.
+- [x] Remover blocos originais do `app.js`
+- [x] Deploy staging
+- [x] Testar `/health` e rota inexistente para validar 404 + error handler
+- [x] Redução: 2386 → 2365 linhas (-21 linhas)
 
 Commit sugerido:
 `refactor(step2): extract cors, notFound and error handlers from app.js`
@@ -91,6 +92,33 @@ Commit sugerido:
 - [ ] Validar que inicialização do catálogo ainda ocorre antes do `listen`
 - [ ] Deploy staging
 - [ ] Testar `/api/catalog` e `/api/hls-logs`
+
+Micropassos ETAPA 3:
+#### 3.1 Limpeza inicial e estabilização
+- [x] Verificar `state/catalogState.js` e `state/hlsState.js` (contêm todas as funções necessárias)
+- [x] Remover bloco duplicado de catálogo e fragmento órfão de `generateContinuousFile` (código solto ~linhas 930–1060) em `backend/app.js`
+- [x] Garantir que apenas estes imports de estado existam no topo do `app.js`:
+  - `const { catalog, initializeCatalog, saveCatalog } = require('./state/catalogState');`
+  - `const { autoLogs, saveAutoLog, hlsLogs, addHLSLog } = require('./state/hlsState');`
+- [x] Rodar `node backend/app.js` (compilar sem SyntaxError)
+- [x] Testar rapidamente: `/health` (200), `/api/catalog` (200), `/api/hls-logs` (200)
+- [x] Commit: `refactor(step3a): cleanup duplicates & wire state modules`
+
+> Nota 3.1: Servidor subiu sem erros. Endpoints retornaram 200. Catálogo carregado com 15 tracks. Logs HLS vazios (esperado).
+
+#### 3.2 Inicialização e consistência
+- [ ] Confirmar `initializeCatalog()` chamado antes de `app.listen()` (ou adicionar)
+- [ ] Remover qualquer resquício de funções duplicadas (`saveCatalogToSpaces`, `loadCatalogFromSpaces`, `generateContinuousFile`) ainda presentes em `app.js`
+- [ ] Verificar que chamadas a `saveCatalog()` agora usam a versão importada
+- [ ] Commit: `refactor(step3b): ensure catalog init sequence`
+
+#### 3.3 Deploy e validação
+- [ ] Deploy para staging
+- [ ] Smoke test: `/api/catalog`, `/api/hls-logs`, `/api/debug-logs`
+- [ ] Atualizar este plano marcando ETAPA 3 concluída
+- [ ] Commit: `chore(refactor): stage validation step3`
+
+Nota: Extração e reorganização de `generateContinuousFile` ficará para a ETAPA 5 (não refatorar agora para reduzir risco).
 
 Commit sugerido:
 `refactor(step3): move catalog & HLS in-memory state + logging helpers to state modules`

@@ -29,6 +29,10 @@ const corsMiddleware = require('./middleware/cors');
 const errorHandler = require('./middleware/errorHandler');
 const notFoundHandler = require('./middleware/notFound');
 
+// Import state modules
+const { catalog, initializeCatalog, saveCatalog } = require('./state/catalogState');
+const { autoLogs, saveAutoLog, hlsLogs, addHLSLog } = require('./state/hlsState');
+
 // Configuração básica
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -57,26 +61,6 @@ app.get('/health', (req, res) => {
 });
 
 // ========== DEBUG LOGS ENDPOINTS ==========
-
-// Array em memória para logs automaticos (max 100 entradas)
-let autoLogs = [];
-const MAX_AUTO_LOGS = 100;
-
-function saveAutoLog(message, type = 'info') {
-  const timestamp = new Date().toISOString();
-  const logEntry = { timestamp, type, message };
-  
-  // Adicionar ao array
-  autoLogs.unshift(logEntry);
-  
-  // Manter apenas os últimos 100 logs
-  if (autoLogs.length > MAX_AUTO_LOGS) {
-    autoLogs = autoLogs.slice(0, MAX_AUTO_LOGS);
-  }
-  
-  // Console também (para logs do servidor)
-  console.log(`[${type.toUpperCase()}] ${message}`);
-}
 
 // Endpoint para receber logs de debug do iPhone
 app.post('/api/debug-logs', (req, res) => {
@@ -342,72 +326,7 @@ const upload = multer({
   limits: { fileSize: 50 * 1024 * 1024 } // 50MB
 });
 
-// Catálogo em memória (formato compatível com frontend)
-let catalog = {
-  version: "v2.2.4",
-  tracks: [],
-  metadata: {
-    totalTracks: 0,
-    totalDuration: 0,
-    artwork: "/icons/icon-192x192.png",
-    radioName: "Radio Importante"
-  }
-};
-
-// Inicializar catálogo carregando do DigitalOcean Spaces (SOLUÇÃO PARA PERSISTÊNCIA)
-async function initializeCatalog() {
-  console.log('🔄 [catalog] Inicializando catálogo...');
-  
-  // Tentar carregar do Spaces primeiro
-  const spacesLoaded = await loadCatalogFromSpaces();
-  
-  if (!spacesLoaded) {
-    // Fallback: tentar carregar localmente
-    try {
-      const catalogPath = process.env.CATALOG_PATH || path.join(process.cwd(), '..', 'public', 'data', 'catalog.json');
-      if (fs.existsSync(catalogPath)) {
-        const catalogData = fs.readFileSync(catalogPath, 'utf8');
-        const loadedCatalog = JSON.parse(catalogData);
-        
-        // Usar apenas os tracks no formato correto
-        if (loadedCatalog.tracks) {
-          catalog.tracks = loadedCatalog.tracks.map(track => ({
-            id: track.id || track.filename?.replace(/\.[^/.]+$/, ''),
-            filename: track.filename,
-            title: track.title || track.filename?.replace(/\.[^/.]+$/, ''),
-            artist: track.artist || 'Radio Importante',
-            duration: track.duration || 0,
-            size: track.size || 0,
-            uploadDate: track.uploadDate || new Date().toISOString(),
-            url: track.url || storageConfig.getFileUrl(`audio/${track.filename}`)
-          }));
-          
-          catalog.metadata.totalTracks = catalog.tracks.length;
-          catalog.metadata.totalDuration = catalog.tracks.reduce((sum, track) => sum + (track.duration || 0), 0);
-          
-          console.log(`✅ [catalog] Catálogo carregado localmente: ${catalog.tracks.length} tracks`);
-          
-          // Migrar para Spaces se possível
-          if (process.env.DO_SPACES_KEY && process.env.DO_SPACES_SECRET) {
-            console.log('🔄 [catalog] Migrando catálogo local para Spaces...');
-            await saveCatalogToSpaces();
-          }
-        }
-      } else {
-        console.log('ℹ️ [catalog] Nenhum catálogo encontrado, usando catálogo vazio');
-      }
-    } catch (error) {
-      console.log('⚠️ [catalog] Erro ao carregar catálogo local:', error);
-    }
-  }
-  
-  console.log(`🎵 [catalog] Inicialização completa: ${catalog.tracks.length} tracks carregadas`);
-}
-
-// Inicializar catálogo (async)
-initializeCatalog().catch(error => {
-  console.error('❌ [catalog] Erro na inicialização:', error);
-});
+// Inicializar aplicação
 
 // API Routes
 app.get('/api/catalog', async (req, res) => {
@@ -995,44 +914,8 @@ app.get('/api/verify-spaces-structure', async (req, res) => {
 });
 
 // ===========================================================
-
-// Função para salvar catálogo no DigitalOcean Spaces (SOLUÇÃO PARA PERSISTÊNCIA APÓS DEPLOY)
-async function saveCatalogToSpaces() {
-  try {
-    if (!process.env.DO_SPACES_KEY || !process.env.DO_SPACES_SECRET) {
-      console.warn('⚠️ [catalog] Credenciais Spaces não configuradas, salvando localmente...');
-      return saveCatalogLocally();
-    }
-
-    const spacesEndpoint = new AWS.Endpoint(process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com');
-    const s3 = new AWS.S3({
-      endpoint: spacesEndpoint,
-      accessKeyId: process.env.DO_SPACES_KEY,
-      secretAccessKey: process.env.DO_SPACES_SECRET,
-      region: process.env.DO_SPACES_REGION || 'nyc3'
-    });
-
-    const catalogData = JSON.stringify(catalog, null, 2);
-    const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
-
-    await s3.putObject({
-      Bucket: bucket,
-      Key: 'data/catalog.json',
-      Body: catalogData,
-      ContentType: 'application/json',
-      ACL: 'public-read'
-    }).promise();
-
-    console.log('✅ [catalog] Catálogo salvo no DigitalOcean Spaces: data/catalog.json');
-    
-    // Backup local também (fallback)
-    saveCatalogLocally();
-    
-  } catch (error) {
-    console.error('❌ [catalog] Erro ao salvar no Spaces, usando backup local:', error);
-    saveCatalogLocally();
-  }
-}
+// (REMOVIDO: bloco duplicado de catálogo e fragmento órfão de generateContinuousFile - extraído para state/catalogState.js e será refeito na Etapa 5)
+// ===========================================================
 
 // Função para salvar catálogo localmente (fallback)
 function saveCatalogLocally() {
@@ -1106,174 +989,6 @@ async function loadCatalogFromSpaces() {
     }
     return false;
   }
-}
-
-// Função principal para salvar catálogo (usa Spaces como principal)
-async function saveCatalog() {
-  await saveCatalogToSpaces();
-}
-
-// Função para gerar arquivo contínuo para iPhone PWA
-async function generateContinuousFile() {
-  console.log('🔧 [continuous] Iniciando geração...');
-  
-  // 1. Verificar se FFmpeg está disponível
-  try {
-    execSync('ffmpeg -version', { stdio: 'pipe' });
-    console.log('✅ [continuous] FFmpeg encontrado');
-  } catch (error) {
-    throw new Error('FFmpeg não encontrado. Necessário para gerar arquivo contínuo.');
-  }
-  
-  // 2. Baixar arquivos do Spaces para temp
-  const tempDir = path.join(os.tmpdir(), 'radio-importante-continuous');
-  if (!fs.existsSync(tempDir)) {
-    fs.mkdirSync(tempDir, { recursive: true });
-  }
-  
-  console.log(`📁 [continuous] Diretório temporário: ${tempDir}`);
-  
-  const trackFiles = [];
-  const trackCues = [];
-  let currentTime = 0;
-  
-  const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
-  const endpoint = process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com';
-  
-  // 3. Baixar cada arquivo e calcular cues
-  for (let i = 0; i < catalog.tracks.length; i++) {
-    const track = catalog.tracks[i];
-    const tempFilePath = path.join(tempDir, `track_${i}_${track.filename}`);
-    
-    try {
-      console.log(`⬇️ [continuous] Baixando: ${track.filename}`);
-      
-      // Baixar arquivo do Spaces
-      const spacesUrl = `https://${bucket}.${endpoint}/audio/${track.filename}`;
-      
-      await new Promise((resolve, reject) => {
-        const file = fs.createWriteStream(tempFilePath);
-        const request = https.get(spacesUrl, (response) => {
-          response.pipe(file);
-          file.on('finish', () => {
-            file.close();
-            resolve();
-          });
-        });
-        
-        request.on('error', (err) => {
-          fs.unlink(tempFilePath, () => {}); // Delete temp file on error
-          reject(err);
-        });
-      });
-      
-      // Obter duração real do arquivo
-      let duration;
-      try {
-        const ffprobeCmd = `ffprobe -v quiet -show_entries format=duration -of csv=p=0 "${tempFilePath}"`;
-        const durationStr = execSync(ffprobeCmd, { encoding: 'utf8' }).trim();
-        duration = parseFloat(durationStr) || track.duration || 300;
-      } catch (e) {
-        duration = track.duration || 300; // Fallback para duração do catálogo
-      }
-      
-      trackFiles.push(tempFilePath);
-      
-      // Criar cue para esta track
-      trackCues.push({
-        id: track.id,
-        title: track.title,
-        artist: track.artist,
-        genre: track.genre || 'Unknown',
-        startTime: currentTime,
-        endTime: currentTime + duration,
-        duration: duration,
-        filename: track.filename
-      });
-      
-      currentTime += duration;
-      console.log(`✅ [continuous] ${track.filename} - ${duration.toFixed(1)}s`);
-      
-    } catch (error) {
-      console.warn(`⚠️ [continuous] Erro ao baixar ${track.filename}:`, error.message);
-      // Continuar sem este arquivo
-    }
-  }
-  
-  if (trackFiles.length === 0) {
-    throw new Error('Nenhum arquivo válido encontrado para gerar arquivo contínuo');
-  }
-  
-  // 4. Criar lista de arquivos para FFmpeg
-  const fileListPath = path.join(tempDir, 'filelist.txt');
-  const fileListContent = trackFiles.map(file => `file '${file}'`).join('\n');
-  fs.writeFileSync(fileListPath, fileListContent);
-  
-  // 5. Gerar arquivo contínuo MP3
-  const outputPath = path.join(tempDir, 'radio-importante-continuous.mp3');
-  console.log('🎬 [continuous] Executando FFmpeg...');
-  
-  const ffmpegCmd = [
-    'ffmpeg',
-    '-f concat',
-    '-safe 0',
-    `-i "${fileListPath}"`,
-    '-c:a libmp3lame',
-    '-b:a 128k',
-    '-y',
-    `"${outputPath}"`
-  ].join(' ');
-  
-  try {
-    execSync(ffmpegCmd, { 
-      encoding: 'utf8',
-      stdio: ['pipe', 'pipe', 'pipe'],
-      maxBuffer: 1024 * 1024 * 100 // 100MB buffer
-    });
-    console.log('✅ [continuous] Arquivo MP3 gerado');
-  } catch (error) {
-    throw new Error(`Erro FFmpeg: ${error.message}`);
-  }
-  
-  // 6. Criar track-cues.json
-  const trackCuesData = {
-    mode: 'single',
-    totalDuration: currentTime,
-    trackCount: trackCues.length,
-    generatedAt: new Date().toISOString(),
-    tracks: trackCues
-  };
-  
-  const trackCuesPath = path.join(tempDir, 'track-cues.json');
-  fs.writeFileSync(trackCuesPath, JSON.stringify(trackCuesData, null, 2));
-  console.log('📋 [continuous] Track cues gerado');
-  
-  // 7. Upload para DigitalOcean Spaces
-  await uploadToSpaces(outputPath, 'radio-importante-continuous.mp3');
-  await uploadToSpaces(trackCuesPath, 'hls/track-cues.json');
-  
-  // 8. Obter info do arquivo antes da limpeza
-  const fileSize = fs.statSync(outputPath).size;
-  console.log('🎉 [continuous] Arquivo contínuo gerado com sucesso!');
-  
-  // 9. Limpar arquivos temporários
-  try {
-    trackFiles.forEach(file => fs.unlinkSync(file));
-    fs.unlinkSync(fileListPath);
-    fs.unlinkSync(outputPath);
-    fs.unlinkSync(trackCuesPath);
-    fs.rmdirSync(tempDir);
-    console.log('🧹 [continuous] Arquivos temporários limpos');
-  } catch (e) {
-    console.warn('⚠️ [continuous] Erro ao limpar temp files:', e.message);
-  }
-  
-  return {
-    totalDuration: currentTime,
-    trackCount: trackCues.length,
-    fileSize: fileSize,
-    generatedAt: new Date().toISOString()
-  };
 }
 
 // Função para upload para DigitalOcean Spaces
@@ -1762,27 +1477,6 @@ app.get('/api/hls-rolling-status', async (req, res) => {
   }
 });
 
-// Sistema de logs em tempo real para diagnóstico
-let hlsLogs = [];
-const MAX_LOGS = 100;
-
-function addHLSLog(type, message, data = null) {
-  const logEntry = {
-    timestamp: new Date().toISOString(),
-    type,
-    message,
-    data,
-    id: Date.now() + Math.random()
-  };
-  
-  hlsLogs.unshift(logEntry);
-  if (hlsLogs.length > MAX_LOGS) {
-    hlsLogs = hlsLogs.slice(0, MAX_LOGS);
-  }
-  
-  console.log(`📊 [HLS-LOG] ${type}: ${message}`, data || '');
-}
-
 // Endpoint para ver logs em tempo real
 app.get('/api/hls-logs', (req, res) => {
   res.json({
@@ -1827,24 +1521,15 @@ app.get('/api/hls-rolling-debug', async (req, res) => {
           const totalTime = Date.now() - startTime;
           addHLSLog('DEBUG', `Spaces response complete: ${data.length} bytes`, { totalTime });
           resolve({
-            status: spacesRes.statusCode,
-            responseTime: totalTime,
-            contentLength: data.length,
+            statusCode: spacesRes.statusCode,
             headers: spacesRes.headers,
-            preview: data.substring(0, 200)
+            data: data
           });
         });
       });
       
-      request.on('error', (error) => {
-        addHLSLog('ERROR', 'Spaces request error', { error: error.message });
-        reject(error);
-      });
-      
-      request.setTimeout(10000, () => {
-        addHLSLog('ERROR', 'Spaces request timeout');
-        request.destroy();
-        reject(new Error('Timeout accessing Spaces'));
+      request.on('error', (err) => {
+        reject(err);
       });
     });
     
