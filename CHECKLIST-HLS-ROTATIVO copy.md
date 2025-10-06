@@ -8,9 +8,8 @@ Statu### F2: HLS VOD (Video on Demand) ✅ CONCLUÍDO
 - ✅ Sync básico e `full=true` enriquecendo dur/ID3
 - ✅ Botão Admin "Sincronizar" atualiza lista e totais
 - ✅ **HLS VOD disponível em `generated/hls/latest/` e tocando no iPhone PWA!**
-- [x] Rolling playlist publicada em `generated/hls/rolling/` (derivada sem copiar segments)
-- [ ] Playback iPhone PWA (Rolling) validado (lockscreen/background sem stall)
-- [ ] Cadeia fallback validada: HLS → IOSPWAStrategy → faixas
+- [ ] HLS Rotativo publicado em `generated/hls/rolling/` e tocando no iPhone (F3)
+- [ ] Fallback funcionando: HLS → estratégia IOSPWAStrategy existente → por faixas (F4)
 
 ### 🎯 F2 Marcos Alcançados:
 - ✅ **Background Playback**: Funcionando perfeitamente no iPhone PWA
@@ -83,9 +82,10 @@ Diretriz central:
 - Seguir o workflow: pequenas mudanças, testar em staging, manter estabilidade.
 - Se alguma tarefa exigir algo novo/complexo fora dos padrões dos guias, PAUSAR e solicitar aprovação antes.
 
-Legenda: [ ] pendente, [x] concluído, [!] checkpoint de validação, [STOP] requer aprovação, [legacy] mantido apenas para referência.
+Legenda: [ ] pendente, [x] concluído, [!] checkpoint de validação, [STOP] requer aprovação.
 
 ---
+
 ## 🔄 Atualização 02/10/2025 - F2 CONSOLIDADO ✅
 - [x] F1 (backend) concluído: `/api/sync-catalog?full=true` com `music-metadata` (ESM import dinâmico), limite 20 faixas/execução, retorno com `durationComputed` e `metadataFilled`.
 - [x] F1 (frontend) concluído: botão "Sincronizar com Spaces (Completo)" no `admin.html`, desabilita durante execução, mostra resumo e atualiza lista/totais.
@@ -97,6 +97,7 @@ Legenda: [ ] pendente, [x] concluído, [!] checkpoint de validação, [STOP] req
 - [x] IOSPWAStrategy confirmada e mantida IMUTÁVEL (somente fallback).
 
 ---
+
 ## 0) Preparação e Disciplina de Deploy
 
 - [x] Confirmar que staging está estável e documentado nos guias principais
@@ -107,6 +108,7 @@ Legenda: [ ] pendente, [x] concluído, [!] checkpoint de validação, [STOP] req
 - [!] Abrir checklist em paralelo durante a execução e ir marcando itens
 
 ---
+
 ## F0 – Estrutura de Pastas/Arquivos no Spaces (verificação)
 
 - [x] Validar existência das pastas lógicas (prefixos): `audio/`, `data/`, `generated/`, `generated/mixes/`, `generated/status/`, `generated/hls/`
@@ -121,6 +123,7 @@ Legenda: [ ] pendente, [x] concluído, [!] checkpoint de validação, [STOP] req
 - [!] Aceite F0: Estrutura compreendida e validada; `audio/` e `data/` existem, `generated/*` será criado em F2
 
 ---
+
 ## F0.1 – Estratégia IOSPWAStrategy EXISTENTE (verificação, IMUTÁVEL)
 
 - [x] Verificar existência de `/src/player/strategies/IOSPWAStrategy.ts`
@@ -130,6 +133,7 @@ Legenda: [ ] pendente, [x] concluído, [!] checkpoint de validação, [STOP] req
 - [!] Aceite F0.1: Estratégia IOSPWAStrategy validada e congelada (somente uso como fallback)
 
 ---
+
 ## F1 – Backend: Enriquecimento de Metadados (dur/ID3) + Cache JSON
 
 - [x] [STOP] Aprovação: adicionar dependência leve `music-metadata` (backend)
@@ -145,6 +149,7 @@ Legenda: [ ] pendente, [x] concluído, [!] checkpoint de validação, [STOP] req
 Nota: `metadata-cache.json` ficará para uma subfase F1.1 (sem impacto no fluxo atual).
 
 ---
+
 ## F1 – Frontend (Admin): Botão "Sincronizar" simples
 
 - [x] Adicionar botão único na aba "Gerenciar Biblioteca Musical" (UI já existente) – sem redesenhar
@@ -156,8 +161,9 @@ Nota: `metadata-cache.json` ficará para uma subfase F1.1 (sem impacto no fluxo 
 - [!] Aceite F1-Front: botão funciona, lista e totais atualizam; nenhuma outra mudança visual
 
 ---
+
 ## F2 – Backend: HLS VOD (m3u8 + segmentos) – Opt-in
-[legacy] (Seções F2 detalhadas migradas p/ plano incremental; manter apenas para histórico – todas as subtarefas já cobertas pelo Plano R3/R4 atual.)
+
 - [ ] [STOP] Aprovação: adicionar `ffmpeg-static` e `fluent-ffmpeg` (backend)
 - [ ] Implementar `POST /api/generate-hls` (assíncrono): `{ shuffle, limit, bitrate, segment }`
 - [ ] Gerar VOD longo em `/tmp` com re-encode único (AAC 128k, 44.1k, segmentos 6s)
@@ -170,8 +176,9 @@ Nota: `metadata-cache.json` ficará para uma subfase F1.1 (sem impacto no fluxo 
 - [!] Aceite F2: HLS VOD disponível e reproduz no iPhone (background). Sem impactar MP3 contínuo
 
 ---
+
 ## F2 – Frontend (Admin): Botão opcional "Gerar HLS (VOD)"
-[legacy] (Coberto; interface já validada.)
+
 - [ ] Adicionar botão (opcional) que chama `POST /api/generate-hls` com presets simples
 - [ ] Mostrar feedback rápido (iniciado) e link para status
 - [ ] Não alterar outras partes da UI
@@ -179,8 +186,9 @@ Nota: `metadata-cache.json` ficará para uma subfase F1.1 (sem impacto no fluxo 
 - [!] Aceite F2-Front: botão dispara job; status acessível; sem efeitos colaterais
 
 ---
+
 ## F3 – Backend: HLS Rotativo (publicação atômica) – Opt-in
-[legacy] Publicação atômica original substituída por derivação textual (sem cópia de segments). Itens relevantes migrados para R5/R6.
+
 - [x] Estender `POST /api/generate-hls` para `mode:"rolling"` (VOD longo)
 - [x] Gerar em `generated/hls/tmp/<jobId>/...` e, ao finalizar, publicar em `generated/hls/rolling/` (cópia/movimentação)
 - [x] Salvar `generated/hls/rolling/manifest.json` e `generated/status/hls-rolling-status.json`
@@ -191,6 +199,7 @@ Nota: `metadata-cache.json` ficará para uma subfase F1.1 (sem impacto no fluxo 
 - [!] Aceite F3: publicação atômica; HLS rotativo disponível; sem afetar `latest/`
 
 ---
+
 ## F3 – Frontend (Admin): Botão opcional "Gerar/Atualizar HLS Rotativo"
 
 - [x] Adicionar botão (opcional) que chama `POST /api/generate-hls` com `{ mode:"rolling" }`
@@ -211,6 +220,7 @@ Nota: `metadata-cache.json` ficará para uma subfase F1.1 (sem impacto no fluxo 
 - [!] Aceite F3-Front: botão opera job rotativo sem mudar outras áreas
 
 ---
+
 ## F4 – Frontend (Player): Switch automático em segundo plano (opt-in)
 
 - [ ] Adicionar preferência: “Usar HLS em segundo plano (iPhone)” (OFF por padrão)
@@ -224,6 +234,7 @@ Nota: `metadata-cache.json` ficará para uma subfase F1.1 (sem impacto no fluxo 
 - [!] Aceite F4: troca estável, sem regressões no player e respeitando opt-in
 
 ---
+
 ## F5 – Alternativa cliente (NO-OP)
 
 - [ ] Confirmar que não há tasks para geração de MP3 no cliente (lamejs/ffmpeg.wasm)
@@ -231,43 +242,37 @@ Nota: `metadata-cache.json` ficará para uma subfase F1.1 (sem impacto no fluxo 
 - [!] Aceite F5: Escopo cliente excluído e alinhado com o plano
 
 ---
+
 ## Observabilidade e Segurança
-- [x] Prefixos de log atualizados: SYNC, META, HLS_PROXY, HLS_GEN, HLS_DIAG, SAFARI_ANALYSIS, SAFARI_CORRELATION, SAFARI_HYPOTHESIS, R5_GATE
-- [ ] Status JSONs atualizados: `hls-status.json`, `hls-rolling-status.json`, `sync-status.json` (rolling/legacy job JSON pode ser simplificado) 
-- [x] CORS e Content-Type corretos no Spaces
-- [x] Nenhum segredo exposto em logs
-- [ ] Métricas de player (switches/falhas) consolidadas
+
+- [ ] Prefixos de log: SYNC, META, HLS
+- [ ] Status JSONs atualizados: `hls-status.json`, `hls-rolling-status.json`, `sync-status.json`
+- [ ] CORS e Content-Type corretos no Spaces
+- [ ] Nenhum segredo exposto em logs
+- [ ] Métricas de player (mínimo): switches e falhas
 
 ---
+
 ## Validação dos Critérios de Aceite (Consolidação)
+
 - [x] Sync básico e `full=true` enriquecendo dur/ID3
 - [x] Botão Admin “Sincronizar” atualiza lista e totais
-- [x] HLS VOD disponível em `generated/hls/latest/` e tocando no iPhone
-- [x] Rolling playlist publicada (derivada) em `generated/hls/rolling/`
-- [ ] Playback Rolling validado no iPhone (continuity + lockscreen)
-- [ ] Fallback chain HLS→IOSPWAStrategy→faixas validada
+- [ ] HLS VOD disponível em `generated/hls/latest/` e tocando no iPhone
+- [ ] HLS Rotativo publicado em `generated/hls/rolling/` e tocando no iPhone
+- [ ] Fallback funcionando: HLS → estratégia IOSPWAStrategy existente → por faixas
 
 ---
-## R6 – Hardening Snapshot (Consolidado)
-- [x] (R6-1) Reconciliar checklist (esta atualização)
-- [ ] (R6-2) Script `scripts/hls-smoke.js` (pipeline + diagnostics + hipótese)
-- [ ] (R6-3) Threshold evaluator (segmentCount, totalDurationApprox, ffmpegDurationMs)
-- [ ] (R6-4) Rollback snapshot `index.prev.m3u8` + doc
-- [ ] (R6-5) Teste cadeia fallback (geração falha forçada)
-- [ ] (R6-6) Janitor `/tmp/hls-work/*` (>24h cleanup)
-- [ ] (R6-7) Estabilidade 24h (smoke interval + p95 diag)
-- [ ] (R6-8) Playback Rolling iPhone (lockscreen/background sem stall ~17s)
-- [ ] (R6-9) Endpoints last diagnostics/hypothesis (opcional)
-- [ ] (R6-10) Gate final R6 (100% + zero 500)
 
----
 ## Rollback Simples
+
 - [ ] Desabilitar opt-ins de HLS (frontend)
 - [ ] Usar `full=false` no sync para voltar ao comportamento atual
 - [ ] Player segue com estratégia IOSPWAStrategy existente e reprodução por faixas
 
 ---
+
 ## Checkpoints de Aprovação (não implementar sem validar antes)
+
 - ✅ [STOP] Adicionar/instalar `music-metadata` (F1) - APROVADO E IMPLEMENTADO
 - ✅ [STOP] Adicionar/instalar `ffmpeg-static` e `fluent-ffmpeg` (F2) - APROVADO E VALIDADO
 - [ ] [STOP] Ajustes em CORS/Headers no Spaces (se necessário para `.m3u8`, `.ts/.m4s`) - F3/F4
@@ -279,10 +284,9 @@ Nota: `metadata-cache.json` ficará para uma subfase F1.1 (sem impacto no fluxo 
 **Próximo**: F3 (HLS Rotativo) ou F4 (Player Automático)
 
 ---
+
 ## Encerramento
 
 - [ ] Validar critérios de aceite consolidados (ver `PLANO-SINCRONIZAR-COM-SPACES.md`)
 - [ ] Atualizar documentação (`PLANO_EXECUCAO.md` e `GUIA_TECNICO_DETALHADO.md`) com datas/links de staging
 - [ ] Abrir PR da branch de feature para staging quando todos os checkpoints da fase estiverem marcados
-
-Fim do Plano Incremental HLS.

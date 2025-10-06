@@ -180,15 +180,19 @@ Publish atômico avançado: adiado para pós-R6 se ainda necessário.
 - Hipótese Safari registrada e plausível com dados.
 
 ### R6 – Hardening / Smoke & Operacionalização
-**Objetivo:** Consolidar confiabilidade e preparar próxima fase (publish atômico avançado se necessário).
-**Tarefas:**
-- [ ] (R6-1) Criar `CHECKLIST-HLS-ROTATIVO.md` com seções: Proxies, Capabilities, VOD Generation, Rolling, Diagnostics, Safari Smoke.
-- [ ] (R6-2) Script opcional `scripts/hls-smoke.js` executando: capabilities → generate latest simulate:false → generate rolling → diagnostics.
-- [ ] (R6-3) Adicionar métricas básicas no log (tempo geração, segmentCount) com thresholds (ex: warn se > 90s ou segmentCount < 3).
-- [ ] (R6-4) Documentar rollback: restaurar playlist anterior (manter cópia `index.prev.m3u8`).
-- [ ] (R6-5) Validar que MP3 fallback continua funcionando após geração real.
-- [ ] (R6-6) Limpeza: remover diretórios temporários em `/tmp` após sucesso; log warning se leftover > 24h.
-- [ ] (R6-7) Gate final: Checklist 100% + zero 500 em endpoints HLS core por 24h em staging.
+**Objetivo:** Consolidar confiabilidade, prevenir regressões e preparar avaliação de publish atômico pós-estabilidade.
+**Notas Iniciais:** Gate R5 aprovado (diagnostics p95 < 3000ms, hipótese Safari registrada, sem novos 500). Esta fase adiciona automação, rollback rápido e validação de cadeia de fallback.
+**Tarefas Atualizadas:**
+- [x] (R6-1) Reconciliar & atualizar `CHECKLIST-HLS-ROTATIVO.md` (remover/rotular legado, adicionar seções: Rolling Publication, Rolling Playback, Diagnostics, Safari Analysis, Hypothesis/Gate, Fallback Chain, Smoke & Stability).
+- [x] (R6-2) Implementar script `scripts/hls-smoke.js`: sequência capabilities → generate latest (simulate:false) → generate rolling → diagnostics latest & rolling → safari-hypothesis; saída resumida + exit code.
+- [ ] (R6-3) Avaliador de thresholds: WARN se `segmentCount < 3` ou `totalDurationApprox < 12s`; WARN se `ffmpegDurationMs >= 90000`; fallback simulate se `ffmpegDurationMs >= 150000` (já previsto logicamente, padronizar logging).
+- [ ] (R6-4) Rollback snapshot: antes de publicar nova `latest/index.m3u8` salvar `index.prev.m3u8` + doc de restauração / (opcional) endpoint `/api/hls/rollback-latest`.
+- [ ] (R6-5) Validação cadeia fallback: forçar falha geração (simulada) e confirmar reprodução MP3 + IOSPWAStrategy intacta; registrar resultado no RUN-LOG.
+- [ ] (R6-6) Janitor `/tmp/hls-work/*`: remover diretórios concluídos após sucesso; varrer >24h órfãos e deletar (log `HLS_GEN` tipo `janitor`).
+- [ ] (R6-7) Estabilidade 24h: executar smoke em intervalo (manual ou loop) por 24h agregando: total runs, passes, falhas 500, p95 diagnostics; gerar sumário final.
+- [ ] (R6-8) Playback Rolling iPhone: validar lockscreen/background sem stall (~17s); registrar métricas (tempo até primeiro play, continuity ok).
+- [ ] (R6-9) (Opcional) Expor JSON curto `GET /api/hls/last-diagnostics` + `GET /api/hls/last-hypothesis` para Admin/Debug UI.
+- [ ] (R6-10) Gate final: 100% tarefas R6 marcadas + 24h sem 500 em endpoints core HLS.
 
 ---
 ## 5. Restrições (Atualizado)
@@ -209,7 +213,8 @@ Publish atômico avançado: adiado para pós-R6 se ainda necessário.
 - `feat(hls): bootstrap ffmpeg capability + simulate fallback (R3)`
 - `feat(hls): implement real VOD generation latest (R4)`
 - `feat(hls): add rolling builder + diagnostics endpoint (R5)`
-- `chore(hls): add smoke checklist and cleanup tasks (R6)`
+- `feat(hls): safari analysis + correlation + hypothesis + gate (R5)`
+- `chore(hls): reconcile checklist & add smoke/rollback tasks (R6)`
 
 ---
 ## 8. Checklist de Aceite Final
@@ -219,7 +224,7 @@ Publish atômico avançado: adiado para pós-R6 se ainda necessário.
 ✅ VOD latest gerado real (R4).  
 ✅ Rolling playlist + diagnostics + hipótese Safari (R5).  
 ✅ MP3 contínuo intacto e funcional.  
-⏳ Smoke checklist + rollback documentado (R6).  
+⏳ Smoke + rollback + janitor + thresholds (R6).  
 
 ---
 ## 9. Próximos Passos (Após Encerrar R6)

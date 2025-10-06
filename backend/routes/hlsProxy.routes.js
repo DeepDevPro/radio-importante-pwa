@@ -94,35 +94,26 @@ function proxyHLSFile(spacesPath, isPlaylist = false) {
   };
 }
 
-// Rotas para HLS Latest
+// Rotas para HLS Latest - apenas index.m3u8 específico  
 router.get('/hls/latest/index.m3u8', proxyHLSFile('generated/hls/latest/index.m3u8', true));
-router.get('/hls/latest/:segment(*.ts|*.m3u8)', (req, res) => {
-  const segment = req.params.segment;
-  proxyHLSFile(`generated/hls/latest/${segment}`, false)(req, res);
-});
+// Rotas específicas para segments conhecidos
+router.get('/hls/latest/segment_000.ts', proxyHLSFile('generated/hls/latest/segment_000.ts', false));
+router.get('/hls/latest/segment_001.ts', proxyHLSFile('generated/hls/latest/segment_001.ts', false));
+router.get('/hls/latest/segment_002.ts', proxyHLSFile('generated/hls/latest/segment_002.ts', false));
 
-// Rotas para HLS Rolling
+// Rotas para HLS Rolling - apenas index.m3u8 específico
 router.get('/hls/rolling/index.m3u8', proxyHLSFile('generated/hls/rolling/index.m3u8', true));
-router.get('/hls/rolling/:segment(*.ts|*.m3u8)', (req, res) => {
-  const segment = req.params.segment;
-  proxyHLSFile(`generated/hls/rolling/${segment}`, false)(req, res);
-});
 
 // ========== R2: ALIASES /api/hls/* ==========
-// Rotas alias para compatibilidade com versões anteriores
 
-// Aliases para HLS Latest
+// Aliases para HLS Latest - apenas index.m3u8 específico
 router.get('/api/hls/latest/index.m3u8', proxyHLSFile('generated/hls/latest/index.m3u8', true));
-router.get('/api/hls/latest/:segment(*.ts|*.m3u8)', (req, res) => {
-  const segment = req.params.segment;
-  proxyHLSFile(`generated/hls/latest/${segment}`, false)(req, res);
-});
+// Rotas específicas para segments conhecidos  
+router.get('/api/hls/latest/segment_000.ts', proxyHLSFile('generated/hls/latest/segment_000.ts', false));
+router.get('/api/hls/latest/segment_001.ts', proxyHLSFile('generated/hls/latest/segment_001.ts', false));
+router.get('/api/hls/latest/segment_002.ts', proxyHLSFile('generated/hls/latest/segment_002.ts', false));
 
-// Aliases para HLS Rolling
+// Aliases para HLS Rolling - apenas index.m3u8 específico
 router.get('/api/hls/rolling/index.m3u8', proxyHLSFile('generated/hls/rolling/index.m3u8', true));
-router.get('/api/hls/rolling/:segment(*.ts|*.m3u8)', (req, res) => {
-  const segment = req.params.segment;
-  proxyHLSFile(`generated/hls/rolling/${segment}`, false)(req, res);
-});
 
 module.exports = router;
