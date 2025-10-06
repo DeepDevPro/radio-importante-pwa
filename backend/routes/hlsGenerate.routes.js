@@ -16,6 +16,7 @@ const { handleSafariAnalysisRequest } = require('../hls/safariAnalysis');
 const { handleSafariCorrelationRequest } = require('../hls/safariDiagnosticsCorrelation');
 const { handleSafariHypothesisRequest } = require('../hls/safariHypothesisLogger');
 const { handleR5GateValidationRequest } = require('../hls/r5GateValidation');
+const { debugDataCache } = require('../hls/debugDataCache');
 const https = require('https');
 const AWS = require('aws-sdk');
 
@@ -102,6 +103,20 @@ router.get('/:mode/diagnostics', async (req, res) => {
       },
       durationMs: Date.now() - startTime
     };
+
+    // R6-9: Update debug cache with fresh diagnostics data
+    if (diagnosticResult.success && diagnosticResult.playlist) {
+      debugDataCache.updateDiagnostics(mode, {
+        status: diagnosticResult.status,
+        declaredCount: diagnosticResult.playlist.declaredCount,
+        headOkCount: diagnosticResult.headOkCount || 0,
+        totalDurationApprox: diagnosticResult.playlist.totalDurationApprox,
+        averageExtinf: diagnosticResult.playlist.averageExtinf,
+        timings: diagnosticResult.timings || [],
+        warnings,
+        segments: diagnosticResult.playlist.segments?.slice(0, 3) // Keep only first 3 for UI
+      });
+    }
 
     res.json(response);
 

@@ -1,0 +1,550 @@
+{
+  "metadata": {
+    "testName": "R6-8 iPhone Playback Metrics Validation",
+    "timestamp": "2025-10-06T22:12:39.801Z",
+    "config": {
+      "baseUrl": "https://radio-importante-pwa-backend-skg2w.ondigitalocean.app",
+      "outputDir": "/Users/juniordeep/deepdev2/music-player/Ago25PwaCleanTest/mplayer001/devFiles/temps",
+      "timeoutMs": 20000,
+      "stallThresholdMs": 500,
+      "maxGapThresholdMs": 17000,
+      "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+      "reportPrefix": "ios-playback-metrics"
+    },
+    "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
+  },
+  "results": {
+    "timestamp": "2025-10-06T22:12:39.801Z",
+    "scenarios": {
+      "foreground": {
+        "scenario": "foreground",
+        "name": "Foreground Playback",
+        "description": "Standard foreground HLS playback",
+        "startTime": 1759788760096,
+        "endTime": 1759788761097,
+        "success": true,
+        "metrics": {
+          "tFirstAudio": null,
+          "stallCount": 0,
+          "longestGap": 0,
+          "continuityOk": true,
+          "playlistLoadTime": 323,
+          "segmentLoadTimes": [
+            189,
+            281,
+            205
+          ],
+          "averageSegmentLoad": 225,
+          "bufferHealth": "unknown"
+        },
+        "errors": [],
+        "timeline": [
+          {
+            "timestamp": 1,
+            "event": "playlist_request_start",
+            "url": "https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/hls/rolling/index.m3u8"
+          },
+          {
+            "timestamp": 324,
+            "event": "playlist_response",
+            "statusCode": 200,
+            "loadTime": 323
+          },
+          {
+            "timestamp": 324,
+            "event": "playlist_parsed",
+            "segmentCount": 10,
+            "totalDuration": 55.435078999999995
+          },
+          {
+            "timestamp": 325,
+            "event": "segment_request_start",
+            "segment": "segment_006.ts",
+            "sequence": 6
+          },
+          {
+            "timestamp": 514,
+            "event": "segment_response",
+            "segment": "segment_006.ts",
+            "statusCode": 404,
+            "loadTime": 189,
+            "gap": 0
+          },
+          {
+            "timestamp": 514,
+            "event": "segment_request_start",
+            "segment": "segment_007.ts",
+            "sequence": 7
+          },
+          {
+            "timestamp": 795,
+            "event": "segment_response",
+            "segment": "segment_007.ts",
+            "statusCode": 404,
+            "loadTime": 281,
+            "gap": 0
+          },
+          {
+            "timestamp": 795,
+            "event": "segment_request_start",
+            "segment": "segment_008.ts",
+            "sequence": 8
+          },
+          {
+            "timestamp": 1000,
+            "event": "segment_response",
+            "segment": "segment_008.ts",
+            "statusCode": 404,
+            "loadTime": 205,
+            "gap": 0
+          }
+        ],
+        "totalDuration": 1001
+      },
+      "background": {
+        "scenario": "background",
+        "name": "Background/Lockscreen",
+        "description": "Simulated background/lockscreen scenario",
+        "startTime": 1759788762099,
+        "endTime": 1759788768359,
+        "success": true,
+        "metrics": {
+          "tFirstAudio": null,
+          "stallCount": 0,
+          "longestGap": 0,
+          "continuityOk": true,
+          "playlistLoadTime": 302,
+          "segmentLoadTimes": [
+            194,
+            280,
+            221
+          ],
+          "averageSegmentLoad": 231.66666666666666,
+          "bufferHealth": "unknown"
+        },
+        "errors": [],
+        "timeline": [
+          {
+            "timestamp": 1,
+            "event": "playlist_request_start",
+            "url": "https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/hls/rolling/index.m3u8"
+          },
+          {
+            "timestamp": 303,
+            "event": "playlist_response",
+            "statusCode": 200,
+            "loadTime": 302
+          },
+          {
+            "timestamp": 303,
+            "event": "playlist_parsed",
+            "segmentCount": 10,
+            "totalDuration": 55.435078999999995
+          },
+          {
+            "timestamp": 303,
+            "event": "segment_request_start",
+            "segment": "segment_006.ts",
+            "sequence": 6
+          },
+          {
+            "timestamp": 498,
+            "event": "segment_response",
+            "segment": "segment_006.ts",
+            "statusCode": 404,
+            "loadTime": 194,
+            "gap": 0
+          },
+          {
+            "timestamp": 498,
+            "event": "segment_request_start",
+            "segment": "segment_007.ts",
+            "sequence": 7
+          },
+          {
+            "timestamp": 778,
+            "event": "segment_response",
+            "segment": "segment_007.ts",
+            "statusCode": 404,
+            "loadTime": 280,
+            "gap": 0
+          },
+          {
+            "timestamp": 778,
+            "event": "segment_request_start",
+            "segment": "segment_008.ts",
+            "sequence": 8
+          },
+          {
+            "timestamp": 999,
+            "event": "segment_response",
+            "segment": "segment_008.ts",
+            "statusCode": 404,
+            "loadTime": 221,
+            "gap": 0
+          },
+          {
+            "timestamp": 1000,
+            "event": "background_simulation_start",
+            "description": "Simulating iOS background/lockscreen behavior"
+          },
+          {
+            "timestamp": 6260,
+            "event": "background_playlist_check",
+            "statusCode": 200,
+            "accessible": true
+          }
+        ],
+        "totalDuration": 6260
+      },
+      "networkSwitch": {
+        "scenario": "networkSwitch",
+        "name": "Network Transition",
+        "description": "Simulated network quality changes",
+        "startTime": 1759788769360,
+        "endTime": 1759788771042,
+        "success": true,
+        "metrics": {
+          "tFirstAudio": null,
+          "stallCount": 0,
+          "longestGap": 0,
+          "continuityOk": true,
+          "playlistLoadTime": 211,
+          "segmentLoadTimes": [
+            194,
+            314,
+            224
+          ],
+          "averageSegmentLoad": 244,
+          "bufferHealth": "unknown"
+        },
+        "errors": [],
+        "timeline": [
+          {
+            "timestamp": 0,
+            "event": "playlist_request_start",
+            "url": "https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/hls/rolling/index.m3u8"
+          },
+          {
+            "timestamp": 211,
+            "event": "playlist_response",
+            "statusCode": 200,
+            "loadTime": 211
+          },
+          {
+            "timestamp": 212,
+            "event": "playlist_parsed",
+            "segmentCount": 10,
+            "totalDuration": 55.435078999999995
+          },
+          {
+            "timestamp": 212,
+            "event": "segment_request_start",
+            "segment": "segment_006.ts",
+            "sequence": 6
+          },
+          {
+            "timestamp": 407,
+            "event": "segment_response",
+            "segment": "segment_006.ts",
+            "statusCode": 404,
+            "loadTime": 194,
+            "gap": 0
+          },
+          {
+            "timestamp": 407,
+            "event": "segment_request_start",
+            "segment": "segment_007.ts",
+            "sequence": 7
+          },
+          {
+            "timestamp": 722,
+            "event": "segment_response",
+            "segment": "segment_007.ts",
+            "statusCode": 404,
+            "loadTime": 314,
+            "gap": 0
+          },
+          {
+            "timestamp": 722,
+            "event": "segment_request_start",
+            "segment": "segment_008.ts",
+            "sequence": 8
+          },
+          {
+            "timestamp": 946,
+            "event": "segment_response",
+            "segment": "segment_008.ts",
+            "statusCode": 404,
+            "loadTime": 224,
+            "gap": 0
+          },
+          {
+            "timestamp": 947,
+            "event": "network_condition_change",
+            "condition": "fast",
+            "timeout": 2000
+          },
+          {
+            "timestamp": 1170,
+            "event": "network_segment_test",
+            "condition": "fast",
+            "loadTime": 223,
+            "success": true
+          },
+          {
+            "timestamp": 1170,
+            "event": "network_condition_change",
+            "condition": "slow",
+            "timeout": 8000
+          },
+          {
+            "timestamp": 1445,
+            "event": "network_segment_test",
+            "condition": "slow",
+            "loadTime": 275,
+            "success": true
+          },
+          {
+            "timestamp": 1445,
+            "event": "network_condition_change",
+            "condition": "fast",
+            "timeout": 2000
+          },
+          {
+            "timestamp": 1682,
+            "event": "network_segment_test",
+            "condition": "fast",
+            "loadTime": 237,
+            "success": true
+          }
+        ],
+        "totalDuration": 1682
+      },
+      "segmentGaps": {
+        "scenario": "segmentGaps",
+        "name": "Segment Gap Analysis",
+        "description": "Analysis of gaps between segments",
+        "startTime": 1759788772045,
+        "endTime": 1759788784848,
+        "success": true,
+        "metrics": {
+          "tFirstAudio": null,
+          "stallCount": 0,
+          "longestGap": 0,
+          "continuityOk": true,
+          "playlistLoadTime": 245,
+          "segmentLoadTimes": [
+            186,
+            267,
+            214
+          ],
+          "averageSegmentLoad": 222.33333333333334,
+          "bufferHealth": "unknown",
+          "gapAnalysis": {
+            "averageGap": 1601.6,
+            "maxGap": 2002,
+            "gaps": [
+              0,
+              2002,
+              2002,
+              2002,
+              2002
+            ],
+            "gapConsistency": true
+          }
+        },
+        "errors": [],
+        "timeline": [
+          {
+            "timestamp": 1,
+            "event": "playlist_request_start",
+            "url": "https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/hls/rolling/index.m3u8"
+          },
+          {
+            "timestamp": 246,
+            "event": "playlist_response",
+            "statusCode": 200,
+            "loadTime": 245
+          },
+          {
+            "timestamp": 246,
+            "event": "playlist_parsed",
+            "segmentCount": 10,
+            "totalDuration": 55.435078999999995
+          },
+          {
+            "timestamp": 246,
+            "event": "segment_request_start",
+            "segment": "segment_006.ts",
+            "sequence": 6
+          },
+          {
+            "timestamp": 433,
+            "event": "segment_response",
+            "segment": "segment_006.ts",
+            "statusCode": 404,
+            "loadTime": 186,
+            "gap": 0
+          },
+          {
+            "timestamp": 433,
+            "event": "segment_request_start",
+            "segment": "segment_007.ts",
+            "sequence": 7
+          },
+          {
+            "timestamp": 700,
+            "event": "segment_response",
+            "segment": "segment_007.ts",
+            "statusCode": 404,
+            "loadTime": 267,
+            "gap": 0
+          },
+          {
+            "timestamp": 700,
+            "event": "segment_request_start",
+            "segment": "segment_008.ts",
+            "sequence": 8
+          },
+          {
+            "timestamp": 914,
+            "event": "segment_response",
+            "segment": "segment_008.ts",
+            "statusCode": 404,
+            "loadTime": 214,
+            "gap": 0
+          },
+          {
+            "timestamp": 914,
+            "event": "gap_measurement",
+            "segment": "segment_006.ts",
+            "gap": 0,
+            "expectedDuration": 6013.967
+          },
+          {
+            "timestamp": 3152,
+            "event": "gap_measurement",
+            "segment": "segment_007.ts",
+            "gap": 2002,
+            "expectedDuration": 5990.744000000001
+          },
+          {
+            "timestamp": 5432,
+            "event": "gap_measurement",
+            "segment": "segment_008.ts",
+            "gap": 2002,
+            "expectedDuration": 6013.978
+          },
+          {
+            "timestamp": 7664,
+            "event": "gap_measurement",
+            "segment": "segment_009.ts",
+            "gap": 2002,
+            "expectedDuration": 5990.744000000001
+          },
+          {
+            "timestamp": 10244,
+            "event": "gap_measurement",
+            "segment": "segment_010.ts",
+            "gap": 2002,
+            "expectedDuration": 5996.255999999999
+          },
+          {
+            "timestamp": 12803,
+            "event": "gap_analysis_complete",
+            "averageGap": 1601.6,
+            "maxGap": 2002,
+            "consistent": true
+          }
+        ],
+        "totalDuration": 12803
+      }
+    },
+    "aggregatedMetrics": {
+      "overallSuccess": true,
+      "successRate": 100,
+      "avgFirstAudio": 0,
+      "totalStalls": 0,
+      "maxGap": 0,
+      "avgSegmentLoad": 231,
+      "scenarioCount": 4,
+      "successfulScenarios": 4,
+      "iOSCompatibility": {
+        "rating": "excellent",
+        "issues": [],
+        "recommendations": []
+      }
+    },
+    "diagnosticsCorrelation": {
+      "success": true,
+      "mode": "rolling",
+      "status": "ok",
+      "playlist": {
+        "declaredCount": 10,
+        "hasEndlist": false,
+        "totalDurationApprox": 55.435078999999995,
+        "averageExtinf": 5.5435079,
+        "firstSegments": [
+          "segment_006.ts",
+          "segment_007.ts",
+          "segment_008.ts"
+        ],
+        "lastSegments": [
+          "segment_013.ts",
+          "segment_014.ts",
+          "segment_015.ts"
+        ]
+      },
+      "segments": {
+        "headOkCount": 3,
+        "totalProbes": 3,
+        "timings": [
+          24,
+          19,
+          17
+        ],
+        "sampleSegments": [
+          {
+            "index": 0,
+            "name": "segment_006.ts",
+            "success": true,
+            "durationMs": 24
+          },
+          {
+            "index": 5,
+            "name": "segment_011.ts",
+            "success": true,
+            "durationMs": 19
+          },
+          {
+            "index": 9,
+            "name": "segment_015.ts",
+            "success": true,
+            "durationMs": 17
+          }
+        ]
+      },
+      "durationMs": 39,
+      "thresholds": {
+        "warnings": [],
+        "hasWarnings": false
+      }
+    },
+    "recommendations": []
+  },
+  "summary": {
+    "overallSuccess": true,
+    "iOSCompatibility": {
+      "rating": "excellent",
+      "issues": [],
+      "recommendations": []
+    },
+    "keyMetrics": {
+      "avgFirstAudio": 0,
+      "totalStalls": 0,
+      "maxGap": 0,
+      "successRate": 100
+    }
+  }
+}

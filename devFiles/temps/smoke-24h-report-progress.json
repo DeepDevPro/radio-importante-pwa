@@ -1,0 +1,80 @@
+{
+  "metadata": {
+    "startTime": "2025-10-06T21:58:39.823Z",
+    "currentTime": "2025-10-06T22:03:50.963Z",
+    "elapsedHours": 0.09,
+    "progress": 16.67,
+    "remainingRuns": 10,
+    "configuration": {
+      "intervalMinutes": 5,
+      "maxDurationHours": 1,
+      "failureThresholdPercent": 5,
+      "diagnosticsP95ThresholdMs": 3000,
+      "outputDir": "/Users/juniordeep/deepdev2/music-player/Ago25PwaCleanTest/mplayer001/devFiles/temps",
+      "smokeScript": "./scripts/hls-smoke.cjs",
+      "reportPrefix": "smoke-24h-report",
+      "logLevel": "info"
+    }
+  },
+  "statistics": {
+    "totalRuns": 2,
+    "successfulRuns": 2,
+    "failedRuns": 0,
+    "failureRate": 0,
+    "durationStats": {
+      "count": 2,
+      "min": 5140,
+      "max": 5988,
+      "avg": 5564,
+      "p95": 5988
+    },
+    "diagnosticsP95": 0,
+    "lastRuns": [
+      {
+        "runId": "run-1",
+        "timestamp": "2025-10-06T21:58:39.838Z",
+        "success": true,
+        "durationMs": 5988
+      },
+      {
+        "runId": "run-2",
+        "timestamp": "2025-10-06T22:03:45.822Z",
+        "success": true,
+        "durationMs": 5140
+      }
+    ]
+  },
+  "criteria": {
+    "failureThresholdMet": true,
+    "diagnosticsThresholdMet": true,
+    "minimumRunsCompleted": false
+  },
+  "runs": [
+    {
+      "runId": "run-1",
+      "timestamp": "2025-10-06T21:58:39.838Z",
+      "startTime": 1759787919838,
+      "endTime": 1759787925826,
+      "durationMs": 5988,
+      "success": true,
+      "exitCode": 0,
+      "output": "[2025-10-06T21:58:39.920Z] [INFO] === HLS SMOKE TEST START ===\n[2025-10-06T21:58:39.925Z] [INFO] Target: https://radio-importante-pwa-backend-skg2w.ondigitalocean.app\n[2025-10-06T21:58:39.925Z] [INFO] Timeout: 30000ms per request\n[2025-10-06T21:58:40.288Z] [INFO] CAPABILITIES: ✅ PASS canSpawn=true, version=6.0-static (362ms)\n[2025-10-06T21:58:44.276Z] [INFO] GENERATE_LATEST: ✅ PASS action=generated, segments=16, duration=91s (3988ms)\n[2025-10-06T21:58:44.599Z] [INFO] GENERATE_ROLLING: ✅ PASS action=rolling_published, segments=unknown (323ms)\n[2025-10-06T21:58:45.036Z] [INFO] DIAGNOSTICS_LATEST: ✅ PASS status=ok, declared=undefined, probes=undefined, duration=undefineds (437ms)\n[2025-10-06T21:58:45.626Z] [INFO] DIAGNOSTICS_ROLLING: ✅ PASS status=ok, declared=undefined, probes=undefined, duration=undefineds (590ms)\n[2025-10-06T21:58:45.816Z] [INFO] SAFARI_HYPOTHESIS: ✅ PASS hypothesis=[object Object], confidence=unknown (190ms)\n[2025-10-06T21:58:45.816Z] [INFO] === SMOKE TEST SUMMARY ===\n[2025-10-06T21:58:45.816Z] [INFO] Tests: 6/6 passed\n[2025-10-06T21:58:45.816Z] [SUCCESS] 🎉 ALL TESTS PASSED\n",
+      "error": null,
+      "metrics": null,
+      "diagnostics": null
+    },
+    {
+      "runId": "run-2",
+      "timestamp": "2025-10-06T22:03:45.822Z",
+      "startTime": 1759788225822,
+      "endTime": 1759788230962,
+      "durationMs": 5140,
+      "success": true,
+      "exitCode": 0,
+      "output": "[2025-10-06T22:03:45.983Z] [INFO] === HLS SMOKE TEST START ===\n[2025-10-06T22:03:45.988Z] [INFO] Target: https://radio-importante-pwa-backend-skg2w.ondigitalocean.app\n[2025-10-06T22:03:45.988Z] [INFO] Timeout: 30000ms per request\n[2025-10-06T22:03:46.298Z] [INFO] CAPABILITIES: ✅ PASS canSpawn=true, version=6.0-static (310ms)\n[2025-10-06T22:03:50.040Z] [INFO] GENERATE_LATEST: ✅ PASS action=generated, segments=16, duration=91s (3740ms)\n[2025-10-06T22:03:50.364Z] [INFO] GENERATE_ROLLING: ✅ PASS action=rolling_published, segments=unknown (323ms)\n[2025-10-06T22:03:50.563Z] [INFO] DIAGNOSTICS_LATEST: ✅ PASS status=ok, declared=undefined, probes=undefined, duration=undefineds (199ms)\n[2025-10-06T22:03:50.777Z] [INFO] DIAGNOSTICS_ROLLING: ✅ PASS status=ok, declared=undefined, probes=undefined, duration=undefineds (214ms)\n[2025-10-06T22:03:50.959Z] [INFO] SAFARI_HYPOTHESIS: ✅ PASS hypothesis=[object Object], confidence=unknown (181ms)\n[2025-10-06T22:03:50.959Z] [INFO] === SMOKE TEST SUMMARY ===\n[2025-10-06T22:03:50.959Z] [INFO] Tests: 6/6 passed\n[2025-10-06T22:03:50.959Z] [SUCCESS] 🎉 ALL TESTS PASSED\n",
+      "error": null,
+      "metrics": null,
+      "diagnostics": null
+    }
+  ]
+}

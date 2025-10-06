@@ -1,0 +1,283 @@
+{
+  "timestamp": "2025-10-06T23:01:39.748Z",
+  "success": true,
+  "criteria": {
+    "tasksComplete": true,
+    "smokeFailureRate": 0,
+    "no500Errors": true,
+    "diagnosticsP95": 44
+  },
+  "r6Tasks": {
+    "R6-1": {
+      "name": "Checklist Reconciliation",
+      "success": true,
+      "message": "Checklist found",
+      "duration": 0
+    },
+    "R6-2": {
+      "name": "Smoke Test Implementation",
+      "success": true,
+      "message": "Smoke test script found",
+      "duration": 0
+    },
+    "R6-3": {
+      "name": "Diagnostics Real + Thresholds",
+      "success": true,
+      "message": "Diagnostics endpoint working",
+      "duration": 360,
+      "data": {
+        "success": true,
+        "mode": "latest",
+        "status": "ok",
+        "playlist": {
+          "declaredCount": 16,
+          "hasEndlist": true,
+          "totalDurationApprox": 91.437646,
+          "averageExtinf": 5.714852875,
+          "firstSegments": [
+            "segment_000.ts",
+            "segment_001.ts",
+            "segment_002.ts"
+          ],
+          "lastSegments": [
+            "segment_013.ts",
+            "segment_014.ts",
+            "segment_015.ts"
+          ]
+        },
+        "segments": {
+          "headOkCount": 3,
+          "totalProbes": 3,
+          "timings": [
+            14,
+            14,
+            15
+          ],
+          "sampleSegments": [
+            {
+              "index": 0,
+              "name": "segment_000.ts",
+              "success": true,
+              "durationMs": 14
+            },
+            {
+              "index": 8,
+              "name": "segment_008.ts",
+              "success": true,
+              "durationMs": 14
+            },
+            {
+              "index": 15,
+              "name": "segment_015.ts",
+              "success": true,
+              "durationMs": 15
+            }
+          ]
+        },
+        "durationMs": 46,
+        "thresholds": {
+          "warnings": [],
+          "hasWarnings": false
+        }
+      }
+    },
+    "R6-4": {
+      "name": "Rollback Snapshot",
+      "success": true,
+      "message": "Rollback system available",
+      "duration": 188,
+      "data": {
+        "success": true,
+        "mode": "latest",
+        "snapshots": [
+          {
+            "type": "current",
+            "key": "generated/hls/latest/index.m3u8",
+            "exists": false,
+            "size": 0
+          },
+          {
+            "type": "snapshot",
+            "key": "generated/hls/latest/index.prev.m3u8",
+            "exists": false,
+            "size": 0
+          }
+        ],
+        "error": null,
+        "durationMs": 1
+      }
+    },
+    "R6-5": {
+      "name": "Fallback Chain Validation",
+      "success": true,
+      "message": "Fallback chain healthy",
+      "duration": 189,
+      "data": {
+        "status": "healthy",
+        "service": "radio-importante-backend",
+        "version": "2.2.4",
+        "timestamp": "2025-10-06T23:00:55.365Z"
+      }
+    },
+    "R6-6": {
+      "name": "Janitor Inteligente",
+      "success": true,
+      "message": "Janitor system operational",
+      "duration": 202,
+      "data": {
+        "success": true,
+        "status": {
+          "tempBaseExists": true,
+          "totalDirectories": 0,
+          "totalSizeBytes": 0,
+          "orphanedDirectories": 0,
+          "orphanedSizeBytes": 0,
+          "oldestOrphanHours": 0
+        },
+        "durationMs": 1
+      }
+    },
+    "R6-7": {
+      "name": "Estabilidade 24h + Automation",
+      "success": true,
+      "message": "24h automation script found",
+      "duration": 1
+    },
+    "R6-8": {
+      "name": "iPhone Playback Validation",
+      "success": true,
+      "message": "iOS test script found",
+      "duration": 0
+    },
+    "R6-9": {
+      "name": "Debug UI Integration",
+      "success": true,
+      "message": "Debug UI endpoints working",
+      "duration": 201,
+      "data": {
+        "success": true,
+        "timestamp": 1759791655763,
+        "cache": {
+          "status": "active",
+          "ttl": 300000
+        },
+        "stats": {
+          "diagnostics": {
+            "available": []
+          },
+          "hypothesis": {
+            "available": []
+          }
+        },
+        "uptime": 650.162139895,
+        "duration": 0
+      }
+    }
+  },
+  "smokeResults": [
+    {
+      "iteration": 1,
+      "success": true,
+      "duration": 6357,
+      "capabilities": 200,
+      "generation": 200,
+      "diagnostics": 200,
+      "diagDuration": 43
+    },
+    {
+      "iteration": 2,
+      "success": true,
+      "duration": 4378,
+      "capabilities": 200,
+      "generation": 200,
+      "diagnostics": 200,
+      "diagDuration": 43
+    },
+    {
+      "iteration": 3,
+      "success": true,
+      "duration": 4204,
+      "capabilities": 200,
+      "generation": 200,
+      "diagnostics": 200,
+      "diagDuration": 29
+    },
+    {
+      "iteration": 4,
+      "success": true,
+      "duration": 3956,
+      "capabilities": 200,
+      "generation": 200,
+      "diagnostics": 200,
+      "diagDuration": 31
+    },
+    {
+      "iteration": 5,
+      "success": true,
+      "duration": 4353,
+      "capabilities": 200,
+      "generation": 200,
+      "diagnostics": 200,
+      "diagDuration": 32
+    },
+    {
+      "iteration": 6,
+      "success": true,
+      "duration": 4221,
+      "capabilities": 200,
+      "generation": 200,
+      "diagnostics": 200,
+      "diagDuration": 44
+    },
+    {
+      "iteration": 7,
+      "success": true,
+      "duration": 4097,
+      "capabilities": 200,
+      "generation": 200,
+      "diagnostics": 200,
+      "diagDuration": 34
+    },
+    {
+      "iteration": 8,
+      "success": true,
+      "duration": 4186,
+      "capabilities": 200,
+      "generation": 200,
+      "diagnostics": 200,
+      "diagDuration": 31
+    },
+    {
+      "iteration": 9,
+      "success": true,
+      "duration": 4077,
+      "capabilities": 200,
+      "generation": 200,
+      "diagnostics": 200,
+      "diagDuration": 40
+    },
+    {
+      "iteration": 10,
+      "success": true,
+      "duration": 4309,
+      "capabilities": 200,
+      "generation": 200,
+      "diagnostics": 200,
+      "diagDuration": 28
+    }
+  ],
+  "diagnosticsMetrics": [
+    28,
+    29,
+    31,
+    31,
+    32,
+    34,
+    40,
+    43,
+    43,
+    44
+  ],
+  "errors": [],
+  "warnings": []
+}
