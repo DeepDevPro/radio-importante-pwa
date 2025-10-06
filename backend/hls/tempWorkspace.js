@@ -55,7 +55,7 @@ async function createTempWorkspace() {
     // Clean up if partially created
     try {
       if (workspaceDir) {
-        await fs.promises.rmdir(workspaceDir, { recursive: true });
+        await fs.promises.rm(workspaceDir, { recursive: true });
       }
     } catch (cleanupError) {
       // Best effort cleanup
@@ -81,7 +81,7 @@ async function cleanupTempWorkspace(workspaceDir) {
       throw new Error('Invalid workspace directory for cleanup');
     }
     
-    await fs.promises.rmdir(workspaceDir, { recursive: true });
+    await fs.promises.rm(workspaceDir, { recursive: true });
     result.success = true;
     
     console.log(`[TempWorkspace] Cleaned up: ${workspaceDir}`);
