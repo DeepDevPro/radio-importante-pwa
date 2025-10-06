@@ -68,6 +68,10 @@ app.use('/', require('./routes/debugLogs.routes'));
 // R1: Rotas de proxy para HLS (latest e rolling)
 app.use('/', require('./routes/hlsProxy.routes'));
 
+// ========== HLS GENERATION ROUTES ==========
+// R3: Rota para geração de HLS via script
+app.use('/', require('./routes/hlsGenerate.routes'));
+
 // Rota para servir track-cues.json (necessário para iPhone PWA)
 app.get('/audio/hls/track-cues.json', async (req, res) => {
   try {
