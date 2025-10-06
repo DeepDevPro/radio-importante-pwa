@@ -174,22 +174,22 @@ Commit sugerido:
 +- [x] Criar `backend/routes/debugLogs.routes.js` com 3 endpoints originais
 +- [x] Substituir blocos inline por `app.use('/', require('./routes/debugLogs.routes'))`
 +- [x] Verificar server local sobe sem erro (porta livre)
-+- [ ] Deploy staging (após 4.2 junto para reduzir ciclos)
++- [x] Deploy staging (após 4.2 junto para reduzir ciclos)
 +- [x] Commit: `refactor(step4.1): extract debug logs routes to dedicated router`
 +
 +#### 4.2 Extração Catálogo (somente leitura + manutenção)
-+- [ ] Criar `backend/routes/catalog.routes.js` contendo:
++- [x] Criar `backend/routes/catalog.routes.js` contendo:
 +  - `GET /api/catalog`
 +  - `POST /api/regenerate-catalog`
 +  - `POST /api/sync-catalog`
 +  - `POST /api/clear-catalog`
 +  - `PUT /api/tracks/:id/metadata`
 +  - `DELETE /api/delete/:id`
-+- [ ] Mover lógica existente de cada rota para o arquivo novo SEM alterar respostas
-+- [ ] Importar `catalog`, `saveCatalog` do state e reutilizar utilitários já no `app.js`
-+- [ ] Substituir blocos originais por `app.use('/', require('./routes/catalog.routes'))`
-+- [ ] Testar local `/api/catalog` e update metadata
-+- [ ] Commit: `refactor(step4.2): extract catalog routes`
++- [x] Mover lógica existente de cada rota para o arquivo novo SEM alterar respostas
++- [x] Importar `catalog`, `saveCatalog` do state e reutilizar utilitários já no `app.js`
++- [x] Substituir blocos originais por `app.use('/', require('./routes/catalog.routes'))`
++- [x] Testar local `/api/catalog` e update metadata
++- [x] Commit: `refactor(step4.2): extract catalog routes`
 +
 +#### 4.3 Deploy e validação conjunta
 +- [x] Merge em `staging` (inclui 4.1 + 4.2)
@@ -201,18 +201,18 @@ Commit sugerido:
 +
 +> Nota 4.3: Deploy staging concluído. Smoke tests realizados: `/health` (200), `/api/catalog` (200, com tracks), `/api/debug-logs` (200), `PUT /api/tracks/.../metadata` (200, success: true). ETAPA 4 completa: rotas debug e catálogo extraídas com sucesso.
 +
-- [ ] Criar `routes/debugLogs.routes.js` com endpoints:
--  - `POST /api/debug-logs`
--  - `GET /api/debug-logs`
--  - `GET /debug-logs/:filename`
-- [ ] Criar `routes/catalog.routes.js` com endpoints:
--  - `GET /api/catalog`
--  - `POST /api/regenerate-catalog`
--  - `POST /api/sync-catalog`
--  - `POST /api/clear-catalog`
--  - `PUT /api/tracks/:id/metadata`
--  - `DELETE /api/delete/:id`
-- [ ] Em `app.js`, montar routers (`app.use`) e remover blocos originais
-- [ ] Deploy staging
-- [ ] Testar endpoints de catálogo e debug logs
+- [x] Criar `routes/debugLogs.routes.js` com endpoints:
+  - `POST /api/debug-logs`
+  - `GET /api/debug-logs`
+  - `GET /debug-logs/:filename`
+- [x] Criar `routes/catalog.routes.js` com endpoints:
+  - `GET /api/catalog`
+  - `POST /api/regenerate-catalog`
+  - `POST /api/sync-catalog`
+  - `POST /api/clear-catalog`
+  - `PUT /api/tracks/:id/metadata`
+  - `DELETE /api/delete/:id`
+- [x] Em `app.js`, montar routers (`app.use`) e remover blocos originais
+- [x] Deploy staging
+- [x] Testar endpoints de catálogo e debug logs
 +> Nota 4.1: Rotas de debug extraídas para `routes/debugLogs.routes.js`. Próximo: extrair rotas de catálogo (4.2) antes do deploy de staging conjunto (4.3).
