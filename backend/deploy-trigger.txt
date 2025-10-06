@@ -1,1 +1,1 @@
-Reordering debug routes for precedence
+Simplified debug routes for testing
