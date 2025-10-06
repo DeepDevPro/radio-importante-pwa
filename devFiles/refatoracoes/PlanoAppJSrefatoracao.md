@@ -107,10 +107,12 @@ Micropassos ETAPA 3:
 > Nota 3.1: Servidor subiu sem erros. Endpoints retornaram 200. Catálogo carregado com 15 tracks. Logs HLS vazios (esperado).
 
 #### 3.2 Inicialização e consistência
-- [ ] Confirmar `initializeCatalog()` chamado antes de `app.listen()` (ou adicionar)
-- [ ] Remover qualquer resquício de funções duplicadas (`saveCatalogToSpaces`, `loadCatalogFromSpaces`, `generateContinuousFile`) ainda presentes em `app.js`
-- [ ] Verificar que chamadas a `saveCatalog()` agora usam a versão importada
-- [ ] Commit: `refactor(step3b): ensure catalog init sequence`
+- [x] Confirmar `initializeCatalog()` chamado antes de `app.listen()` (ou adicionar)
+- [x] Remover qualquer resquício de funções duplicadas (`saveCatalogToSpaces`, `loadCatalogFromSpaces`, `generateContinuousFile`) ainda presentes em `app.js`
+- [x] Verificar que chamadas a `saveCatalog()` agora usam a versão importada
+- [x] Commit: `refactor(step3b): ensure catalog init sequence`
+
+> Nota 3.2: `initializeCatalog()` executa antes do listen (ver logs). Funções duplicadas removidas. Chamadas a `saveCatalog()` apontam para módulo de estado. generateContinuousFile marcado com TODO para Etapa 5.
 
 #### 3.3 Deploy e validação
 - [ ] Deploy para staging
