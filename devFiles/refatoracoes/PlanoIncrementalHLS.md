@@ -154,7 +154,7 @@ Publish atômico avançado: adiado para pós-R6 se ainda necessário.
 **Tarefas Rolling:**
 - [x] (R5-0) Saneamento logging: testar `saveAutoLog` com chamadas (`msg, tipo`) e (`tipo invertido`) garantindo não quebra; adicionar guard/normalização definitiva.
 - [x] (R5-1) Criar util `buildRollingPlaylist.js` recebendo: `{ segments: [{ name, duration }], windowSize }` → retorna string playlist SEM `#EXT-X-ENDLIST` e com `MEDIA-SEQUENCE` correto.
-- [ ] (R5-2) Criar util `extractLatestSegments.js` que: baixa `latest/index.m3u8` do Spaces, faz parse de EXTINF + nomes; retorna ordenado.
+- [x] (R5-2) Criar util `extractLatestSegments.js` que: baixa `latest/index.m3u8` do Spaces, faz parse de EXTINF + nomes; retorna ordenado.
 - [ ] (R5-3) Publicar playlist rolling em `generated/hls/rolling/index.m3u8` referenciando os MESMOS nomes (sem upload de .ts). Headers iguais aos de playlist latest (`no-cache`).
 - [ ] (R5-4) Atualizar `/api/generate-hls` para aceitar `mode=rolling`: se `latest` válido → gerar rolling; senão `action: simulate_missing_latest` (sem erro).
 
