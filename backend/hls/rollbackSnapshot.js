@@ -1,7 +1,7 @@
 // Rollback Snapshot System for HLS Playlists
 // R6-4: Before publishing new latest/index.m3u8, save index.prev.m3u8
 
-const storageConfig = require('../config/storage-config');
+const storageConfig = require('../storage-config');
 const { saveAutoLog } = require('../utils/autoLog');
 
 /**
