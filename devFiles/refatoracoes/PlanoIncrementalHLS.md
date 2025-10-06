@@ -167,9 +167,9 @@ Publish atômico avançado: adiado para pós-R6 se ainda necessário.
 
 **Análise Safari Timeout:**
 - [x] (R5-10) Reproduzir freeze e capturar timestamps network (HAR ou logs manual) + tempo até travar.
-- [ ] (R5-11) Correlacionar com `diagnostics` (ex: `totalDurationApprox < 18s` ou lacunas EXTINF).
-- [ ] (R5-12) Registrar hipótese única no RUN-LOG (`MISSING_SEGMENTS | PLAYLIST_STALLED | HEADER_CACHING | PLAYER_STRATEGY_MISMATCH`).
-- [ ] (R5-13) Gate: Rolling playlist 200 (sem `#EXT-X-ENDLIST`) + diagnostics < 3000ms + hipótese documentada.
+- [x] (R5-11) Correlacionar com `diagnostics` (ex: `totalDurationApprox < 18s` ou lacunas EXTINF).
+- [x] (R5-12) Registrar hipótese única no RUN-LOG (`MISSING_SEGMENTS | PLAYLIST_STALLED | HEADER_CACHING | PLAYER_STRATEGY_MISMATCH`).
+- [x] (R5-13) Gate: Rolling playlist 200 (sem `#EXT-X-ENDLIST`) + diagnostics < 3000ms + hipótese documentada.
 
 **Critérios de Aceite R5 (Atualizados):**
 - Rolling publicado sem copiar segments (somente nova playlist).
@@ -217,7 +217,7 @@ Publish atômico avançado: adiado para pós-R6 se ainda necessário.
 ✅ Rotas /api/hls/* aliases funcionando (compatibilidade).  
 ✅ Capabilities endpoint e simulate fallback (R3).  
 ✅ VOD latest gerado real (R4).  
-⏳ Rolling playlist + diagnostics + hipótese Safari (R5).  
+✅ Rolling playlist + diagnostics + hipótese Safari (R5).  
 ✅ MP3 contínuo intacto e funcional.  
 ⏳ Smoke checklist + rollback documentado (R6).  
 

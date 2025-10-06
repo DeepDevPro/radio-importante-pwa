@@ -13,6 +13,9 @@ const { generateVodLatest } = require('../hls/generateVodLatest');
 const { publishRollingPlaylist } = require('../hls/publishRollingPlaylist');
 const { diagnoseHlsPlaylist } = require('../hls/hlsDiagnostics');
 const { handleSafariAnalysisRequest } = require('../hls/safariAnalysis');
+const { handleSafariCorrelationRequest } = require('../hls/safariDiagnosticsCorrelation');
+const { handleSafariHypothesisRequest } = require('../hls/safariHypothesisLogger');
+const { handleR5GateValidationRequest } = require('../hls/r5GateValidation');
 const https = require('https');
 const AWS = require('aws-sdk');
 
@@ -724,5 +727,14 @@ router.get('/:mode/diagnostics', async (req, res) => {
 
 // R5-10: Safari Analysis Endpoint
 router.post('/safari-analysis', handleSafariAnalysisRequest);
+
+// R5-11: Safari Diagnostics Correlation Endpoint
+router.post('/safari-correlation', handleSafariCorrelationRequest);
+
+// R5-12: Safari Hypothesis Logger Endpoint
+router.post('/safari-hypothesis', handleSafariHypothesisRequest);
+
+// R5-13: R5 Gate Validation Endpoint
+router.post('/r5-gate-validation', handleR5GateValidationRequest);
 
 module.exports = router;
