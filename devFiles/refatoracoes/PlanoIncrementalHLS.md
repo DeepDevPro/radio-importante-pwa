@@ -83,56 +83,101 @@ Publish atômico avançado: adiado para pós-R6 se ainda necessário.
 **Objetivo:** Preparar ambiente para geração real (F2) sem quebrar UI. Fornecer endpoint `/api/generate-hls` que: (a) detecta capacidade real de geração; (b) executa modo `simulate` se faltarem binários; (c) expõe metadados de capability.
 **Saída Final:** `POST /api/generate-hls` responde 200 sempre com JSON estruturado, e `GET /api/hls/capabilities` reporta estado.
 **Tarefas:**
-- [ ] (R3-1) Adicionar dependências no backend: `ffmpeg-static`, `fluent-ffmpeg` (import dinâmico para evitar crash se faltar binário).
-- [ ] (R3-2) Implementar módulo util `backend/hls/ffmpegCapability.js` que retorna `{ hasFfmpegStatic, ffmpegPath, canSpawn }` (tenta require de `ffmpeg-static` e simples spawn `-version` com timeout 1500ms).
-- [ ] (R3-3) Criar `GET /api/hls/capabilities` retornando `{ success:true, capability }` e log `HLS_GEN` tipo `capability`.
-- [ ] (R3-4) Refatorar rota POST `/api/generate-hls`: aceitar body `{ mode, simulate }`; default `mode=latest`, `simulate` automático: `true` se `!canSpawn`.
-- [ ] (R3-5) Extrair função scanner rápida do Spaces (HEAD index.m3u8 + HEAD segment_000.ts) → retorna `{ playlistExists, firstSegmentExists }`.
-- [ ] (R3-6) Lógica de decisão:
+- [x] (R3-1) Adicionar dependências no backend: `ffmpeg-static`, `fluent-ffmpeg` (import dinâmico para evitar crash se faltar binário).
+- [x] (R3-2) Implementar módulo util `backend/hls/ffmpegCapability.js` que retorna `{ hasFfmpegStatic, ffmpegPath, canSpawn }` (tenta require de `ffmpeg-static` e simples spawn `-version` com timeout 1500ms).
+- [x] (R3-3) Criar `GET /api/hls/capabilities` retornando `{ success:true, capability }` e log `HLS_GEN` tipo `capability`.
+- [x] (R3-4) Refatorar rota POST `/api/generate-hls`: aceitar body `{ mode, simulate }`; default `mode=latest`, `simulate` automático: `true` se `!canSpawn`.
+- [x] (R3-5) Extrair função scanner rápida do Spaces (HEAD index.m3u8 + HEAD segment_000.ts) → retorna `{ playlistExists, firstSegmentExists }`.
+- [x] (R3-6) Lógica de decisão:
   - se `simulate` → ações: `reused|synthetic|empty` (mantendo conceito anterior) sem erro.
   - se `!simulate` e capacidade OK → retornar `action: ready_for_real_generation` (não gera ainda) preparando R4.
-- [ ] (R3-7) JSON final: `{ success:true, mode, simulate, capability, action, detected: { playlistExists, firstSegmentExists }, durationMs }`.
-- [ ] (R3-8) Logging `HLS_GEN` consolidado com campos acima.
-- [ ] (R3-9) Atualizar RUN-LOG com 3 cenários simulate + 1 capability real.
-- [ ] (R3-10) Gate: Nenhuma resposta 500; Admin botão interpreta `success:true` como OK.
+- [x] (R3-7) JSON final: `{ success:true, mode, simulate, capability, action, detected: { playlistExists, firstSegmentExists }, durationMs }`.
+- [x] (R3-8) Logging `HLS_GEN` consolidado com campos acima.
+- [x] (R3-9) Atualizar RUN-LOG com 3 cenários simulate + 1 capability real.
+- [x] (R3-10) Gate: Nenhuma resposta 500; Admin botão interpreta `success:true` como OK.
+**Gate p/ R4:** UI do Admin confirma sucesso e playlists continuam acessíveis via proxy.
+
+**⚠️ NOTAS R4 (Baseado em aprendizados R3):**
+- **Dependency Safety:** ffmpeg-static está disponível no package.json mas precisa spawn test real
+- **Logging Fix:** Usar `saveAutoLog(message, type)` não `saveAutoLog(type, object)` - já corrigido
+- **Performance:** Container DigitalOcean tem CPU limitada - monitorar tempo pipeline (threshold: <90s)
+- **Storage:** Reutilizar storage-config.js existente (já funciona com DigitalOcean Spaces)
+- **Fallback:** Manter generate endpoint sempre disponível (nunca 500) mesmo se FFmpeg falhar
 
 ### R4 – Geração VOD Real (latest) (F2-Parte 2)
 **Objetivo:** Implementar geração HLS VOD real (apenas `latest`) a partir de MP3 remotos no Spaces usando pipeline ffmpeg local (transcoding ou transmux se possível). Publicar em `generated/hls/latest/` preservando compatibilidade com proxies.
 **Premissas:** MP3 no Spaces podem ser baixados via stream; container tem CPU limitada → usar taxa/segmento moderados.
-**Parâmetros Iniciais (ajustáveis):** segment length 6s, codec copy se possível (`-c copy` para acelerar), playlist `#EXT-X-PLAYLIST-TYPE:VOD`.
+**Parâmetros Iniciais (ajustáveis):** segment length 6s, tentativa `codec copy` APENAS se já estiver em AAC (ou outro compatível) caso contrário transcodificar para AAC (`-c:a aac -b:a 128k`) para máxima compatibilidade iOS/Safari; playlist `#EXT-X-PLAYLIST-TYPE:VOD`; manter nomes `segment_%03d.ts`.
+**Notas Técnicas Adicionais:**
+- MP3 em TS pode não ser suportado universalmente em Safari iOS → fallback automático para transcode AAC se probe inicial indicar codec inesperado.
+- Se tentativa `copy` falhar rapidamente (exit code != 0 em < 2s) refazer pipeline em modo transcode e registrar no log `transcodeFallback:true`.
+- Threshold de performance: geração total alvo < 90s; warn se >= 90s; hard fail (fallback simulate) se >= 150s.
+- Manter diretório temporário NÃO excluído em caso de falha para análise; remover somente em sucesso (limpeza adicional reforçada em R6).
 **Tarefas:**
-- [ ] (R4-1) Criar diretório interno temporário `/tmp/hls-work/latest-<timestamp>/`.
-- [ ] (R4-2) Implementar util `downloadTrackList.js` que baixa N primeiras faixas (escopo mínimo: 2–3 faixas) para teste; depois expandir para catálogo completo.
-- [ ] (R4-3) Implementar `generateVodLatest.js` usando `fluent-ffmpeg` com `ffmpegPath` de `ffmpeg-static` (definir via `setFfmpegPath`).
-- [ ] (R4-4) Pipeline: concat (arquivos) → saída segmentada (`-f hls -hls_time 6 -hls_playlist_type vod -hls_segment_filename segment_%03d.ts index.m3u8`).
-- [ ] (R4-5) Validar artefatos locais: existência `index.m3u8`, pelo menos 1 `.ts`.
-- [ ] (R4-6) Upload sequencial (ou limitado em paralelo) para `generated/hls/latest/` com headers adequados (playlist no-cache, segments long cache) utilizando storage util já existente.
-- [ ] (R4-7) Se upload parcial falhar → abortar e não sobrescrever playlist antiga (garantir atomicidade simples: upload segments primeiro, playlist por último).
-- [ ] (R4-8) Atualizar `/api/generate-hls` quando `simulate:false` & capability OK para executar pipeline e retornar `action: generated` + `segmentCount`.
-- [ ] (R4-9) Logging `HLS_GEN` com métricas `{ segmentCount, totalDurationApprox }` (somar EXTINF parse).
-- [ ] (R4-10) Gate: GET `/hls/latest/index.m3u8` via proxy exibe playlist nova com `#EXT-X-ENDLIST` e segmentação válida.
+- [x] (R4-1) **PRÉ-REQUISITO:** Melhorar detecção real de capability em `/api/hls/capabilities` (spawn test com timeout e log detalhado) incluindo campo `ffmpegVersion` e `spawnLatencyMs`.
+- [x] (R4-2) Criar diretório interno temporário `/tmp/hls-work/latest-<timestamp>/` (validar permissões & existência de espaço livre via `statfs` simples se disponível ou checar falha de escrita inicial).
+- [x] (R4-3) Implementar util `downloadTrackList.js` que baixa N primeiras faixas do catálogo (escopo inicial: 3–5) com: streaming para arquivo local, checksum rápido (md5) opcional e métricas `downloadDurationMs` acumuladas.
+- [x] (R4-4) Implementar `generateVodLatest.js` usando `fluent-ffmpeg` com `ffmpegPath` de `ffmpeg-static`; aceitar opção `{ forceTranscode:boolean }`.
+- [x] (R4-5) Pipeline FFmpeg: concat (arquivos) → saída segmentada (`-hide_banner -nostdin -f hls -hls_time 6 -hls_playlist_type vod -hls_segment_filename segment_%03d.ts -start_number 0 index.m3u8`) adicionando: se `forceTranscode` → `-vn -c:a aac -b:a 128k`; else tentar `-c:a copy` e capturar stderr inicial para detectar incompatibilidade.
+- [x] (R4-6) Validar artefatos locais: existência `index.m3u8`, >=1 `.ts`, presença de `#EXT-X-ENDLIST`, e parsing de EXTINF somando duração aproximada.
+- [x] (R4-7) Upload sequencial para `generated/hls/latest/` reutilizando storage util existente com headers (playlist no-cache, segments long cache). Registrar métricas `uploadDurationMs` e `segmentCount`.
+- [x] (R4-8) **ATOMICIDADE:** Upload segments primeiro, playlist por último; se upload parcial falhar → NÃO sobrescrever playlist antiga. Se falhar depois de alguns segments, tentar deletar segmentos novos (best-effort) e logar `partialUpload:true`.
+- [x] (R4-9) **INTEGRAÇÃO:** Atualizar `/api/generate-hls` quando `simulate:false` & `capability.canSpawn:true` para executar pipeline real e retornar `action: generated` + `segmentCount`, `transcodeFallback`, `downloadCount`.
+- [x] (R4-10) Logging `HLS_GEN` com métricas `{ segmentCount, totalDurationApprox, ffmpegDurationMs, uploadDurationMs, downloadDurationMs, transcodeFallback, partialUpload }`.
+- [x] (R4-11) **FALLBACK:** Se geração real falhar → não retornar 500; fallback simulate com `action: generation_failed` + `errorSummary` (primeira linha stderr ou mensagem sanitizada).
+- [x] (R4-12) Gate técnico principal: GET `/hls/latest/index.m3u8` via proxy retorna nova playlist válida com `#EXT-X-ENDLIST` e segmentação funcionando.
+- [x] (R4-13) **CRITÉRIOS DE ACEITE COMPLETOS:**
+  - Nenhuma resposta 500 nos endpoints `/api/generate-hls` e `/api/hls/capabilities` durante testes.
+  - `capability.canSpawn:true` refletindo detecção real + `ffmpegVersion` presente.
+  - Execução real: `action: generated`, `segmentCount >= 3`, `totalDurationApprox >= 12s`.
+  - Logs contêm métricas (download, ffmpeg, upload) e flags de fallback (quando aplicável).
+  - Tempo total (download + ffmpeg + upload) < 90s (warn se >=90s & <150s; simulate fallback se >=150s).
+  - Fallback testado: forçar falha (ex: `forceTranscode:false` com codec incompatível) produz `generation_failed` simulate sem quebrar playlist antiga.
+  - Playlist antiga preservada em cenário de falha (comparar hash antes/depois).  
+**Saída R4 Esperada:** Playlist `latest` gerada real + métricas registradas + rota estável sem regressão do fallback MP3.
 
 ### R5 – Rolling + Diagnóstico + Safari Timeout
-**Objetivo:** Estender geração para `rolling` (janela limitada de segmentos) + fornecer diagnóstico estruturado e analisar freeze Safari (~17s).
-**Rolling Simplificado:** Reusar segmentos já gerados (ou regenerar) e publicar janela com últimos N (ex: 10) sem `#EXT-X-ENDLIST`.
-**Tarefas Rolling:**
-- [ ] (R5-1) Implementar util `buildRollingPlaylist.js` que recebe lista ordenada de segments (nome + duração) e gera `index.m3u8` sem `#EXT-X-ENDLIST` e limita N.
-- [ ] (R5-2) Estratégia inicial: usar mesmos segments do VOD (sem nova transcodificação) → copiar/repontar.
-- [ ] (R5-3) Publicar em `generated/hls/rolling/` playlist adaptada + subset de segments (se necessário copiar) mantendo nomes consistentes.
-- [ ] (R5-4) Atualizar endpoint `/api/generate-hls` para aceitar `mode=rolling` e acionar construção rolling (dependendo de latest gerado, senão fallback simulate).
+**Objetivo:** Estender geração para `rolling` (janela limitada de segmentos) reutilizando os MESMOS segments do `latest` (sem copiar / retranscodificar) + fornecer diagnóstico estruturado e analisar freeze Safari (~17s).
 
-**Diagnóstico (substitui antigo R4 isolado):**
-- [ ] (R5-5) Endpoint `GET /api/hls/rolling/diagnostics` (ou `/api/hls/:mode/diagnostics`) reutilizando fetch único.
-- [ ] (R5-6) Parser playlist: contar EXTINF, detectar `#EXT-X-ENDLIST`, listar primeiros/últimos 3 segments.
-- [ ] (R5-7) HEAD/Range parallel nos segments amostrados (timeout 1500ms) → métricas `{ headOkCount, averageExtinf, totalDurationApprox }`.
-- [ ] (R5-8) JSON: `{ status: ok|missing|partial, declaredCount, timing, probed, flags }` (mesmo design anterior).
-- [ ] (R5-9) Log `HLS_DIAG` condensado.
+**Notas R5 (Aprendizados R4):**
+- Logging ainda frágil (caso `saveAutoLog` ordem de parâmetros) → inserir passo de saneamento ANTES de qualquer nova feature (R5-0).
+- Evitar cópia física de arquivos dos segments: playlist rolling apenas referencia segmentos já publicados em `generated/hls/latest/`.
+- Não regenerar/transcodificar no rolling (custo desnecessário). Rolling = derivado textual da VOD.
+- Se playlist `latest` ausente ou inválida → rolling entra em modo simulate (não 500).
+- Timeout de diagnósticos ampliado: 1500ms → 3000ms (latência rede + Spaces).
+- Usar cache-bust (`?t=<timestamp>`) ao baixar playlist para diagnóstico para evitar CDN stale.
+- Aguardar ~30s pós deploy antes de primeiro diagnóstico para evitar race de cache.
+- Base para Safari freeze: correlacionar congelamento com `totalDurationApprox`, gaps ou stalls (ausência de segmentos iniciais ou variação irregular de EXTINF).
+
+**Rolling Simplificado (Janela):** Últimos N (default 10) EXTINF do `latest/index.m3u8` sem `#EXT-X-ENDLIST`, mantendo `#EXTM3U`, `#EXT-X-VERSION`, `#EXT-X-TARGETDURATION`, `#EXT-X-MEDIA-SEQUENCE` recalculado com base no primeiro segmento da janela.
+
+**Tarefas Rolling:**
+- [x] (R5-0) Saneamento logging: testar `saveAutoLog` com chamadas (`msg, tipo`) e (`tipo invertido`) garantindo não quebra; adicionar guard/normalização definitiva.
+- [x] (R5-1) Criar util `buildRollingPlaylist.js` recebendo: `{ segments: [{ name, duration }], windowSize }` → retorna string playlist SEM `#EXT-X-ENDLIST` e com `MEDIA-SEQUENCE` correto.
+- [ ] (R5-2) Criar util `extractLatestSegments.js` que: baixa `latest/index.m3u8` do Spaces, faz parse de EXTINF + nomes; retorna ordenado.
+- [ ] (R5-3) Publicar playlist rolling em `generated/hls/rolling/index.m3u8` referenciando os MESMOS nomes (sem upload de .ts). Headers iguais aos de playlist latest (`no-cache`).
+- [ ] (R5-4) Atualizar `/api/generate-hls` para aceitar `mode=rolling`: se `latest` válido → gerar rolling; senão `action: simulate_missing_latest` (sem erro).
+
+**Diagnóstico (Rolling / Latest Genérico):**
+- [ ] (R5-5) Endpoint `GET /api/hls/:mode/diagnostics` (suporta `latest` e `rolling`).
+- [ ] (R5-6) Parser playlist: contar EXTINF, detectar `hasEndlist`, listar primeiros e últimos 3 segmentos.
+- [ ] (R5-7) Probe segmentos amostrados (1º, meio, último) via HEAD (e opcional Range 0-255) com timeout 3000ms → métricas `{ headOkCount, timings[], averageExtinf, totalDurationApprox }`.
+- [ ] (R5-8) Classificação `status`: `ok` (>=1 seg & todos probes 200), `missing` (playlist 404 ou zero EXTINF), `partial` (algum HEAD falhou), `stalled` (sem crescimento previsto — placeholder futuro).
+- [ ] (R5-9) Log `HLS_DIAG` compacto: `{ mode, status, declaredCount, headOkCount, totalDurationApprox, averageExtinf }`.
 
 **Análise Safari Timeout:**
-- [ ] (R5-10) Reproduzir freeze e correlacionar com `diagnostics` (comparar `totalDurationApprox` vs tempo até travar).
-- [ ] (R5-11) Identificar hipótese: `MISSING_SEGMENTS`, `PLAYLIST_STALLED`, `HEADER_CACHING`, ou `PLAYER_STRATEGY_MISMATCH`.
-- [ ] (R5-12) Registrar hipótese única no RUN-LOG com evidências (códigos/extinf, timestamps network).
-- [ ] (R5-13) Gate: Rolling playlist servida (sem 500) + diagnóstico < 2s + hipótese documentada.
+- [ ] (R5-10) Reproduzir freeze e capturar timestamps network (HAR ou logs manual) + tempo até travar.
+- [ ] (R5-11) Correlacionar com `diagnostics` (ex: `totalDurationApprox < 18s` ou lacunas EXTINF).
+- [ ] (R5-12) Registrar hipótese única no RUN-LOG (`MISSING_SEGMENTS | PLAYLIST_STALLED | HEADER_CACHING | PLAYER_STRATEGY_MISMATCH`).
+- [ ] (R5-13) Gate: Rolling playlist 200 (sem `#EXT-X-ENDLIST`) + diagnostics < 3000ms + hipótese documentada.
+
+**Critérios de Aceite R5 (Atualizados):**
+- Rolling publicado sem copiar segments (somente nova playlist).
+- Playlist rolling sem `#EXT-X-ENDLIST`, `MEDIA-SEQUENCE` coerente.
+- Endpoint diagnostics não retorna 500 e classifica corretamente casos simulados.
+- Tempo diagnostics < 3000ms (p95) em staging.
+- Nenhum 500 novo introduzido nos endpoints existentes.
+- Hipótese Safari registrada e plausível com dados.
 
 ### R6 – Hardening / Smoke & Operacionalização
 **Objetivo:** Consolidar confiabilidade e preparar próxima fase (publish atômico avançado se necessário).
@@ -170,8 +215,8 @@ Publish atômico avançado: adiado para pós-R6 se ainda necessário.
 ## 8. Checklist de Aceite Final
 ✅ Rotas /hls/latest e /hls/rolling respondem (proxy).  
 ✅ Rotas /api/hls/* aliases funcionando (compatibilidade).  
-⏳ Capabilities endpoint e simulate fallback (R3).  
-⏳ VOD latest gerado real (R4).  
+✅ Capabilities endpoint e simulate fallback (R3).  
+✅ VOD latest gerado real (R4).  
 ⏳ Rolling playlist + diagnostics + hipótese Safari (R5).  
 ✅ MP3 contínuo intacto e funcional.  
 ⏳ Smoke checklist + rollback documentado (R6).  
