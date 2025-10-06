@@ -49,10 +49,10 @@ router.get('/capabilities', async (req, res) => {
 });
 
 /**
- * POST /api/generate-hls
+ * POST /generate-hls
  * Unified generation endpoint with capability detection and simulate fallback
  */
-router.post('/api/generate-hls', async (req, res) => {
+router.post('/generate-hls', async (req, res) => {
   const startTime = Date.now();
   const { mode = 'latest', simulate } = req.body;
 
