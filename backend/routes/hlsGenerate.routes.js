@@ -47,6 +47,7 @@ function headCheck(url) {
  * - Timing metrics and duration analysis
  */
 router.get('/:mode/diagnostics', async (req, res) => {
+  console.log('🔍 [DIAGNOSTICS] Route hit!', req.params, req.originalUrl);
   const startTime = Date.now();
   const { mode } = req.params;
   
