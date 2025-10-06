@@ -31,33 +31,18 @@ router.get('/capabilities', async (req, res) => {
   const startTime = Date.now();
   
   try {
-    // Basic capability detection without external modules
-    let hasFfmpeg = false;
-    let ffmpegPath = null;
-    
-    try {
-      const ffmpegStatic = require('ffmpeg-static');
-      hasFfmpeg = true;
-      ffmpegPath = ffmpegStatic;
-    } catch (e) {
-      // ffmpeg-static not available
-    }
-    
+    // Very basic capability detection without any external requires
     const capability = {
-      hasFfmpegStatic: hasFfmpeg,
-      ffmpegPath: ffmpegPath,
-      canSpawn: false, // Will test spawn separately later
-      error: hasFfmpeg ? null : 'ffmpeg-static not available'
+      hasFfmpegStatic: false,
+      ffmpegPath: null,
+      canSpawn: false,
+      error: 'Capability detection not implemented yet'
     };
     
     const durationMs = Date.now() - startTime;
 
     // Log capability check
-    await saveAutoLog('HLS_GEN', {
-      type: 'capability',
-      capability,
-      durationMs
-    });
+    await saveAutoLog(`Capability check: ${JSON.stringify(capability)}`, 'HLS_GEN');
 
     res.json({
       success: true,
@@ -68,11 +53,7 @@ router.get('/capabilities', async (req, res) => {
   } catch (error) {
     const durationMs = Date.now() - startTime;
     
-    await saveAutoLog('HLS_GEN', {
-      type: 'capability',
-      error: error.message,
-      durationMs
-    });
+    await saveAutoLog(`Capability error: ${error.message}`, 'HLS_GEN');
 
     res.status(500).json({
       success: false,
@@ -148,15 +129,7 @@ router.post('/generate-hls', async (req, res) => {
     const durationMs = Date.now() - startTime;
 
     // Log generation attempt
-    await saveAutoLog('HLS_GEN', {
-      type: 'generate',
-      mode,
-      simulate: shouldSimulate,
-      capability,
-      action,
-      detected,
-      durationMs
-    });
+    await saveAutoLog(`Generate ${mode}: ${action} (simulate:${shouldSimulate})`, 'HLS_GEN');
 
     res.json({
       success: true,
@@ -171,12 +144,7 @@ router.post('/generate-hls', async (req, res) => {
   } catch (error) {
     const durationMs = Date.now() - startTime;
     
-    await saveAutoLog('HLS_GEN', {
-      type: 'generate',
-      mode,
-      error: error.message,
-      durationMs
-    });
+    await saveAutoLog(`Generate error ${mode}: ${error.message}`, 'HLS_GEN');
 
     res.status(500).json({
       success: false,
