@@ -68,6 +68,10 @@ app.use('/', require('./routes/debugLogs.routes'));
 // R1: Rotas de proxy para HLS (latest e rolling)
 app.use('/', require('./routes/hlsProxy.routes'));
 
+// ========== HLS DEBUG UI ROUTES ==========
+// R6-9: Rotas de debug para Admin/Debug UI (registradas ANTES das rotas gerais para precedência)
+app.use('/api/hls', require('./routes/hlsDebug.routes'));
+
 // ========== HLS GENERATION ROUTES ==========
 // R3: Rota para geração de HLS via script + capabilities
 app.use('/api/hls', require('./routes/hlsGenerate.routes'));
