@@ -181,3 +181,79 @@ Objetivo: Restaurar funcionalidades HLS removidas na refatoração
 3. Adicionar capability detection progressivamente
 
 ---
+
+## R3 - Correção e Sucesso (06/10/2025 - 13:15)
+**Problema identificado:** `TypeError: type.toUpperCase is not a function` em hlsState.js:22
+**Causa:** Parâmetros invertidos em saveAutoLog - esperava `(message, type)` mas recebeu `(type, object)`
+**Solução:** Commit 4c28a58 - correção da ordem dos parâmetros
+**Resultado:** ✅ R3 COMPLETO
+
+### Endpoints funcionais:
+1. **GET /api/hls/capabilities → HTTP 200**
+   ```json
+   {"success":true,"capability":{"hasFfmpegStatic":false,"ffmpegPath":null,"canSpawn":false,"error":"Capability detection not implemented yet"},"durationMs":0}
+   ```
+
+2. **POST /api/hls/generate-hls (latest) → HTTP 200**
+   ```json
+   {"success":true,"mode":"latest","simulate":true,"capability":{"hasFfmpegStatic":true,"canSpawn":false,"ffmpegPath":"available"},"action":"reused","detected":{"playlistExists":true,"firstSegmentExists":true},"durationMs":26}
+   ```
+
+3. **POST /api/hls/generate-hls (rolling) → HTTP 200**
+   ```json
+   {"success":true,"mode":"rolling","simulate":true,"capability":{"hasFfmpegStatic":true,"canSpawn":false,"ffmpegPath":"available"},"action":"reused","detected":{"playlistExists":true,"firstSegmentExists":true},"durationMs":9}
+   ```
+
+### ✅ R3 Status Final:
+- Capabilities endpoint: Retorna JSON estruturado
+- Generate endpoint: Modos latest e rolling operacionais  
+- Simulate mode: Funcionando (action: reused para ambos)
+- Logs: HLS_GEN registrando corretamente
+- Server stability: Sem 500 errors
+
+**✅ R3 CONCLUÍDO COM SUCESSO!**
+
+---
+
+## R4 - Geração VOD Real (06/10/2025)
+
+### R4-1: Enhanced Capability Detection ✅
+**Branch:** feature/hls-r4-vod  
+**Commit:** 1d6e9b6 - feat(hls): enhance capability detection with real spawn test and version info
+
+**Melhorias implementadas:**
+- ✅ Real spawn test com timeout (1500ms)
+- ✅ Version extraction via ffmpeg -version
+- ✅ Latency measurement (spawnLatencyMs)
+- ✅ Enhanced error handling e fallback
+
+**Teste pós-deploy (06/10/2025 ~14:30):**
+```bash
+GET /api/hls/capabilities → HTTP 200
+```
+```json
+{
+  "success": true,
+  "capability": {
+    "hasFfmpegStatic": true,
+    "ffmpegPath": "/usr/src/app/node_modules/ffmpeg-static/ffmpeg",
+    "canSpawn": true,
+    "ffmpegVersion": "6.0-static",
+    "spawnLatencyMs": 29,
+    "error": null
+  },
+  "durationMs": 34
+}
+```
+
+### ✅ R4-1 Análise de Resultado:
+- **Environment**: Container DigitalOcean com FFmpeg 6.0-static funcionando
+- **Performance**: Spawn latency excelente (29ms)
+- **Capability**: Real generation pronta (`canSpawn: true`)
+- **Stability**: Detection rápida (34ms total)
+
+**Status:** R4-1 CONCLUÍDO - Environment validado para geração real!
+
+**Próximo:** R4-2 (diretório temporário e workspace preparation)
+
+---
