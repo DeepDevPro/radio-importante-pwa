@@ -4,6 +4,34 @@ Objetivo: reduzir o tamanho e a complexidade de `backend/app.js` preservando com
 
 Observação Importante: Cada etapa que altera código deve ser seguida de (1) commit, (2) deploy para staging, (3) teste rápido em staging (curl ou acesso via browser / debug page). Não faremos testes locais.
 
+## 🚀 Processo de Deploy para Staging
+
+**IMPORTANTE**: O deploy automático só funciona na branch `staging`. Estamos trabalhando na branch `refactor/appjs-step1`.
+
+### Workflow de Deploy:
+1. **Fazer commits na branch de trabalho** (`refactor/appjs-step1`)
+2. **Merge para staging quando pronto para deploy**:
+   ```bash
+   git checkout staging
+   git merge refactor/appjs-step1
+   git push origin staging
+   ```
+3. **Deploy automático é disparado** via GitHub Actions (`.github/workflows/deploy-backend-staging.yml`)
+4. **Aguardar ~30-60 segundos** para o deploy completar
+5. **Testar endpoints em staging**:
+   - URL do backend: `https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/`
+   - Smoke tests: `/health`, `/api/catalog`, `/api/debug-logs`
+
+### Voltar para branch de trabalho:
+```bash
+git checkout refactor/appjs-step1
+git merge staging  # sincronizar se necessário
+```
+
+### URLs de Staging:
+- **Backend**: `https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/`
+- **Frontend**: `https://radio-importante-frontend-stagin-6rjzv.ondigitalocean.app/`
+
 Legenda de Checkboxes:
 - [ ] Tarefa pendente
 - [x] Concluída (marcar manualmente após execução)
@@ -120,7 +148,7 @@ Micropassos ETAPA 3:
 - [x] Atualizar este plano marcando ETAPA 3 concluída
 - [x] Commit: `chore(refactor): stage validation step3`
 
-> Nota 3.3: Testes locais realizados. `/api/catalog` (200, catálogo vazio por falta de Spaces config), `/api/debug-logs` (200). `/api/hls-logs` ainda não implementado (será criado na ETAPA 7). Deploy automático não ativo na branch de refatoração.
+> Nota 3.3: Deploy feito para staging via merge para branch `staging`. Smoke tests realizados: `/api/catalog` (200, ~5KB com dados), `/api/debug-logs` (200), `/health` (200). `/api/hls-logs` ainda não implementado (será criado na ETAPA 7). Staging funcional com refatorações da ETAPA 3.
 
 Nota: Extração e reorganização de `generateContinuousFile` ficará para a ETAPA 5 (não refatorar agora para reduzir risco).
 
