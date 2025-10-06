@@ -104,16 +104,4 @@ router.get('/hls/latest/segment_002.ts', proxyHLSFile('generated/hls/latest/segm
 // Rotas para HLS Rolling - apenas index.m3u8 específico
 router.get('/hls/rolling/index.m3u8', proxyHLSFile('generated/hls/rolling/index.m3u8', true));
 
-// ========== R2: ALIASES /api/hls/* ==========
-
-// Aliases para HLS Latest - apenas index.m3u8 específico
-router.get('/api/hls/latest/index.m3u8', proxyHLSFile('generated/hls/latest/index.m3u8', true));
-// Rotas específicas para segments conhecidos  
-router.get('/api/hls/latest/segment_000.ts', proxyHLSFile('generated/hls/latest/segment_000.ts', false));
-router.get('/api/hls/latest/segment_001.ts', proxyHLSFile('generated/hls/latest/segment_001.ts', false));
-router.get('/api/hls/latest/segment_002.ts', proxyHLSFile('generated/hls/latest/segment_002.ts', false));
-
-// Aliases para HLS Rolling - apenas index.m3u8 específico
-router.get('/api/hls/rolling/index.m3u8', proxyHLSFile('generated/hls/rolling/index.m3u8', true));
-
 module.exports = router;

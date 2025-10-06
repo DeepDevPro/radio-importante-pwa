@@ -48,7 +48,27 @@ function headCheck(url) {
  */
 router.get('/:mode/diagnostics', async (req, res) => {
   console.log('🔍 [DIAGNOSTICS] Route hit!', req.params, req.originalUrl);
-  const startTime = Date.now();
+  
+  // FORCE JSON RESPONSE FOR DEBUGGING
+  res.set('Content-Type', 'application/json');
+  
+  try {
+    return res.json({
+      success: true,
+      debug: true,
+      message: "Route is working!",
+      params: req.params,
+      url: req.originalUrl,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    return res.json({
+      success: false,
+      debug: true,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
   const { mode } = req.params;
   
   try {
