@@ -192,12 +192,14 @@ Commit sugerido:
 +- [ ] Commit: `refactor(step4.2): extract catalog routes`
 +
 +#### 4.3 Deploy e validação conjunta
-+- [ ] Merge em `staging` (inclui 4.1 + 4.2)
-+- [ ] Smoke test staging: `/api/catalog`, `PUT /api/tracks/:id/metadata` (um caso), `/api/debug-logs`
-+- [ ] Atualizar plano marcando ETAPA 4 concluída
-+- [ ] Commit (na branch refactor após merge): `chore(refactor): stage validation step4`
++- [x] Merge em `staging` (inclui 4.1 + 4.2)
++- [x] Smoke test staging: `/api/catalog`, `PUT /api/tracks/:id/metadata` (um caso), `/api/debug-logs`
++- [x] Atualizar plano marcando ETAPA 4 concluída
++- [x] Commit (na branch refactor após merge): `chore(refactor): stage validation step4`
 +
-+- [ ] (Checklist final ETAPA 4) Confirmar remoção dos blocos originais do `app.js`
++- [x] (Checklist final ETAPA 4) Confirmar remoção dos blocos originais do `app.js`
++
++> Nota 4.3: Deploy staging concluído. Smoke tests realizados: `/health` (200), `/api/catalog` (200, com tracks), `/api/debug-logs` (200), `PUT /api/tracks/.../metadata` (200, success: true). ETAPA 4 completa: rotas debug e catálogo extraídas com sucesso.
 +
 - [ ] Criar `routes/debugLogs.routes.js` com endpoints:
 -  - `POST /api/debug-logs`
