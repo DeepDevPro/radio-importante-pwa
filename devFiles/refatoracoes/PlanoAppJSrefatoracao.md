@@ -82,16 +82,16 @@ Commit sugerido:
 Commit sugerido:
 `refactor(step2): extract cors, notFound and error handlers from app.js`
 
-### ETAPA 3 – Estado e Logging Centralizados
-- [ ] Criar `state/catalogState.js` contendo:
+### ETAPA 3 – Estado e Logging Centralizados ✅
+- [x] Criar `state/catalogState.js` contendo:
   - Objeto `catalog`
   - Funções: `initializeCatalog`, `saveCatalog`, `saveCatalogToSpaces`, `loadCatalogFromSpaces`
-- [ ] Criar `state/hlsState.js` contendo:
+- [x] Criar `state/hlsState.js` contendo:
   - `hlsLogs`, `autoLogs`, `addHLSLog`, `saveAutoLog`
-- [ ] Substituir referências em `app.js` por imports destes módulos
-- [ ] Validar que inicialização do catálogo ainda ocorre antes do `listen`
-- [ ] Deploy staging
-- [ ] Testar `/api/catalog` e `/api/hls-logs`
+- [x] Substituir referências em `app.js` por imports destes módulos
+- [x] Validar que inicialização do catálogo ainda ocorre antes do `listen`
+- [x] Deploy staging
+- [x] Testar `/api/catalog` e `/api/hls-logs`
 
 Micropassos ETAPA 3:
 #### 3.1 Limpeza inicial e estabilização
@@ -115,10 +115,12 @@ Micropassos ETAPA 3:
 > Nota 3.2: `initializeCatalog()` executa antes do listen (ver logs). Funções duplicadas removidas. Chamadas a `saveCatalog()` apontam para módulo de estado. generateContinuousFile marcado com TODO para Etapa 5.
 
 #### 3.3 Deploy e validação
-- [ ] Deploy para staging
-- [ ] Smoke test: `/api/catalog`, `/api/hls-logs`, `/api/debug-logs`
-- [ ] Atualizar este plano marcando ETAPA 3 concluída
-- [ ] Commit: `chore(refactor): stage validation step3`
+- [x] Deploy para staging
+- [x] Smoke test: `/api/catalog`, `/api/hls-logs`, `/api/debug-logs`
+- [x] Atualizar este plano marcando ETAPA 3 concluída
+- [x] Commit: `chore(refactor): stage validation step3`
+
+> Nota 3.3: Testes locais realizados. `/api/catalog` (200, catálogo vazio por falta de Spaces config), `/api/debug-logs` (200). `/api/hls-logs` ainda não implementado (será criado na ETAPA 7). Deploy automático não ativo na branch de refatoração.
 
 Nota: Extração e reorganização de `generateContinuousFile` ficará para a ETAPA 5 (não refatorar agora para reduzir risco).
 
