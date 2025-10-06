@@ -7,6 +7,13 @@ let autoLogs = [];
 const MAX_AUTO_LOGS = 100;
 
 function saveAutoLog(message, type = 'info') {
+  // Support both orders: (message, type) and (type, message) for backward compatibility
+  if (typeof message === 'string' && typeof type === 'string' && 
+      message.startsWith('HLS_') && !type.includes(' ')) {
+    // Swap if first param looks like a type
+    [message, type] = [type, message];
+  }
+  
   const timestamp = new Date().toISOString();
   const logEntry = { timestamp, type, message };
   
