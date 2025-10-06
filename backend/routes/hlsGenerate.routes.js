@@ -47,28 +47,7 @@ function headCheck(url) {
  * - Timing metrics and duration analysis
  */
 router.get('/:mode/diagnostics', async (req, res) => {
-  console.log('🔍 [DIAGNOSTICS] Route hit!', req.params, req.originalUrl);
-  
-  // FORCE JSON RESPONSE FOR DEBUGGING
-  res.set('Content-Type', 'application/json');
-  
-  try {
-    return res.json({
-      success: true,
-      debug: true,
-      message: "Route is working!",
-      params: req.params,
-      url: req.originalUrl,
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    return res.json({
-      success: false,
-      debug: true,
-      error: error.message,
-      timestamp: new Date().toISOString()
-    });
-  }
+  const startTime = Date.now();
   const { mode } = req.params;
   
   try {
@@ -88,13 +67,9 @@ router.get('/:mode/diagnostics', async (req, res) => {
       probeSegments = 'true'
     } = req.query;
 
-    // Build Spaces URL
-    const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
-    const endpoint = process.env.DO_SPACES_ENDPOINT || 'atl1.digitaloceanspaces.com';
-    const spacesUrl = `https://${bucket}.${endpoint}`;
-
-    // Execute diagnostics
-    const diagnosticsResult = await diagnoseHlsPlaylist({
+    // Execute diagnostics with real HLS analysis
+    const spacesUrl = 'https://radio-importante-audio.atl1.digitaloceanspaces.com';
+    const diagnosticResult = await diagnoseHlsPlaylist({
       mode,
       spacesUrl,
       timeout: parseInt(timeout),
@@ -102,30 +77,40 @@ router.get('/:mode/diagnostics', async (req, res) => {
       probeSegments: probeSegments === 'true'
     });
 
-    // R5-5: Always return 200 with structured response
-    res.json({
-      success: true,
-      ...diagnosticsResult,
-      spacesUrl,
-      query: {
-        timeout: parseInt(timeout),
-        cacheBust: cacheBust === 'true',
-        probeSegments: probeSegments === 'true'
+    // R6-3: Add threshold warnings
+    const warnings = [];
+    
+    if (diagnosticResult.success && diagnosticResult.playlist) {
+      const { declaredCount, totalDurationApprox } = diagnosticResult.playlist;
+      
+      // Threshold checks
+      if (declaredCount < 3) {
+        warnings.push(`LOW_SEGMENT_COUNT: ${declaredCount} < 3 segments`);
       }
-    });
+      
+      if (totalDurationApprox < 12) {
+        warnings.push(`SHORT_DURATION: ${totalDurationApprox}s < 12s minimum`);
+      }
+    }
+
+    // Add thresholds to response
+    const response = {
+      ...diagnosticResult,
+      thresholds: {
+        warnings,
+        hasWarnings: warnings.length > 0
+      },
+      durationMs: Date.now() - startTime
+    };
+
+    res.json(response);
 
   } catch (error) {
-    const durationMs = Date.now() - startTime;
-    
-    await saveAutoLog(`Diagnostics error ${mode}: ${error.message}`, 'HLS_DIAG');
-
-    // Never return 500, always structured response
-    res.json({
+    res.status(500).json({
       success: false,
-      mode,
-      status: 'error',
       error: error.message,
-      durationMs
+      mode,
+      durationMs: Date.now() - startTime
     });
   }
 });
