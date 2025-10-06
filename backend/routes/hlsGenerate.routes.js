@@ -11,6 +11,8 @@ const { createTempWorkspace, cleanupTempWorkspace } = require('../hls/tempWorksp
 const { downloadTrackList } = require('../hls/downloadTrackList');
 const { generateVodLatest } = require('../hls/generateVodLatest');
 const { publishRollingPlaylist } = require('../hls/publishRollingPlaylist');
+const { diagnoseHlsPlaylist } = require('../hls/hlsDiagnostics');
+const { handleSafariAnalysisRequest } = require('../hls/safariAnalysis');
 const https = require('https');
 const AWS = require('aws-sdk');
 
@@ -646,5 +648,81 @@ segment_001.ts
     });
   }
 });
+
+/**
+ * GET /:mode/diagnostics
+ * R5-5: HLS Playlist Diagnostics (supports 'latest' and 'rolling')
+ * 
+ * Diagnoses playlist health including:
+ * - Playlist parsing (EXTINF count, hasEndlist)
+ * - Segment probing (1st, middle, last via HEAD)
+ * - Status classification (ok/missing/partial/stalled)
+ * - Timing metrics and duration analysis
+ */
+router.get('/:mode/diagnostics', async (req, res) => {
+  const startTime = Date.now();
+  const { mode } = req.params;
+  
+  try {
+    // Validate mode parameter
+    if (!['latest', 'rolling'].includes(mode)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid mode. Must be "latest" or "rolling"',
+        durationMs: Date.now() - startTime
+      });
+    }
+
+    // Configuration from query params
+    const {
+      timeout = '3000',
+      cacheBust = 'true',
+      probeSegments = 'true'
+    } = req.query;
+
+    // Build Spaces URL
+    const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
+    const endpoint = process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com';
+    const spacesUrl = `https://${bucket}.${endpoint}`;
+
+    // Execute diagnostics
+    const diagnosticsResult = await diagnoseHlsPlaylist({
+      mode,
+      spacesUrl,
+      timeout: parseInt(timeout),
+      cacheBust: cacheBust === 'true',
+      probeSegments: probeSegments === 'true'
+    });
+
+    // R5-5: Always return 200 with structured response
+    res.json({
+      success: true,
+      ...diagnosticsResult,
+      spacesUrl,
+      query: {
+        timeout: parseInt(timeout),
+        cacheBust: cacheBust === 'true',
+        probeSegments: probeSegments === 'true'
+      }
+    });
+
+  } catch (error) {
+    const durationMs = Date.now() - startTime;
+    
+    await saveAutoLog(`Diagnostics error ${mode}: ${error.message}`, 'HLS_DIAG');
+
+    // Never return 500, always structured response
+    res.json({
+      success: false,
+      mode,
+      status: 'error',
+      error: error.message,
+      durationMs
+    });
+  }
+});
+
+// R5-10: Safari Analysis Endpoint
+router.post('/safari-analysis', handleSafariAnalysisRequest);
 
 module.exports = router;

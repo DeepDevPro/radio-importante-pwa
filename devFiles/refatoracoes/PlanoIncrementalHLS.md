@@ -159,14 +159,14 @@ Publish atômico avançado: adiado para pós-R6 se ainda necessário.
 - [x] (R5-4) Atualizar `/api/generate-hls` para aceitar `mode=rolling`: se `latest` válido → gerar rolling; senão `action: simulate_missing_latest` (sem erro).
 
 **Diagnóstico (Rolling / Latest Genérico):**
-- [ ] (R5-5) Endpoint `GET /api/hls/:mode/diagnostics` (suporta `latest` e `rolling`).
-- [ ] (R5-6) Parser playlist: contar EXTINF, detectar `hasEndlist`, listar primeiros e últimos 3 segmentos.
-- [ ] (R5-7) Probe segmentos amostrados (1º, meio, último) via HEAD (e opcional Range 0-255) com timeout 3000ms → métricas `{ headOkCount, timings[], averageExtinf, totalDurationApprox }`.
-- [ ] (R5-8) Classificação `status`: `ok` (>=1 seg & todos probes 200), `missing` (playlist 404 ou zero EXTINF), `partial` (algum HEAD falhou), `stalled` (sem crescimento previsto — placeholder futuro).
-- [ ] (R5-9) Log `HLS_DIAG` compacto: `{ mode, status, declaredCount, headOkCount, totalDurationApprox, averageExtinf }`.
+- [x] (R5-5) Endpoint `GET /api/hls/:mode/diagnostics` (suporta `latest` e `rolling`).
+- [x] (R5-6) Parser playlist: contar EXTINF, detectar `hasEndlist`, listar primeiros e últimos 3 segmentos.
+- [x] (R5-7) Probe segmentos amostrados (1º, meio, último) via HEAD (e opcional Range 0-255) com timeout 3000ms → métricas `{ headOkCount, timings[], averageExtinf, totalDurationApprox }`.
+- [x] (R5-8) Classificação `status`: `ok` (>=1 seg & todos probes 200), `missing` (playlist 404 ou zero EXTINF), `partial` (algum HEAD falhou), `stalled` (sem crescimento previsto — placeholder futuro).
+- [x] (R5-9) Log `HLS_DIAG` compacto: `{ mode, status, declaredCount, headOkCount, totalDurationApprox, averageExtinf }`.
 
 **Análise Safari Timeout:**
-- [ ] (R5-10) Reproduzir freeze e capturar timestamps network (HAR ou logs manual) + tempo até travar.
+- [x] (R5-10) Reproduzir freeze e capturar timestamps network (HAR ou logs manual) + tempo até travar.
 - [ ] (R5-11) Correlacionar com `diagnostics` (ex: `totalDurationApprox < 18s` ou lacunas EXTINF).
 - [ ] (R5-12) Registrar hipótese única no RUN-LOG (`MISSING_SEGMENTS | PLAYLIST_STALLED | HEADER_CACHING | PLAYER_STRATEGY_MISMATCH`).
 - [ ] (R5-13) Gate: Rolling playlist 200 (sem `#EXT-X-ENDLIST`) + diagnostics < 3000ms + hipótese documentada.
