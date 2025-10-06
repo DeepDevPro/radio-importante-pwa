@@ -1,6 +1,18 @@
 # Plano de Refatoração Segura do backend/app.js
 
-Objetivo: reduzir o tamanho e a complexidade de `backend/app.js` preservando comportamento e endpoints atuais. Priorizar simplicidade, baixo risco e passos pequenos com capacidade de rollback.
+Objetivo: reduzir o tamanho e a complexidade de `backend/app.js` preservando comportamento e endpoints atuais. Prioriz#### 4.2 Extração Catálogo (somente leitura + manutenção)
+- [x] Criar `backend/routes/catalog.routes.js` contendo:
+  - `GET /api/catalog`
+  - `POST /api/regenerate-catalog`
+  - `POST /api/sync-catalog`
+  - `POST /api/clear-catalog`
+  - `PUT /api/tracks/:id/metadata`
+  - `DELETE /api/delete/:id`
+- [x] Mover lógica existente de cada rota para o arquivo novo SEM alterar respostas
+- [x] Importar `catalog`, `saveCatalog` do state e reutilizar utilitários já no `app.js`
+- [x] Substituir blocos originais por `app.use('/', require('./routes/catalog.routes'))`
+- [x] Testar local `/api/catalog` e update metadata
+- [x] Commit: `refactor(step4.2): extract catalog routes`de, baixo risco e passos pequenos com capacidade de rollback.
 
 Observação Importante: Cada etapa que altera código deve ser seguida de (1) commit, (2) deploy para staging, (3) teste rápido em staging (curl ou acesso via browser / debug page). Não faremos testes locais.
 
