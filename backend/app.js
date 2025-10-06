@@ -78,9 +78,10 @@ app.get('/audio/hls/track-cues.json', async (req, res) => {
     console.log('🍎 [iPhone PWA] Solicitação de track-cues.json');
     
     // Construir URL do arquivo no Spaces
+    try {
     const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
-    const endpoint = process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com';
-    const spacesUrl = `https://${bucket}.${endpoint}/hls/track-cues.json`;
+    const endpoint = process.env.DO_SPACES_ENDPOINT || 'atl1.digitaloceanspaces.com';
+    const url = `https://${bucket}.${endpoint}/generated/hls/latest/index.m3u8`;
     
     console.log(`🎯 [track-cues] Proxy request: ${spacesUrl}`);
     
@@ -187,7 +188,7 @@ app.get('/audio/:filename', async (req, res) => {
     
     // Construir URL do arquivo no Spaces
     const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
-    const endpoint = process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com';
+    const endpoint = process.env.DO_SPACES_ENDPOINT || 'atl1.digitaloceanspaces.com';
     const spacesUrl = `https://${bucket}.${endpoint}/audio/${filename}`;
     
     console.log(`🎵 [audio] Proxy request: ${filename} -> ${spacesUrl}`);
@@ -275,7 +276,7 @@ app.get('/api/verify-spaces-structure', async (req, res) => {
     }
     
     // Configurar acesso ao Spaces
-    const spacesEndpoint = new AWS.Endpoint(process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com');
+    const spacesEndpoint = new AWS.Endpoint(process.env.DO_SPACES_ENDPOINT || 'atl1.digitaloceanspaces.com');
     const s3 = new AWS.S3({
       endpoint: spacesEndpoint,
       accessKeyId: process.env.DO_SPACES_KEY,
@@ -337,7 +338,7 @@ app.get('/api/verify-spaces-structure', async (req, res) => {
     
     const summary = {
       bucket: bucket,
-      endpoint: process.env.DO_SPACES_ENDPOINT || 'nyc3.digitaloceanspaces.com',
+      endpoint: process.env.DO_SPACES_ENDPOINT || 'atl1.digitaloceanspaces.com',
       structure: results,
       mimeTypes: mimeTypes,
       recommendations: {
