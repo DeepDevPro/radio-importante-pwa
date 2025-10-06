@@ -1,10 +1,11 @@
 // HLS Capabilities and Generation Routes
-// R4-1: Enhanced capability detection with real spawn test
+// R4-2: Workspace management integration
 
 const express = require('express');
 const router = express.Router();
 const { saveAutoLog } = require('../state/hlsState');
 const { detectCapability } = require('../hls/ffmpegCapability');
+const { createTempWorkspace, cleanupTempWorkspace } = require('../hls/tempWorkspace');
 const https = require('https');
 
 /**
@@ -61,6 +62,68 @@ router.get('/capabilities', async (req, res) => {
         spawnLatencyMs: null,
         error: error.message
       },
+      durationMs
+    });
+  }
+});
+
+/**
+ * GET /workspace-test
+ * Tests temporary workspace creation and cleanup (R4-2)
+ */
+router.get('/workspace-test', async (req, res) => {
+  const startTime = Date.now();
+  
+  try {
+    // Test workspace creation
+    const createResult = await createTempWorkspace();
+    
+    if (!createResult.success) {
+      await saveAutoLog(`Workspace creation failed: ${createResult.error}`, 'HLS_GEN');
+      return res.json({
+        success: false,
+        phase: 'creation',
+        error: createResult.error,
+        durationMs: Date.now() - startTime
+      });
+    }
+    
+    const workspaceDir = createResult.workspaceDir;
+    await saveAutoLog(`Workspace created: ${workspaceDir}, free space: ${createResult.freeSpaceBytes ? Math.round(createResult.freeSpaceBytes / 1024 / 1024) + 'MB' : 'unknown'}`, 'HLS_GEN');
+    
+    // Test cleanup
+    const cleanupResult = await cleanupTempWorkspace(workspaceDir);
+    
+    if (!cleanupResult.success) {
+      await saveAutoLog(`Workspace cleanup failed: ${cleanupResult.error}`, 'HLS_GEN');
+      return res.json({
+        success: false,
+        phase: 'cleanup',
+        workspaceDir,
+        error: cleanupResult.error,
+        durationMs: Date.now() - startTime
+      });
+    }
+    
+    const durationMs = Date.now() - startTime;
+    await saveAutoLog(`Workspace test successful: ${workspaceDir} (${durationMs}ms)`, 'HLS_GEN');
+    
+    res.json({
+      success: true,
+      workspaceDir,
+      freeSpaceBytes: createResult.freeSpaceBytes,
+      freeSpaceMB: createResult.freeSpaceBytes ? Math.round(createResult.freeSpaceBytes / 1024 / 1024) : null,
+      durationMs
+    });
+    
+  } catch (error) {
+    const durationMs = Date.now() - startTime;
+    await saveAutoLog(`Workspace test error: ${error.message}`, 'HLS_GEN');
+    
+    res.json({
+      success: false,
+      phase: 'unknown',
+      error: error.message,
       durationMs
     });
   }
