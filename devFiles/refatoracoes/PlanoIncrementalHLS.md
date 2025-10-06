@@ -2,7 +2,9 @@
 
 Data: 06/10/2025  
 Responsável (origem): Refatoração pós extração `app.js`  
-Objetivo imediato: Restaurar funcionalidades HLS removidas na refatoração (sem reinvenção), diagnosticar 404 e timeout Safari (~17s), manter MP3 contínuo intacto como fallback.
+Objetivo imediato: Restaurar funcionalidades H- [ ] (R6-6) **Janitor `/tmp/hls-work/*` INTELIGENTE**: remover diretórios concluídos após sucesso; varrer >24h órfãos e deletar (log `HLS_GEN` tipo `janitor`). **NOVA**: Adicionar métricas de storage usage e cleanup automático baseado em thresholds.
+- [ ] (R6-7) **Estabilidade 24h + Smoke Automation**: executar smoke em intervalo (manual ou loop) por 24h agregando: total runs, passes, falhas 500, p95 diagnostics; gerar sumário final. **NOVA**: Implementar monitoramento contínuo com alertas baseados no smoke test.
+- [ ] (R6-8) **Playback Rolling iPhone + Performance Analysis**: validar lockscreen/background sem stall (~17s); registrar métricas (tempo até primeiro play, continuity ok). **NOVA**: Correlacionar com dados de diagnostics para otimização específica iOS.removidas na refatoração (sem reinvenção), diagnosticar 404 e timeout Safari (~17s), manter MP3 contínuo intacto como fallback.
 
 ---
 ## 1. Princípios
@@ -104,6 +106,14 @@ Publish atômico avançado: adiado para pós-R6 se ainda necessário.
 - **Storage:** Reutilizar storage-config.js existente (já funciona com DigitalOcean Spaces)
 - **Fallback:** Manter generate endpoint sempre disponível (nunca 500) mesmo se FFmpeg falhar
 
+**🎯 LIÇÕES APRENDIDAS R6-2 (Baseado em implementação de sucesso):**
+- **Route Conflicts Critical:** Express route order matters - parameterized routes can capture specific endpoints unintentionally
+- **Diagnostics Pattern:** Debug endpoints helped validate structure before implementing real analysis 
+- **Smoke Test Power:** 6-stage validation catches integration issues that individual tests miss
+- **Error Handling Robustness:** All endpoints must handle edge cases gracefully (string vs object, missing data)
+- **Deployment Consistency:** DigitalOcean staging/production alignment critical for reliable testing
+- **Performance Baselines Established:** Latest generation ~4s (16 segments), Rolling derivation ~260ms, Diagnostics <200ms
+
 ### R4 – Geração VOD Real (latest) (F2-Parte 2)
 **Objetivo:** Implementar geração HLS VOD real (apenas `latest`) a partir de MP3 remotos no Spaces usando pipeline ffmpeg local (transcoding ou transmux se possível). Publicar em `generated/hls/latest/` preservando compatibilidade com proxies.
 **Premissas:** MP3 no Spaces podem ser baixados via stream; container tem CPU limitada → usar taxa/segmento moderados.
@@ -182,17 +192,38 @@ Publish atômico avançado: adiado para pós-R6 se ainda necessário.
 ### R6 – Hardening / Smoke & Operacionalização
 **Objetivo:** Consolidar confiabilidade, prevenir regressões e preparar avaliação de publish atômico pós-estabilidade.
 **Notas Iniciais:** Gate R5 aprovado (diagnostics p95 < 3000ms, hipótese Safari registrada, sem novos 500). Esta fase adiciona automação, rollback rápido e validação de cadeia de fallback.
+
+**⚠️ PRÉ-REQUISITO R6:** Registrar baseline storage atual antes de qualquer limpeza:
+```bash
+# Executar antes de R6-3:
+du -sh /tmp/hls-work/* 2>/dev/null || echo "No temp directories"
+df -h /tmp
+# Registrar output no RUN-LOG como "R6-BASELINE-STORAGE"
+```
+
 **Tarefas Atualizadas:**
 - [x] (R6-1) Reconciliar & atualizar `CHECKLIST-HLS-ROTATIVO.md` (remover/rotular legado, adicionar seções: Rolling Publication, Rolling Playback, Diagnostics, Safari Analysis, Hypothesis/Gate, Fallback Chain, Smoke & Stability).
 - [x] (R6-2) Implementar script `scripts/hls-smoke.js`: sequência capabilities → generate latest (simulate:false) → generate rolling → diagnostics latest & rolling → safari-hypothesis; saída resumida + exit code.
-- [ ] (R6-3) Avaliador de thresholds: WARN se `segmentCount < 3` ou `totalDurationApprox < 12s`; WARN se `ffmpegDurationMs >= 90000`; fallback simulate se `ffmpegDurationMs >= 150000` (já previsto logicamente, padronizar logging).
-- [ ] (R6-4) Rollback snapshot: antes de publicar nova `latest/index.m3u8` salvar `index.prev.m3u8` + doc de restauração / (opcional) endpoint `/api/hls/rollback-latest`.
-- [ ] (R6-5) Validação cadeia fallback: forçar falha geração (simulada) e confirmar reprodução MP3 + IOSPWAStrategy intacta; registrar resultado no RUN-LOG.
-- [ ] (R6-6) Janitor `/tmp/hls-work/*`: remover diretórios concluídos após sucesso; varrer >24h órfãos e deletar (log `HLS_GEN` tipo `janitor`).
-- [ ] (R6-7) Estabilidade 24h: executar smoke em intervalo (manual ou loop) por 24h agregando: total runs, passes, falhas 500, p95 diagnostics; gerar sumário final.
-- [ ] (R6-8) Playback Rolling iPhone: validar lockscreen/background sem stall (~17s); registrar métricas (tempo até primeiro play, continuity ok).
-- [ ] (R6-9) (Opcional) Expor JSON curto `GET /api/hls/last-diagnostics` + `GET /api/hls/last-hypothesis` para Admin/Debug UI.
-- [ ] (R6-10) Gate final: 100% tarefas R6 marcadas + 24h sem 500 em endpoints core HLS.
+- [x] (R6-3) **Diagnostics Real + Thresholds**: Implementar diagnostics real (substituir debug endpoints por análise completa HLS com HEAD requests, parsing de playlists, e métricas de performance). WARN se `segmentCount < 3` ou `totalDurationApprox < 12s`; WARN se `ffmpegDurationMs >= 90000`; fallback simulate se `ffmpegDurationMs >= 150000`. Base: atual smoke test + análise real de segments no Spaces.
+- [x] (R6-4) **Rollback Snapshot**: antes de publicar nova `latest/index.m3u8` salvar `index.prev.m3u8` + doc de restauração + (opcional) endpoint `/api/hls/rollback-latest`. Registrar baseline storage atual antes do janitor. Critério: preservar playlist funcional anterior.
+- [x] (R6-5) **Validação Cadeia Fallback**: forçar falha geração (simulada) e confirmar reprodução MP3 + IOSPWAStrategy intacta; testar rollback automático em cenário de falha; registrar resultado no RUN-LOG. Validar isolação completa entre HLS e fallback MP3.
+- [ ] (R6-6) **Janitor `/tmp/hls-work/*` Inteligente**: remover diretórios concluídos após sucesso; varrer >24h órfãos e deletar (log `HLS_GEN` tipo `janitor`). Métricas: total freed bytes + count removidos. Critério: registrar baseline storage antes cleanup.
+- [ ] (R6-7) **Estabilidade 24h + Smoke Automation**: executar smoke em intervalo (sugestão: 30min) por 24h agregando: total runs, passes, falhas 500, p95 diagnostics; gerar sumário final (JSON + markdown). Critério: <5% falhas em 48 execuções.
+- [ ] (R6-8) **Playback Rolling iPhone + Métricas**: validar lockscreen/background sem stall (~17s); registrar métricas (tFirstAudio, stallCount, longestGap, continuity ok). Correlacionar com dados de diagnostics para otimização específica iOS.
+- [ ] (R6-9) **Debug UI Integration**: (Opcional) Expor JSON curto `GET /api/hls/last-diagnostics` + `GET /api/hls/last-hypothesis` para Admin/Debug UI. Usar snapshot em memória + TTL para evitar locks. Dependência: R6-3 diagnostics real.
+- [ ] (R6-10) **Gate Final + Critérios Agregados**: 100% tarefas R6 marcadas + critérios agregados (0 falhas smoke últimas 10 execuções, p95 diagnostics < 3000ms, nenhum 500, rollback testado, janitor baseline registrado). Automação smoke funcionando + relatório consolidado 24h.
+
+### **🔗 Matriz de Dependências R6 (Ordem de Execução)**
+```bash
+R6-3 (Diagnostics Real) → Base para todas as próximas
+├── R6-4 (Rollback) → Independente, pode executar em paralelo
+├── R6-6 (Janitor) → Independente, registrar baseline antes
+└── R6-5 (Fallback) → Depende de R6-4 (para testar rollback)
+    └── R6-7 (24h) → Depende de R6-3,4,5,6 (smoke automation)
+        ├── R6-8 (iPhone) → Depende de R6-3 (métricas diagnostics)
+        └── R6-9 (Debug UI) → Depende de R6-3 (dados reais)
+            └── R6-10 (Gate) → Depende de todos anteriores
+```
 
 ---
 ## 5. Restrições (Atualizado)
@@ -217,14 +248,38 @@ Publish atômico avançado: adiado para pós-R6 se ainda necessário.
 - `chore(hls): reconcile checklist & add smoke/rollback tasks (R6)`
 
 ---
-## 8. Checklist de Aceite Final
+## 8. Checklist de Aceite Final (Atualizado Oct 6, 2025)
 ✅ Rotas /hls/latest e /hls/rolling respondem (proxy).  
 ✅ Rotas /api/hls/* aliases funcionando (compatibilidade).  
 ✅ Capabilities endpoint e simulate fallback (R3).  
 ✅ VOD latest gerado real (R4).  
 ✅ Rolling playlist + diagnostics + hipótese Safari (R5).  
 ✅ MP3 contínuo intacto e funcional.  
-⏳ Smoke + rollback + janitor + thresholds (R6).  
+✅ **Smoke test R6-2: 6/6 testes passando - SUCESSO TOTAL!**  
+⏳ **Diagnostics real + thresholds + rollback + janitor + automation (R6-3 à R6-10).**  
+
+**🏆 MILESTONE R6-2 ATINGIDO COM EXCELÊNCIA:** Sistema HLS totalmente funcional e validado!
+
+### **📋 R6 EXECUTION ROADMAP (Baseado em Matriz de Dependências)**
+```bash
+FASE 1 - FOUNDATION:
+✅ R6-1: Checklist reconciliado
+✅ R6-2: Smoke test (6/6 passing)  
+✅ R6-3: Diagnostics real + thresholds (CONCLUÍDO - base funcional)
+
+FASE 2 - PARALLEL TASKS (após R6-3):
+✅ R6-4: Rollback snapshot (CONCLUÍDO - sistema ativo e funcional)
+🔄 R6-6: Janitor inteligente (independente, registrar baseline)
+
+FASE 3 - INTEGRATION:
+✅ R6-5: Validação fallback (CONCLUÍDO - isolação HLS/MP3 confirmada)
+🔄 R6-7: Estabilidade 24h (após R6-3,4,5,6)
+
+FASE 4 - FINALIZATION:
+🔄 R6-8: iPhone playback (após R6-3)
+🔄 R6-9: Debug UI (após R6-3) 
+🔄 R6-10: Gate final (após todos)
+```  
 
 ---
 ## 9. Próximos Passos (Após Encerrar R6)
