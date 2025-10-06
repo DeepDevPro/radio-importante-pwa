@@ -1,1 +1,1 @@
-Simplified debug routes for testing
+Fixed debug routes with error handling
