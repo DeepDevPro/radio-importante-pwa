@@ -1,3 +1,5 @@
+/* eslint-env node */
+/* eslint-disable no-undef */
 // VOD Latest HLS Generation Module
 // R4-4: FFmpeg pipeline using fluent-ffmpeg with codec detection and transcoding
 
@@ -5,6 +7,14 @@ const ffmpeg = require('fluent-ffmpeg');
 const fs = require('fs');
 const path = require('path');
 const { uploadHlsFiles } = require('./uploadHlsFiles');
+
+/*
+ * PATCH A (Live-lite enablement):
+ * - Remove '-hls_playlist_type vod' to avoid Safari treating playlist as finite when we plan to evolve to rolling/live.
+ * - Relax validation: no longer require #EXT-X-PLAYLIST-TYPE:VOD nor #EXT-X-ENDLIST.
+ * - This creates a "live-like" static snapshot (player will not stop early due to VOD termination markers).
+ * - Future improvement (Phase 2): replace concat VOD with continuous segmenter.
+ */
 
 /**
  * Generates HLS VOD playlist from downloaded MP3 tracks
@@ -85,6 +95,24 @@ async function generateVodLatest(workspaceDir, downloadedTracks, options = {}) {
       throw new Error(`HLS validation failed: ${validation.error}`);
     }
 
+    await postProcessLiveLite(path.join(workspaceDir, 'index.m3u8'));
+    await rebuildLiveLikePlaylist(path.join(workspaceDir, 'index.m3u8'));
+
+    // Re-check markers and force rewrite if still present
+    try {
+      const p = path.join(workspaceDir, 'index.m3u8');
+      let c = await fs.promises.readFile(p, 'utf8');
+      if (/#EXT-X-PLAYLIST-TYPE:VOD/.test(c) || /#EXT-X-ENDLIST/.test(c)) {
+        const filtered = c.split('\n').filter(l => !l.startsWith('#EXT-X-PLAYLIST-TYPE:') && l.trim() !== '#EXT-X-ENDLIST').join('\n');
+        if (filtered !== c) {
+          await fs.promises.writeFile(p, filtered, 'utf8');
+          console.log('[GenerateVOD] Forced rewrite removing residual VOD markers');
+        }
+      }
+    } catch (e) {
+      console.log('[GenerateVOD] Marker recheck failed:', e.message);
+    }
+
     result.success = true;
     result.playlistPath = playlistPath;
     result.segmentCount = validation.segmentCount;
@@ -136,7 +164,7 @@ async function attemptGeneration(concatListPath, playlistPath, segmentPattern, t
         '-nostdin',
         '-f', 'hls',
         '-hls_time', '6',
-        '-hls_playlist_type', 'vod',
+        '-hls_playlist_type', 'event',  // EVENT type: no ENDLIST, allows continuation
         '-hls_segment_filename', segmentPattern,
         '-start_number', '0'
       ]);
@@ -159,7 +187,6 @@ async function attemptGeneration(concatListPath, playlistPath, segmentPattern, t
         }
       })
       .on('stderr', (stderrLine) => {
-        // Log important stderr lines (errors, warnings)
         if (stderrLine.includes('error') || stderrLine.includes('Error') || stderrLine.includes('failed')) {
           console.log(`[FFmpeg] Error: ${stderrLine}`);
         }
@@ -174,13 +201,12 @@ async function attemptGeneration(concatListPath, playlistPath, segmentPattern, t
       })
       .run();
 
-    // Timeout for copy attempts (should fail quickly if incompatible)
     if (!transcode) {
       setTimeout(() => {
         console.log('[FFmpeg] Copy attempt timeout, assuming failure');
         command.kill('SIGKILL');
         resolve(false);
-      }, 10000); // 10 seconds for copy attempts
+      }, 10000);
     }
   });
 }
@@ -200,26 +226,15 @@ async function validateHlsOutput(workspaceDir) {
 
   try {
     const playlistPath = path.join(workspaceDir, 'index.m3u8');
-    
-    // Check if playlist exists
     if (!fs.existsSync(playlistPath)) {
       throw new Error('Playlist file index.m3u8 not found');
     }
 
-    // Read and parse playlist
     const playlistContent = await fs.promises.readFile(playlistPath, 'utf8');
-    
-    // Check for VOD marker
-    if (!playlistContent.includes('#EXT-X-PLAYLIST-TYPE:VOD')) {
-      throw new Error('Missing VOD playlist type marker');
-    }
 
-    // Check for end marker
-    if (!playlistContent.includes('#EXT-X-ENDLIST')) {
-      throw new Error('Missing playlist end marker');
-    }
+    // Relaxed: no mandatory VOD markers / ENDLIST (live-like patch)
+    // We only require at least one EXTINF and first segment existence.
 
-    // Count segments and calculate duration
     const extinf = playlistContent.match(/#EXTINF:([0-9.]+),/g);
     if (!extinf || extinf.length === 0) {
       throw new Error('No segments found in playlist');
@@ -231,19 +246,17 @@ async function validateHlsOutput(workspaceDir) {
       return total + duration;
     }, 0);
 
-    // Verify at least first segment exists
     const firstSegmentMatch = playlistContent.match(/segment_\d+\.ts/);
     if (!firstSegmentMatch) {
       throw new Error('No segment files referenced in playlist');
     }
-
     const firstSegmentPath = path.join(workspaceDir, firstSegmentMatch[0]);
     if (!fs.existsSync(firstSegmentPath)) {
       throw new Error(`First segment file ${firstSegmentMatch[0]} not found`);
     }
 
     result.success = true;
-    console.log(`[ValidateHLS] Success: ${result.segmentCount} segments, ${Math.round(result.totalDuration)}s total`);
+    console.log(`[ValidateHLS] Success (live-lite): ${result.segmentCount} segments, ${Math.round(result.totalDuration)}s total`);
 
   } catch (error) {
     result.error = error.message;
@@ -253,6 +266,74 @@ async function validateHlsOutput(workspaceDir) {
   return result;
 }
 
-module.exports = {
-  generateVodLatest
-};
+/**
+ * Post-processes HLS playlist to strip VOD/Event markers
+ * @param {string} playlistPath - Path to the playlist file
+ * @returns {Promise<void>}
+ */
+async function postProcessLiveLite(playlistPath) {
+  try {
+    let content = await fs.promises.readFile(playlistPath, 'utf8');
+    const original = content;
+    const beforeLines = content.split('\n').length;
+    // Remove PLAYLIST-TYPE and ENDLIST lines
+    content = content
+      .split('\n')
+      .filter(l => !(l.startsWith('#EXT-X-PLAYLIST-TYPE:')) && l.trim() !== '#EXT-X-ENDLIST')
+      .join('\n');
+    if (content !== original) {
+      await fs.promises.writeFile(playlistPath, content, 'utf8');
+      console.log(`[GenerateVOD] Post-process: stripped markers (lines ${beforeLines} -> ${content.split('\n').length})`);
+    } else {
+      console.log('[GenerateVOD] Post-process: no markers to strip');
+    }
+  } catch (e) {
+    console.log('[GenerateVOD] Post-process failed:', e.message);
+  }
+}
+
+/**
+ * Rebuilds the HLS playlist to a live-like state by stripping PLAYLIST-TYPE and ENDLIST
+ * @param {string} playlistPath - Path to the playlist file
+ * @returns {Promise<void>}
+ */
+async function rebuildLiveLikePlaylist(playlistPath) {
+  try {
+    const raw = await fs.promises.readFile(playlistPath, 'utf8');
+    const lines = raw.split(/\r?\n/).filter(l => l.trim().length);
+    const segments = [];
+    let currentDur = null;
+    for (const line of lines) {
+      if (line.startsWith('#EXTINF:')) {
+        const m = line.match(/#EXTINF:([0-9.]+)/);
+        currentDur = m ? parseFloat(m[1]) : null;
+      } else if (!line.startsWith('#') && currentDur !== null) {
+        segments.push({ name: line.trim(), duration: currentDur });
+        currentDur = null;
+      }
+    }
+    if (segments.length === 0) {
+      console.log('[GenerateVOD] Rebuild skipped: no segments parsed');
+      return;
+    }
+    const target = Math.ceil(Math.max(...segments.map(s => s.duration || 6)) + 0.5);
+    const rebuilt = [
+      '#EXTM3U',
+      '#EXT-X-VERSION:3',
+      `#EXT-X-TARGETDURATION:${target}`,
+      '#EXT-X-MEDIA-SEQUENCE:0',
+      '#EXT-X-INDEPENDENT-SEGMENTS'
+    ];
+    segments.forEach(s => {
+      rebuilt.push(`#EXTINF:${s.duration.toFixed(6)},`);
+      rebuilt.push(s.name);
+    });
+    rebuilt.push('');
+    await fs.promises.writeFile(playlistPath, rebuilt.join('\n'), 'utf8');
+    console.log('[GenerateVOD] Playlist rebuilt live-like (removed PLAYLIST-TYPE/ENDLIST)');
+  } catch (e) {
+    console.log('[GenerateVOD] Rebuild failed:', e.message);
+  }
+}
+
+module.exports = { generateVodLatest };

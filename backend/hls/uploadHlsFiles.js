@@ -5,6 +5,33 @@ const fs = require('fs');
 const path = require('path');
 const { createPlaylistSnapshot } = require('./rollbackSnapshot');
 
+// Helper: sanitize playlist content to enforce live-like semantics
+function sanitizePlaylistContent(content) {
+  const original = content;
+  let lines = content.split(/\r?\n/);
+  // Remove VOD/Event termination semantics
+  lines = lines.filter(l => !/^#EXT-X-PLAYLIST-TYPE:/i.test(l) && l.trim() !== '#EXT-X-ENDLIST');
+  // Ensure INDEPENDENT-SEGMENTS present (helps some players)
+  const hasIndependent = lines.some(l => /^#EXT-X-INDEPENDENT-SEGMENTS$/i.test(l));
+  if (!hasIndependent) {
+    // Insert after MEDIA-SEQUENCE if present else after TARGETDURATION else after first line
+    const insertIdx = lines.findIndex(l => /^#EXT-X-MEDIA-SEQUENCE:/i.test(l));
+    if (insertIdx !== -1) {
+      lines.splice(insertIdx + 1, 0, '#EXT-X-INDEPENDENT-SEGMENTS');
+    } else {
+      const tdIdx = lines.findIndex(l => /^#EXT-X-TARGETDURATION:/i.test(l));
+      if (tdIdx !== -1) {
+        lines.splice(tdIdx + 1, 0, '#EXT-X-INDEPENDENT-SEGMENTS');
+      } else {
+        lines.splice(1, 0, '#EXT-X-INDEPENDENT-SEGMENTS');
+      }
+    }
+  }
+  // Normalize blank lines
+  const sanitized = lines.filter((l, i, arr) => !(l.trim() === '' && (i === 0 || arr[i - 1].trim() === ''))).join('\n').trimEnd() + '\n';
+  return { changed: sanitized !== original, content: sanitized };
+}
+
 // Configure Digital Ocean Spaces (reusing existing config pattern)
 const spacesEndpoint = new AWS.Endpoint(process.env.DO_SPACES_ENDPOINT || 'atl1.digitaloceanspaces.com');
 const s3 = new AWS.S3({
@@ -106,9 +133,23 @@ async function uploadHlsFiles(workspaceDir, targetPrefix = 'generated/hls/latest
       // Continue with upload - snapshot failure shouldn't block generation
     }
 
-    // Upload playlist last (atomic switch)
+    // Upload playlist last (atomic switch) with sanitization
     for (const playlistFile of playlistFiles) {
       const localPath = path.join(workspaceDir, playlistFile);
+      // Sanitize content in-memory before upload
+      try {
+        const raw = await fs.promises.readFile(localPath, 'utf8');
+        const { changed, content } = sanitizePlaylistContent(raw);
+        if (changed) {
+          await fs.promises.writeFile(localPath, content, 'utf8');
+          console.log(`[UploadHLS] Sanitized playlist ${playlistFile} (removed VOD markers)`);
+        } else {
+          console.log(`[UploadHLS] Playlist ${playlistFile} already live-like (no VOD markers)`);
+        }
+      } catch (e) {
+        console.log(`[UploadHLS] Playlist sanitize skipped (${playlistFile}): ${e.message}`);
+      }
+
       const spacesKey = targetPrefix + playlistFile;
       
       // Playlist headers: no-cache
