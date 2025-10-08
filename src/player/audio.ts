@@ -12,6 +12,8 @@ export interface AudioPlayerEvents {
   onCanPlay?: () => void;
   onError?: (error: Error) => void;
   onStalled?: () => void;
+  // Novo: aviso pré-fim (para futuras otimizações de pré-carregamento)
+  onPreEnd?: (remainingSeconds: number) => void;
 }
 
 // Detectar iOS PWA - mantido para compatibilidade
@@ -33,6 +35,10 @@ export class AudioPlayer {
   private trackCues: TrackCue[] = [];
   private currentTrackIndex = 0;
   private isBackground = false; // Controlar updates durante screen lock
+  // Novo: controle de boundary / avanço em background
+  private backgroundBoundaryThreshold = 3; // segundos antes do fim para acionar avanço
+  private backgroundAdvanceTriggered = false;
+  private lastBackgroundUpdateTs = 0;
 
   constructor() {
     // Usar nova detecção de dispositivo
@@ -62,9 +68,11 @@ export class AudioPlayer {
       this.isBackground = document.hidden;
       if (this.isIOSPWA) {
         if (this.isBackground) {
-          console.log('🍎 iOS PWA: Entrando em background - pausando updates');
+          console.log('🍎 iOS PWA: Entrando em background - pausando updates pesados');
+          this.backgroundAdvanceTriggered = false; // reset para nova faixa
         } else {
           console.log('🍎 iOS PWA: Voltando para foreground - retomando updates');
+          this.backgroundAdvanceTriggered = false;
         }
       }
     });
@@ -241,11 +249,40 @@ export class AudioPlayer {
 
     // Evento de atualização de tempo
     this.audio.addEventListener('timeupdate', () => {
-      // No iOS PWA, não fazer updates durante background/screen lock
-      if (this.isIOSPWA && this.isBackground) {
-        return; // Ignorar timeupdate durante screen lock
+      const current = this.audio.currentTime || 0;
+      const duration = this.audio.duration || 0;
+
+      // Boundary detection mesmo em background (iOS throttling tolera callbacks curtos)
+      if (this.isIOSPWA && duration > 0) {
+        const remaining = duration - current;
+
+        // Em background: limitar frequência de processamento completo (a cada ~2s)
+        if (this.isBackground) {
+          const now = (typeof window !== 'undefined' && window.performance && window.performance.now) ? window.performance.now() : Date.now();
+          if (now - this.lastBackgroundUpdateTs < 1900) {
+            // Apenas checar boundary crítico mesmo que throttle
+            if (!this.backgroundAdvanceTriggered && remaining > 0 && remaining <= this.backgroundBoundaryThreshold) {
+              this.handleBackgroundAdvance(remaining);
+            }
+            return; // ignorar updates não críticos
+          }
+          this.lastBackgroundUpdateTs = now;
+        }
+
+        if (!this.backgroundAdvanceTriggered && remaining > 0 && remaining <= this.backgroundBoundaryThreshold) {
+          this.handleBackgroundAdvance(remaining);
+        }
       }
-      this.events.onTimeUpdate?.(this.audio.currentTime, this.audio.duration || 0);
+
+      // Antes retornava totalmente em background — agora fazemos update leve
+      if (!(this.isIOSPWA && this.isBackground)) {
+        this.events.onTimeUpdate?.(current, duration);
+      } else {
+        // Update degradado (posição aproximada) para manter mínimo estado
+        if (current > 0 && duration > 0) {
+          this.events.onTimeUpdate?.(current, duration);
+        }
+      }
     });
 
     // Evento de início de carregamento
@@ -572,5 +609,21 @@ export class AudioPlayer {
       this.audio.src = trackUrl;
       this.audio.load();
     });
+  }
+
+  private handleBackgroundAdvance(remaining: number): void {
+    this.backgroundAdvanceTriggered = true;
+    console.log(`⏭️  BG Boundary detectado (restam ~${remaining.toFixed(2)}s) - preparando avanço`);
+    this.events.onPreEnd?.(remaining);
+
+    // Estratégia simples: disparar onEnded antecipado para iniciar próxima faixa
+    // (iOS permite autoplay contínuo enquanto ainda há áudio ativo)
+    setTimeout(() => {
+      // Se ainda não terminou naturalmente e player segue ativo
+      if (this.audio && !this.audio.ended) {
+        console.log('⏭️  BG Advance: disparando onEnded antecipado (pré-fim)');
+        this.events.onEnded?.();
+      }
+    }, Math.max(remaining * 1000 - 300, 0)); // tenta alinhar ~300ms antes do fim real
   }
 }
