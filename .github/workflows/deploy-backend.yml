@@ -1,0 +1,4 @@
+# ARCHIVED WORKFLOW (deploy-backend.yml)
+# Arquivado em 2025-10-08.
+# Motivo: backend usa apenas deploy-backend-staging.yml no momento; nenhum fluxo de produção automatizado ativo.
+# Removido conteúdo executável.

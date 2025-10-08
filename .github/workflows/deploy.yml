@@ -1,0 +1,5 @@
+# ARCHIVED WORKFLOW (deploy.yml)
+# Esta workflow foi arquivada em 2025-10-08.
+# Motivo: substituída pelos fluxos específicos de deploy para staging e produção.
+# Sem chaves 'name' ou 'on' para impedir que o GitHub Actions a reconheça.
+# Se precisar restaurar, recupere o histórico git anterior a este commit.
