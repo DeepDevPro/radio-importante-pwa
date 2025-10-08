@@ -154,14 +154,16 @@ Nota: Desenvolvedor substitui `'DEFINIR_SENHA_AQUI'` pela senha real (ex: `'radi
 
 ---
 ## 12. Status
-- Estado atual: PLANEJADO
-- Próxima ação: Aprovação do plano.
+- Estado atual: ✅ CONCLUÍDO
+- Deploy staging: ✅ Sucesso
+- Testes manuais: ✅ Validados
+- Senha configurada: `radio2025`
 
 ---
 ## 13. Ações Pós-Conclusão (Atualizar)
 Após implementação bem-sucedida:
-- Marcar este documento como CONCLUÍDO.
-- Anotar senha usada em local seguro interno (não no repositório público se for sensível — usar placeholder se necessário em docs).
+- ✅ Documento marcado como CONCLUÍDO.
+- ✅ Senha anotada: `radio2025` (placeholder de desenvolvimento)
 
 ---
 ## 14. Confirmação
