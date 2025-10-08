@@ -7,6 +7,8 @@ Escopo: Itens 🔄 e ⏳ do checklist rotativo que impactam experiência real, r
 - [ ] Aberto | [x] Concluído | (→) Próximo | (!) Atenção / pré-condição
 - Marcadores de execução: (iPhone), (Mac), (Staging backend), (Produção), (iPhone+Mac), (Mac+Staging backend)
 
+**⚠️ REGRA IMPORTANTE: TODOS OS TESTES DEVEM SER EXECUTADOS NO AMBIENTE STAGING EM PRODUÇÃO, NÃO LOCAL**
+
 <!-- === CONTEXTO ATUAL / CHECKPOINT === -->
 ### Checkpoint 2025-10-07 (HLS Sanitization APLICADA - Frontend OK)
 
@@ -20,33 +22,29 @@ Escopo: Itens 🔄 e ⏳ do checklist rotativo que impactam experiência real, r
 
 **Análise do Comportamento Real:**
 - Frontend Safari: ✅ Playback contínuo normal de todas as músicas
-- HLS direto: ❌ Para aos 17s (mas esse não é o caso de uso real)
+- HLS direto: ❌ Para aos 17s (diagnóstico apenas, não caso de uso real)
 - **FOCO CORRETO**: Background playback e screen lock (casos críticos reais)
 
-**PRÓXIMA FASE:**
-Testes de resistência nos cenários que realmente importam:
-1. **Background playback** (alternar app durante reprodução)
-2. **Screen lock** (bloquear tela durante reprodução)  
-3. **Rolling playlist** (streaming contínuo)
-4. **Fallback chain** (robustez do sistema)
+**Estado Pós-Sanitização (Consolidado):**
+- Playlist live-like confirmada (sem `PLAYLIST-TYPE` / `ENDLIST`).
+- Caso real foreground (Safari / PWA): estável.
+- Problema remanescente (antes do scheduler): avanço de faixa falhava somente em background / screen lock.
 
-### Instruções para GPT-5 (Investigação Técnica Urgente)
-**STATUS:** Patch live-lite falhou. Problema dos 17s persiste.
+**Causa Raiz (identificada para falha de transição em background):**
+- Supressão total de `timeupdate` em background (nenhum sinal de fim iminente).
+- Ausência de scheduler / boundary detection → dependência exclusiva de `onEnded` natural (tardiamente ou sob throttling).
+- Sem pré-aviso (pré-fim) nem disparo antecipado controlado.
 
-**DADOS DO TESTE:**
-- Comando executado: `curl -X POST .../api/hls/generate-hls -d '{"mode":"latest","simulate":false}'`
-- Response: `action=generated, segmentCount=16, totalDurationApprox=91s`
-- iPhone test: tFirstAudio <1s, timeline expandiu >1min, retraiu para 17s, parou aos 17s
+**Mitigação Aplicada (Scheduler):**
+- Timeupdate degradado permitido (≈ cada 2s) em background.
+- Boundary detection (restam ≤3s) dispara `onPreEnd` e agenda `onEnded` antecipado (~300ms antes do fim real).
+- Objetivo: reduzir gap entre término percebido e início da próxima faixa a < 2s continuamente.
 
-**INVESTIGAÇÃO NECESSÁRIA:**
-1. Verificar conteúdo real da playlist gerada:
-   `curl https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/hls/latest/index.m3u8`
-2. Procurar por: `#EXT-X-PLAYLIST-TYPE:VOD` e `#EXT-X-ENDLIST`
-3. Se presentes: ffmpeg ainda gera VOD por padrão - corrigir com `-hls_playlist_type event`
-4. Se ausentes: investigar outra causa (cache, semântica Safari)
+**Próximo Objetivo Imediato:**
+- Validar 3+ transições consecutivas em background (e lock) com gap ≤ 2000ms.
 
-**AÇÃO SOLICITADA:**
-Corrija o código, regenere playlist e atualize este plano com novos passos de teste.
+**Gate Atual Único:**
+- Só avançar para Rolling + análises formais (Seções 2–4) após validação acima ou documentação de exceção.
 
 ### Atualização 2025-10-07 (Sanitização em Upload APLICADA)
 **NOVO PATCH:** Inserido sanitizador em `uploadHlsFiles.js` que:
@@ -64,32 +62,34 @@ Corrija o código, regenere playlist e atualize este plano com novos passos de t
 5. (Mac) Listar primeiras 20 linhas para log: `head -n 20 latest.after-sanitize.m3u8`
 6. (Mac) Verificar nomes de segmento (devem ser segment_000.ts ...): `grep -E 'segment_[0-9]{3}\.ts' latest.after-sanitize.m3u8 | head`
 7. (Mac) HEAD correto de 3 segmentos reais: `for i in 000 001 002; do curl -I -s https://radio-importante-audio.atl1.digitaloceanspaces.com/generated/hls/latest/segment_${i}.ts | head -n 1; done`
-8. (iPhone) Limpar aba/anônimo e tocar novamente (abrir player) → medir duração contínua até ≥120s
-9. (iPhone) Se parar <120s: capturar hora exata e copiar 30 primeiras linhas da playlist naquele momento
-10. (Mac) Se sucesso ≥120s: avançar para Rolling (gerar e testar 5 min)
+8. (iPhone) Limpar aba/anônimo e tocar novamente (abrir player) → medir duração contínua até ≥120s ✅ **SUCESSO: >120s confirmado**
+9. (iPhone) Se parar <120s: capturar hora exata e copiar 30 primeiras linhas da playlist naquele momento ✅ **N/A - não parou**
+10. (Mac) Se sucesso ≥120s: avançar para Rolling (gerar e testar 5 min) ✅ **GATE LIBERADO: Avançando para Testes Críticos**
 
 **CRITÉRIO DE SUCESSO IMEDIATO:** Playlist publicada sem `PLAYLIST-TYPE` e sem `ENDLIST` + playback contínuo >120s.
 
 **PRÓXIMO GATE:** Alcançar 300s sem stall para liberar seção 2 (Safari Analysis formal) e Rolling.
 
-### Relatório de Teste Atual - DIAGNÓSTICO PRECISO
+### Relatório de Teste Atual - DIAGNÓSTICO PRECISO ATUALIZADO
 ```
 SAFARI BROWSER (Não-PWA):
 - ✅ Primeiro plano: TODAS as músicas tocam completamente
 - ✅ Screen lock: Continua tocando todas as músicas normalmente  
+- ✅ Background: Continua tocando >2min sem problemas
 - ✅ tFirstAudio: <1s (excelente)
-- ✅ CONCLUSÃO: Safari browser SEM PROBLEMAS
+- ✅ CONCLUSÃO: Safari browser PERFEITO em todos os cenários
 
-PWA INSTALADO (Caso problemático):
-- ❌ Background/segundo plano: Toca música atual até final, PARA na troca
-- ❌ Screen lock: Toca música atual até final, PARA na troca  
-- ❌ Screen lock imediato: Mesmo comportamento de parada na troca
-- 🔍 PROBLEMA IDENTIFICADO: Transição entre músicas falha em background/lock
+PWA INSTALADO (Progresso Significativo):
+- ✅ Primeiro plano: TODAS as músicas tocam sem interrupção
+- ✅ Screen lock: FUNCIONOU! >3min, sem gaps, troca faixas corretamente  
+- 🔴 Background/segundo plano: Toca 1-2 músicas (60-120s), depois PARA
+- 🔍 PROBLEMA IDENTIFICADO: Suspensão do audio context após ~60-120s em background
 
-ROOT CAUSE SUSPEITA:
-- Background audio API não configurada para PWA
-- HLS stream handover falha sem interface ativa  
-- Service Worker não mantém stream entre faixas
+ROOT CAUSE REFINADA:
+- Screen lock: iOS mantém audio context ativo ✅
+- Background switch: iOS suspende audio context após timeout ❌
+- Background Boundary Scheduler funciona parcialmente (1-2 transições)
+- Service Worker não intercepta HLS streams adequadamente
 ```
 
 ### Gate para avançar para melhorias adicionais
@@ -107,16 +107,12 @@ Prosseguir para reforço de diagnostics ou pipeline contínuo apenas se: LATEST 
 - [x] Abrir URL: https://radio-importante-frontend-stagin-6rjzv.ondigitalocean.app (iPhone) ✅ **Frontend funciona perfeitamente**
 - [x] Medir tFirstAudio (objetivo < 5s) – anotar (iPhone) ✅ **<1s - EXCELENTE!**
 - [x] Ouvir múltiplas músicas completas (iPhone) ✅ **TODAS tocam sem interrupção**
-- [ ] **TESTE CRÍTICO 1: Background Playback** (iPhone) (→ PRÓXIMO)
-  - [ ] Iniciar reprodução de música
-  - [ ] Alternar para outro app (ex: Safari, Notas) por 2 minutos  
-  - [ ] Verificar se áudio continua em background
-  - [ ] Voltar ao app → verificar se música ainda toca sem saltos
-- [ ] **TESTE CRÍTICO 2: Screen Lock** (iPhone) (→ PRÓXIMO)
-  - [ ] Iniciar reprodução de música
-  - [ ] Bloquear tela do iPhone por 3 minutos
-  - [ ] Verificar se áudio continua tocando (pelos alto-falantes)
-  - [ ] Desbloquear → confirmar música ainda toca normalmente
+- [x] **TESTE CRÍTICO 1: Background Playback** (iPhone) ✅🔴 **PARCIAL**
+  - [x] Safari: ✅ **PERFEITO** - continua >2min sem problemas
+  - [x] PWA: 🔴 **PROBLEMA** - toca até fim da música atual + próxima, depois PARA
+- [x] **TESTE CRÍTICO 2: Screen Lock** (iPhone) ✅ **SUCESSO TOTAL**
+  - [x] Safari: ✅ **PERFEITO** - >3min, troca faixas normalmente  
+  - [x] PWA: ✅ **FUNCIONOU!** - >3min, sem gaps, troca faixas corretamente
 - [ ] **TESTE CRÍTICO 3: Background + Screen Lock** (iPhone) (→)
   - [ ] Iniciar música → alternar app → bloquear tela → aguardar 2 min
   - [ ] Desbloquear → voltar ao app → verificar continuidade
@@ -156,16 +152,26 @@ Métricas registrar:
 - [x] Permanecer 5 minutos monitorando continuidade (iPhone) ❌ **Falhou - não conseguiu tocar**
 - [ ] Reteste após LATEST >=120s estável (→)
 
-### 1.4 Coleta de Dados
-- [ ] Registrar métricas finais em bloco (inserir no final deste arquivo) (Mac)
-  - tFirstAudioLatest =
-  - tFirstAudioRolling =
-  - stallCountLatest =
-  - stallCountRolling =
-  - longestGapSec =
-  - backgroundOK = (sim/não)
-  - lockScreenPersist = (sim/não)
-  - observações =
+### 1.4 Coleta de Dados - MÉTRICAS COLETADAS
+**Registrar métricas finais em bloco:**
+- **tFirstAudioLatest** = <1s (excelente)
+- **tFirstAudioRolling** = N/A (falhou na inicialização)
+- **stallCountLatest** = 0 (foreground), 0 (screen lock), 1 (background após 60-120s)
+- **stallCountRolling** = N/A
+- **longestGapSec** = 0s (screen lock), ~indefinido (background stall)
+- **backgroundOK** = Safari: SIM, PWA: PARCIAL (60-120s)
+- **lockScreenPersist** = Safari: SIM, PWA: SIM ✅
+- **observações** = Screen lock RESOLVIDO! Background precisa Audio Context enhancement
+
+**TRANSIÇÕES BACKGROUND PWA:**
+- transitionSuccessCount = 1-2 (primeiras funcionam)
+- transitionFailureCount = subsequentes após 60-120s
+- avgGapMs = <500ms (quando funciona)
+- maxGapMs = infinito (quando para)
+- boundaryDetections = funciona parcialmente
+- antecipatedEndingsDispatched = 1-2 vezes depois falha
+
+**GATE STATUS:** Screen lock ✅ APROVADO. Background ❌ PRECISA CORREÇÃO.
 
 ## 2. Safari Analysis & Hypothesis Formal
 ### 2.1 Estrutura de Documento

@@ -39,6 +39,16 @@ export class AudioPlayer {
   private backgroundBoundaryThreshold = 3; // segundos antes do fim para acionar avanço
   private backgroundAdvanceTriggered = false;
   private lastBackgroundUpdateTs = 0;
+  // ==== Fase 0 Instrumentação Background (somente métricas / logs) ====
+  private lastTimeUpdateTs = 0; // timestamp (ms) do último timeupdate efetivo
+  private lastTimeUpdatePosition = 0; // posição (s) no último timeupdate
+  private backgroundMaxGapMs = 0; // maior gap observado entre timeupdates em background
+  private backgroundSuspensionDetections = 0; // contagens de suspeitas de suspensão
+  private backgroundMonitorInterval?: number; // interval id
+  private lastSuspensionLogTs = 0; // evitar log spam
+  private recoveryAttemptCount = 0; // (futuro) tentativas – ainda não usado
+  private recoverySuccessCount = 0; // (futuro) sucessos – ainda não usado
+  // ==== Fim Instrumentação ====
 
   constructor() {
     // Usar nova detecção de dispositivo
@@ -61,6 +71,8 @@ export class AudioPlayer {
 
     // Configurar listener para detectar background/foreground
     this.setupBackgroundDetection();
+    // Iniciar monitor leve (Fase 0) – apenas logs
+    this.startBackgroundMonitor();
   }
 
   private setupBackgroundDetection(): void {
@@ -76,6 +88,47 @@ export class AudioPlayer {
         }
       }
     });
+  }
+
+  private startBackgroundMonitor(): void {
+    if (this.backgroundMonitorInterval) return;
+    this.backgroundMonitorInterval = window.setInterval(() => {
+      if (!this.isIOSPWA) return;
+      if (!this.isBackground) return;
+      if (!this.isPlaying()) return;
+      const now = (typeof window !== 'undefined' && window.performance && typeof window.performance.now === 'function')
+        ? window.performance.now()
+        : Date.now();
+      if (this.lastTimeUpdateTs === 0) return; // ainda não temos referência
+      const gap = now - this.lastTimeUpdateTs;
+      if (gap > this.backgroundMaxGapMs) {
+        this.backgroundMaxGapMs = gap;
+      }
+      if (gap > 8000) {
+        if (now - this.lastSuspensionLogTs > 30000) {
+          this.lastSuspensionLogTs = now;
+          this.backgroundSuspensionDetections++;
+          const el: HTMLAudioElement = this.audio;
+          const readyState = (el as HTMLAudioElement).readyState; // 0-4
+          const networkState = (el as HTMLAudioElement).networkState; // 0-3
+          const paused = el.paused;
+          const current = el.currentTime;
+          const deltaPos = (current - this.lastTimeUpdatePosition).toFixed(3);
+          console.warn('[BG_STALL_DETECT]', {
+            gapMs: Math.round(gap),
+            backgroundMaxGapMs: Math.round(this.backgroundMaxGapMs),
+            suspensions: this.backgroundSuspensionDetections,
+            readyState,
+            networkState,
+            paused,
+            currentTime: current.toFixed(3),
+            deltaSinceLastUpdate: deltaPos,
+            recoveryAttemptCount: this.recoveryAttemptCount,
+            recoverySuccessCount: this.recoverySuccessCount
+          });
+        }
+      }
+    }, 5000);
   }
 
   public setEventHandlers(events: AudioPlayerEvents): void {
@@ -251,6 +304,11 @@ export class AudioPlayer {
     this.audio.addEventListener('timeupdate', () => {
       const current = this.audio.currentTime || 0;
       const duration = this.audio.duration || 0;
+
+      // Atualizar métricas de instrumentação
+      const nowTs = (typeof window !== 'undefined' && window.performance && window.performance.now) ? window.performance.now() : Date.now();
+      this.lastTimeUpdateTs = nowTs;
+      this.lastTimeUpdatePosition = current;
 
       // Boundary detection mesmo em background (iOS throttling tolera callbacks curtos)
       if (this.isIOSPWA && duration > 0) {
@@ -476,6 +534,11 @@ export class AudioPlayer {
       this.isInitialized = false;
       this.currentSrc = '';
       console.log('🗑️ AudioPlayer destruído');
+    }
+
+    if (this.backgroundMonitorInterval) {
+      clearInterval(this.backgroundMonitorInterval);
+      this.backgroundMonitorInterval = undefined;
     }
   }
 
