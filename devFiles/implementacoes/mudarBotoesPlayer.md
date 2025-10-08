@@ -112,11 +112,11 @@ Se qualquer anomalia: `git revert <commit-hash>` do commit único desta alteraç
 
 ---
 ## 11. Critérios de Aceite
-- [ ] Ordem dos botões refletida visualmente: Next, Play, Info.
-- [ ] Nenhum erro no console após interação básica (Play, Next, Info).
-- [ ] Funções originais inalteradas (callbacks ainda disparados).
-- [ ] IDs, classes e estilos preservados.
-- [ ] Build / deploy staging concluído sem falhas.
+- [x] Ordem dos botões refletida visualmente: Next, Play, Info.
+- [x] Nenhum erro no console após interação básica (Play, Next, Info).
+- [x] Funções originais inalteradas (callbacks ainda disparados).
+- [x] IDs, classes e estilos preservados.
+- [x] Build / deploy staging concluído sem falhas.
 
 ---
 ## 12. Não Metas (Explícito)
@@ -127,13 +127,22 @@ Se qualquer anomalia: `git revert <commit-hash>` do commit único desta alteraç
 
 ---
 ## 13. Próxima Ação
-Executar Micropasso 1 (grep de verificação posicional) antes de editar arquivos.
+~~Executar Micropasso 1 (grep de verificação posicional) antes de editar arquivos.~~
+✅ **CONCLUÍDO** - Implementação validada e funcionando em staging.
 
 ---
 ## 14. Observações Finais
 Alteração mínima, alinhada à filosofia de micro‑deploy. Registrar no futuro changelog conciso caso haja série de pequenos ajustes UI.
 
 ---
-**Status Inicial:** PLANEJADO
+**Status Final:** ✅ **CONCLUÍDO COM SUCESSO**
 
-> Após validação deste plano pelo solicitante, prosseguir para implementação.
+**Commit:** `ae4bef6` - feat(ui): reordenar botões player para Next-Play-Info
+
+**Resultado da Validação:** 
+- ✅ Deploy staging executado com sucesso
+- ✅ Ordem dos botões confirmada: [Next] [Play] [Info]
+- ✅ Funcionalidades testadas e operacionais
+- ✅ Sem regressões detectadas
+
+**Implementação completa e validada. Micro-entrega realizada conforme workflow incremental.**
