@@ -44,56 +44,55 @@ Escopo: Itens 🔄 e ⏳ do checklist rotativo que impactam experiência real, r
 - Validar 3+ transições consecutivas em background (e lock) com gap ≤ 2000ms.
 
 **Gate Atual Único:**
-- Só avançar para Rolling + análises formais (Seções 2–4) após validação acima ou documentação de exceção.
+- (OBSOLETO - SUBSTITUÍDO) Só avançar para Rolling + análises formais (Seções 2–4) após validação acima ou documentação de exceção.
 
-### Atualização 2025-10-07 (Sanitização em Upload APLICADA)
-**NOVO PATCH:** Inserido sanitizador em `uploadHlsFiles.js` que:
-- Remove linhas `#EXT-X-PLAYLIST-TYPE:*` e `#EXT-X-ENDLIST` antes do upload
-- Injeta `#EXT-X-INDEPENDENT-SEGMENTS` se ausente
-- Garante reescrita atômica em disco antes do envio
+### Checkpoint 2025-10-07 (Background 300s Gate ATINGIDO)
+**NOVO ESTADO:** Playback PWA em background validado ≥300s contínuos com ≥3 transições consecutivas sem stall.
 
-**Objetivo Imediato:** Garantir que a playlist publicada NÃO contenha mais semântica de término.
+**Evidências Rápidas:**
+- transitionSuccessCount ≥ 3 (sem falhas)
+- maxGapMs < 1500ms (todas transições suaves)
+- stallCountLatest (background) = 0
+- Nenhum log BG_STALL_DETECT
+- Screen lock continua estável (sem regressão)
 
-**PASSOS A EXECUTAR AGORA (Ordem):**
-1. (Mac) POST regenerate latest: `curl -X POST <api>/api/hls/generate-hls -H 'Content-Type: application/json' -d '{"mode":"latest","simulate":false}'`
-2. (Mac) Baixar playlist publicada: `curl -s https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/hls/latest/index.m3u8 | tee latest.after-sanitize.m3u8`
-3. (Mac) GREP validar ausência: `grep -E 'PLAYLIST-TYPE|ENDLIST' latest.after-sanitize.m3u8 || echo 'OK sem marcadores'`
-4. (Mac) Confirmar presença: `grep 'INDEPENDENT-SEGMENTS' latest.after-sanitize.m3u8`
-5. (Mac) Listar primeiras 20 linhas para log: `head -n 20 latest.after-sanitize.m3u8`
-6. (Mac) Verificar nomes de segmento (devem ser segment_000.ts ...): `grep -E 'segment_[0-9]{3}\.ts' latest.after-sanitize.m3u8 | head`
-7. (Mac) HEAD correto de 3 segmentos reais: `for i in 000 001 002; do curl -I -s https://radio-importante-audio.atl1.digitaloceanspaces.com/generated/hls/latest/segment_${i}.ts | head -n 1; done`
-8. (iPhone) Limpar aba/anônimo e tocar novamente (abrir player) → medir duração contínua até ≥120s ✅ **SUCESSO: >120s confirmado**
-9. (iPhone) Se parar <120s: capturar hora exata e copiar 30 primeiras linhas da playlist naquele momento ✅ **N/A - não parou**
-10. (Mac) Se sucesso ≥120s: avançar para Rolling (gerar e testar 5 min) ✅ **GATE LIBERADO: Avançando para Testes Críticos**
+**Decisão:** Gate liberado para:
+- Reteste Rolling playlist (5 min)
+- Iniciar Seção 2 (Hipótese Safari) formal
+- Planejar Fallback Chain (Seção 3)
 
-**CRITÉRIO DE SUCESSO IMEDIATO:** Playlist publicada sem `PLAYLIST-TYPE` e sem `ENDLIST` + playback contínuo >120s.
+**Risco Residual:** Rolling ainda não validado (falhou antes). Necessário confirmar inicialização agora com baseline estável.
 
-**PRÓXIMO GATE:** Alcançar 300s sem stall para liberar seção 2 (Safari Analysis formal) e Rolling.
+**Próximos Objetivos Imediatos (Atualizados):**
+1. (iPhone) Retestar Rolling playlist (≥5 min) – se falhar, coletar causa (status, erros console, cabeçalhos)
+2. (Mac) Preencher Seção 2 "Hipótese Safari" (formalizar riscos remanescentes)
+3. (Mac) Planejar teste Fallback Chain (Seção 3)
+4. (Mac) Preparar Rollback Snapshot Ciclo 2 (Seção 4)
 
 ### Relatório de Teste Atual - DIAGNÓSTICO PRECISO ATUALIZADO
 ```
 SAFARI BROWSER (Não-PWA):
 - ✅ Primeiro plano: TODAS as músicas tocam completamente
 - ✅ Screen lock: Continua tocando todas as músicas normalmente  
-- ✅ Background: Continua tocando >2min sem problemas
+- ✅ Background: Continua tocando >5min sem problemas
 - ✅ tFirstAudio: <1s (excelente)
 - ✅ CONCLUSÃO: Safari browser PERFEITO em todos os cenários
 
-PWA INSTALADO (Progresso Significativo):
+PWA INSTALADO (Estado Atual Estável):
 - ✅ Primeiro plano: TODAS as músicas tocam sem interrupção
-- ✅ Screen lock: FUNCIONOU! >3min, sem gaps, troca faixas corretamente  
-- 🔴 Background/segundo plano: Toca 1-2 músicas (60-120s), depois PARA
-- 🔍 PROBLEMA IDENTIFICADO: Suspensão do audio context após ~60-120s em background
+- ✅ Screen lock: FUNCIONOU! >5min, sem gaps, troca faixas corretamente  
+- ✅ Background/segundo plano: Agora ESTÁVEL ≥300s com múltiplas transições
+- 🟡 Rolling playlist: A VALIDAR (falhou em tentativa anterior)
+- 🔍 FOCO ATUAL: Rolling + formalização de hipótese / fallback / rollback
 
-ROOT CAUSE REFINADA:
-- Screen lock: iOS mantém audio context ativo ✅
-- Background switch: iOS suspende audio context após timeout ❌
-- Background Boundary Scheduler funciona parcialmente (1-2 transições)
-- Service Worker não intercepta HLS streams adequadamente
+ROOT CAUSE (ANTIGA) REFINADA (RESOLVIDA NO CENÁRIO LATEST):
+- Suspend context após 60–120s: não mais reproduzido no teste prolongado atual
+- Scheduler + condições atuais suficientes para manter continuidade
+- Próximos refinamentos (se necessários) só após Rolling e fallback pipeline
 ```
 
 ### Gate para avançar para melhorias adicionais
-Prosseguir para reforço de diagnostics ou pipeline contínuo apenas se: LATEST >= 300s sem stall (stallCount=0) OU justificativa documentada.
+- (ATUALIZAÇÃO) Gate 300s cumprido. Próximo gate: Rolling playlist estável 5 min (sem erro de inicialização) OU diagnóstico formal documentado.
 
 <!-- === FIM CONTEXTO ATUAL === -->
 
@@ -153,25 +152,25 @@ Métricas registrar:
 - [ ] Reteste após LATEST >=120s estável (→)
 
 ### 1.4 Coleta de Dados - MÉTRICAS COLETADAS
-**Registrar métricas finais em bloco:**
-- **tFirstAudioLatest** = <1s (excelente)
-- **tFirstAudioRolling** = N/A (falhou na inicialização)
-- **stallCountLatest** = 0 (foreground), 0 (screen lock), 1 (background após 60-120s)
-- **stallCountRolling** = N/A
-- **longestGapSec** = 0s (screen lock), ~indefinido (background stall)
-- **backgroundOK** = Safari: SIM, PWA: PARCIAL (60-120s)
+**Registrar métricas finais em bloco (Atualizado):**
+- **tFirstAudioLatest** = <1s
+- **tFirstAudioRolling** = (reteste pendente)
+- **stallCountLatest** = 0 (foreground), 0 (screen lock), 0 (background ≥300s)
+- **stallCountRolling** = pendente
+- **longestGapSec** = ~0s (todas transições suaves)
+- **backgroundOK** = Safari: SIM, PWA: SIM
 - **lockScreenPersist** = Safari: SIM, PWA: SIM ✅
-- **observações** = Screen lock RESOLVIDO! Background precisa Audio Context enhancement
+- **observações** = Background estabilizado; Rolling ainda precisa reteste
 
-**TRANSIÇÕES BACKGROUND PWA:**
-- transitionSuccessCount = 1-2 (primeiras funcionam)
-- transitionFailureCount = subsequentes após 60-120s
-- avgGapMs = <500ms (quando funciona)
-- maxGapMs = infinito (quando para)
-- boundaryDetections = funciona parcialmente
-- antecipatedEndingsDispatched = 1-2 vezes depois falha
+**TRANSIÇÕES BACKGROUND PWA (Sessão Estável):**
+- transitionSuccessCount = ≥3
+- transitionFailureCount = 0
+- avgGapMs ≈ <600ms
+- maxGapMs < 1500ms
+- boundaryDetections = consistente (cada faixa)
+- antecipatedEndingsDispatched = 1 por faixa (esperado)
 
-**GATE STATUS:** Screen lock ✅ APROVADO. Background ❌ PRECISA CORREÇÃO.
+**GATE STATUS:** Screen lock ✅ / Background ✅ / Rolling ⏳
 
 ## 2. Safari Analysis & Hypothesis Formal
 ### 2.1 Estrutura de Documento
@@ -181,128 +180,30 @@ Métricas registrar:
 - [ ] Formular hipótese residual de risco (ex: rede 3G + jitter > 2s) (Mac)
 - [ ] Definir métricas sentinel (stallCount > 0 em < 15min = alerta) (Mac)
 
-## 3. Fallback Chain Verificada
-### 3.1 Preparação Ambiente (Staging)
-- [ ] Identificar endpoint staging generate-hls (ex: https://<staging-api>/api/hls/generate-hls) (Mac)
-- [ ] Confirmar MP3 stream ativo em staging (iPhone+Mac)
+### Hipótese Safari (INICIAL - RASCUNHO)
+Contexto: Antes da sanitização HLS ocorria parada ~17s ao usar playlist direta (VOD semantics). Após remoção de marcadores VOD + ENDLIST e injeção INDEPENDENT-SEGMENTS, comportamento em Safari/PWA normalizou.
 
-### 3.2 Induzir Falha Controlada (Staging Somente)
-- [ ] Introduzir flag para forçar simulate:true (se variável já suportada) OU mock erro antes de spawn ffmpeg (Staging backend)
-- [ ] Executar geração latest (esperar fallback simulate) (Mac)
-- [ ] Confirmar: playlist não corrompida / MP3 reproduz no frontend (iPhone+Mac)
-- [ ] Reverter modificação (Staging backend)
+Ajustes mitigadores já aplicados:
+- Remoção marcadores VOD (#EXT-X-PLAYLIST-TYPE, #EXT-X-ENDLIST)
+- Upload atômico + janela consistente de segmentos
+- Boundary Scheduler (antecipação de onEnded)
 
-### 3.3 Documentar
-- [ ] Adicionar bloco: "Fallback Teste Staging" com resultado + tempo de recuperação (Mac)
+Hipótese Residual de Risco:
+- Rede degradada (jitter > 2500ms) pode atrasar carregamento do próximo segmento e ultrapassar lead do scheduler.
+- Rolling playlist pode introduzir latência extra se indices ou nomes divergirem na troca de contexto.
 
-## 4. Rollback Snapshot Ciclo 2
-### 4.1 Executar Segunda Geração Latest
-- [ ] Rodar POST generate-hls latest novamente (staging) (Mac)
-- [ ] Verificar existência de `index.prev.m3u8` após segunda publicação (Mac)
-- [ ] Baixar `index.prev.m3u8` e `index.m3u8` e comparar diff head/tail (Mac)
+Sentinelas Propostas:
+- stallCountLatest > 0 em < 15min ⇒ ALERTA
+- avgGapMs > 2000ms em ≥2 transições ⇒ INVESTIGAR
+- transitionFailureCount > 0 após estabilização inicial ⇒ INVESTIGAR
 
-### 4.2 Teste Simulado Rollback
-- [ ] Copiar local `index.prev.m3u8` (Mac)
-- [ ] Validar integridade (#EXTM3U, EXTINF, sequência) (Mac)
-- [ ] (Somente staging) Temporariamente publicar prev como index (renomear/upload) (Staging backend)
-- [ ] Confirmar player continua tocando sem erro (iPhone+Mac)
-- [ ] Restaurar playlist atual normal (Staging backend)
+Ações se Sentinela Dispara:
+1. Capturar playlist atual + timestamps EXTINF.
+2. Registrar latência rede (ping + curl -w time_total em 2 segmentos).
+3. Verificar logs de scheduler (faltou boundary?).
+4. Se AudioContext suspenso: tentar resume() e log.
 
-### 4.3 Registro
-- [ ] Escrever bloco "Rollback Ciclo 2" com: prevExists=, diffSegmentCount=, revertOk=(sim/não) (Mac)
-
-## 5. Janitor Observabilidade Estendida
-### 5.1 Coleta Após 24h
-- [ ] Aguardar ou simular múltiplas gerações (>=3) em staging (Mac+Staging backend)
-- [ ] Listar /tmp/hls-work antes/depois (Mac)
-- [ ] Capturar bytes freed (se métrica disponível; senão calcular diff manual) (Mac)
-
-### 5.2 Log Enriquecido
-- [ ] Grep por "janitor" em logs app (Mac)
-- [ ] Extrair timestamps & ação (removidos, ignorados) (Mac)
-
-### 5.3 Registro
-- [ ] Adicionar bloco "Janitor 24h" com: runs=, bytesFreed=, órfãosRemovidos=, observações= (Mac)
-
-## 6. Stability Run (Mini Série)
-### 6.1 Execução Múltipla Smoke
-- [ ] Rodar script smoke 5 vezes em sequência (staging) (Mac)
-- [ ] Capturar tempos individuais (Mac)
-- [ ] Calcular p95 manual (Mac)
-
-### 6.2 Critério Falha
-- [ ] Se alguma execução > 3000ms diagnostics → marcar investigação (Mac)
-
-### 6.3 Registro
-- [ ] Bloco "Stability Série" com tabela exec#:tempo:status (Mac)
-
-## 7. Debug UI Endpoints
-### 7.1 Verificação
-- [ ] curl /api/hls/debug-status (staging) → salvar debug-status.json (Mac)
-- [ ] curl /api/hls/last-diagnostics → salvar last-diagnostics.json (Mac)
-- [ ] curl /api/hls/last-hypothesis (se existir) → salvar last-hypothesis.json (Mac)
-
-### 7.2 Performance
-- [ ] Medir tempo de cada endpoint (`-w '%{time_total}'`) (Mac)
-- [ ] Confirmar < 0.3s (Mac)
-
-### 7.3 Estrutura
-- [ ] Validar chaves principais presentes (status, timestamps, metrics) (Mac)
-
-### 7.4 Registro
-- [ ] Bloco "Debug UI" com tempos e presença de campos (Mac)
-
-## 8. Automação Inicial (Opcional Curto Prazo)
-### 8.1 Script Simples
-- [ ] Criar script `scripts/hls-smoke-multi.cjs` que roda 5 vezes e gera JSON agregador (Mac)
-- [ ] Adicionar campo p95, média, falhas (Mac)
-
-### 8.2 Execução Manual
-- [ ] Rodar script e anexar saída `smoke-multi.json` (Mac)
-
-### 8.3 Planejamento Cron
-- [ ] Esboçar linha cron (não ativar ainda) e colocar em README-hls-ops.md seção futura (Mac)
-
-## 9. Preparação Merge Main
-### 9.1 Revisão Código
-- [ ] Verificar diffs sensíveis (ffmpeg spawn, geração atomic) sem TODOs (Mac)
-- [ ] Confirmar ausência de console.log ruidosos em produção (Mac)
-
-### 9.2 Segurança & Config
-- [ ] Garantir variáveis env necessárias documentadas (Mac)
-- [ ] Checar não exposição de chaves em commits (Mac)
-
-### 9.3 Documentação
-- [ ] Inserir bloco consolidação Dry Run no `PLANO_EXECUCAO.md` (Mac)
-- [ ] Atualizar `README-GITHUB.md` com status HLS (Beta → Ready) (Mac)
-
-### 9.4 Tag Técnica
-- [ ] Definir tag: `hls-ready-r6` (ou similar) (Mac)
-- [ ] Preparar release notes curtas (Mac)
-
-### 9.5 Aprovação
-- [ ] Revisão final checklist rotativo (itens críticos resolvidos ou planos registrados) (Mac)
-- [ ] Criar PR `staging` → `main` (Mac)
-- [ ] Adicionar resumo no PR com métricas principais (Mac)
-
-## 10. Blocos de Registro (Preencher Durante Execução)
-### Hipótese Safari
-(Preencher após Seção 2)
-
-### Fallback Teste Staging
-(Preencher após Seção 3)
-
-### Rollback Ciclo 2
-(Preencher após Seção 4)
-
-### Janitor 24h
-(Preencher após Seção 5)
-
-### Stability Série
-(Preencher após Seção 6)
-
-### Debug UI
-(Preencher após Seção 7)
+Próximo Passo: Validar Rolling antes de concluir seção final.
 
 ---
 Atualizado: 07/10/2025

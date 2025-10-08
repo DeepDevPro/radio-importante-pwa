@@ -2,10 +2,150 @@
 
 > **Projeto**: PWA Music Player "Radio Importante"  
 > **Data de criação**: 29/08/2025  
-> **Última atualização**: 02/10/2025 - F1 (Sync + Metadados) concluída em staging  
-> **Status**: ✅ SISTEMA OPERACIONAL + F1 ENTREGUE (staging)
+> **Última atualização**: 08/10/2025 - MVP: HLS Latest + iOS Background 300s estável (Scheduler Phase0)  
+> **Status**: ✅ F1 (Sync + Metadados) + R6 (HLS Hardening) + MVP Background Playback iOS atingido – Preparando entrega cliente
 
 ---
+
+## 🆕 Atualização 08/10/2025 — MVP Background iOS
+
+### 1. Resultado Gate Background
+| Item | Resultado |
+|------|-----------|
+| iOS PWA Background ≥300s | ✅ Concluído |
+| Transições consecutivas (≥3) | ✅ Sem stalls |
+| maxGapMs | < 1500ms |
+| stallCount (background) | 0 |
+| Logs BG_STALL_DETECT | 0 |
+| Screen Lock Playback | ✅ Estável |
+| Foreground Playback | ✅ Estável |
+
+### 2. Delta vs Snapshot 06/10
+- Adicionado Boundary Scheduler + instrumentação (Phase0) em `audio.ts`.
+- Eliminada parada intermitente 60–120s em background PWA iOS.
+- Rolling playlist ainda não validada após estabilização (estado pendente).
+
+### 3. Itens Prontos para Cliente (MVP)
+| Área | Estado |
+|------|-------|
+| Upload + Persistência (Spaces) | ✅ |
+| Catálogo + Metadados | ✅ |
+| Playback HLS Latest (Safari/PWA) | ✅ |
+| Background + Screen Lock iOS | ✅ |
+| Rollback Snapshot Latest | ✅ |
+| Janitor / Limpeza | ✅ |
+| Debug/Admin Acesso | ✅ |
+| Métricas básicas HLS | ✅ |
+| Rolling Playlist | ⏳ Reteste necessário |
+| Fallback Chain (forçada) | ⏳ Planejado |
+
+### 4. Riscos / Limitações Declaradas para MVP
+| Risco | Mitigação |
+|-------|-----------|
+| Rolling pode falhar ao iniciar | Marcar como Beta / ocultar até validar |
+| Sem histórico persistente de diagnostics | Planejar JSON diário simples |
+| Sem alerta automático (status != ok) | Script cron smoke (próximo passo) |
+| Instrumentação sempre ativa | Manter até pós-Rolling; depois considerar flag |
+
+### 5. Próximos Passos Curtos (Antes de Merge Main)
+1. Retestar Rolling (≥5min). Se falhar: coletar playlist, console, network.
+2. Executar teste rápido Fallback (simulate) para cadeia segura.
+3. Rollback Snapshot Ciclo 2 (verificar `index.prev.m3u8` integridade).
+4. Documentar Hipótese Safari final (consolidar seção no PLAN0 + export para `/api/hls/last-hypothesis`).
+5. Criar tag técnica `hls-ready-mvp` e release notes curtas.
+
+### 6. Critérios para Merge em `main`
+| Critério | Estado alvo |
+|----------|-------------|
+| Rolling validado OU marcado "Beta" explicitamente | (pendente) |
+| Fallback simulate validado | (pendente) |
+| Rollback snapshot 2ª geração verificado | (pendente) |
+| Documentação atualizada (Guia Técnico + Plano Execução) | ✅ |
+| Tag & Release notes | (pendente) |
+| Instrumentação revisada (ruído aceitável) | ✅ (sem ruído crítico) |
+
+### 7. Release Notes (Rascunho)
+"Entrega MVP: Playback confiável Latest HLS (foreground, background, screen lock), upload persistente, debug/admin acessível, rollback & janitor operacionais. Rolling em validação."
+
+### 8. Ações Pós-Go-Live (Propostas)
+| Ordem | Ação |
+|-------|------|
+| 1 | Persistir diagnostics diário (append JSON) |
+| 2 | Alerta cron (smoke + webhook) |
+| 3 | Validar necessidade publish atômico |
+| 4 | Guardar 3 snapshots (rotating) |
+| 5 | UI simples p95 / headOkCount |
+
+---
+
+## 🆕 (Mantido) Atualização 06/10/2025 — R6 HLS Hardening (Resumo Consolidado)
+
+### 1. Resultado Gate Final
+| Item | Resultado |
+|------|-----------|
+| Tarefas R6 | 10/10 concluídas |
+| Smoke últimas 10 | 10/10 (0 falhas) |
+| P95 diagnostics | 44ms (< 3000ms) |
+| Erros 500 HLS | 0 |
+| Rollback snapshot | Ativo (index.prev.m3u8) |
+| Janitor | Operacional (limpeza pós-sucesso + órfãos >24h) |
+
+### 2. Snapshot Operacional
+```
+Geração latest: ~4.2s | Rolling derivação: ~260ms
+Diagnostics: avg 38ms / p95 44ms
+Stalls iOS: 0 | Smoke cycle: 3.9–6.3s
+Cache Debug TTL ativo | Fallback MP3 intacto
+```
+(Detalhes técnicos completos: ver `GUIA_TECNICO_DETALHADO.md` §§ "Métricas & Baselines", "Operação & Runbooks", "Arquitetura HLS").
+
+### 3. Entregas-Chave (R6)
+- Smoke test 6 estágios padronizado
+- Diagnostics real (parse + HEAD sample)
+- Rollback snapshot automático
+- Janitor inteligente `/tmp/hls-work/*`
+- Cadeia fallback validada (HLS isolado do MP3)
+- Playback iPhone (lockscreen/background) estável (0 stalls)
+- Debug UI (diagnostics/hypothesis cache TTL)
+- Automação 24h (baseline p95 + integridade)
+- Gate Final (critérios agregados) aprovado
+
+### 4. Riscos Abertos / Observações
+| Risco | Impacto | Ação Proposta |
+|-------|---------|---------------|
+| Publicação não atômica (playlist overwrite) | Janela curta inconsistente se interrupção | Avaliar swap dir pós-go-live |
+| Sem histórico persistente de diagnostics | Perda de tendência longitudinal | Persistir JSON diário leve |
+| Ausência de alertas automáticos | Detecção tardia de regressão | Cron + webhook (status != ok) |
+| Dependência única do snapshot (1 nível) | Risco se duas gerações corromperem seguidas | Considerar retenção circular N=3 |
+
+### 5. Critérios de Entrada Próxima Fase (Pós-R6)
+- Decisão sobre necessidade de publish atômico (evidência de race?)
+- Escopo inicial de visualização (quais métricas no Admin)
+- Política de retenção e formato para histórico de diagnostics
+- Definição se pipeline incremental (novos segments apenas) gera ganho real
+
+### 6. Próximos Passos Recomendados
+1. Implementar persistência leve de diagnostics (rolling JSON)
+2. Adicionar gráfico simples (p95, headOkCount) no Debug UI
+3. Avaliar e, se necessário, prototipar publish atômico (swap diretórios)
+4. Criar alerta mínimo (cron + script smoke) → notificação
+5. Planejar fMP4 / Low-Latency somente mediante requisito
+
+### 7. Freeze R6
+Alterações em componentes HLS (geração, rolling, diagnostics) somente se: (a) bug crítico; (b) ganho de confiabilidade; (c) preparação documentada para próximo marco.
+
+### 8. Cross-References
+| Tema | Referência |
+|------|-----------|
+| Métricas detalhadas | `GUIA_TECNICO_DETALHADO.md#5-métricas--baselines-r6` |
+| Runbooks | `GUIA_TECNICO_DETALHADO.md#4-operação--runbooks` |
+| Troubleshooting | `GUIA_TECNICO_DETALHADO.md#6-troubleshooting-consolidado` |
+| Decisões & Lições | `GUIA_TECNICO_DETALHADO.md#7-decisões--lições-r6` |
+
+---
+
+## Histórico Resumido (Entradas Anteriores)
+> Blocos técnicos extensos de R6 foram migrados para o Guia Técnico para evitar duplicação. Abaixo mantém-se histórico essencial de fases anteriores.
 
 ## 🆕 Atualização 02/10/2025 — F1 Concluída
 
@@ -600,7 +740,7 @@ LIMPEZA DA ESTRUTURA:
 
 BUILD PIPELINE CORRIGIDO:
 1. TypeScript compilation ✅
-2. Vite build com admin.html ✅  
+2. Vite build (index.html + admin.html) ✅  
 3. S3 sync com exclusões corretas ✅
 4. Metadata normalization ✅
 5. CloudFront invalidation ✅
@@ -1137,113 +1277,4 @@ RESPOSTA:
 
 STATUS: ✅ 200 OK
 SIGNIFICADO: Catálogo carregando e retornando dados corretamente
-```
-
----
-
-## 🔧 **PROBLEMAS RESOLVIDOS (ANTES vs DEPOIS)**
-
-### **❌ → ✅ AWS Elastic Beanstalk (RESOLVIDO)**
-```bash
-❌ PROBLEMA ANTES:
-- Environment status: "Severe"
-- Nginx errors: "client_body_timeout directive is duplicate"  
-- Permission errors: "EACCES: permission denied, mkdir '/var/app/public/audio'"
-- Deploy instável: 11+ falhas consecutivas
-- Logs cheios de erros de proxy
-
-✅ SOLUÇÃO APLICADA:
-- Migração completa para DigitalOcean App Platform
-- Sistema containerizado com Docker
-- Permissions gerenciados pelo platform
-- Deploy pipeline simplificado
-
-✅ RESULTADO:
-- Environment status: Healthy
-- Zero erros de Nginx  
-- Permissions funcionando
-- Deploy estável e automático
-- Logs limpos e claros
-```
-
-### **❌ → ✅ GitHub Actions (RESOLVIDO)**
-```bash
-❌ PROBLEMA ANTES:
-- Pipeline quebrado: "BACKEND_URL="" - curl: (3) URL rejected"
-- Mismatch entre output.backend_url vs output.url
-- Integration tests falhando sistematicamente
-- 10+ consecutive failures
-
-✅ SOLUÇÃO APLICADA:
-- Workflows problemáticos desabilitados (.disabled)
-- Deploy direto via DigitalOcean GitHub integration  
-- Monitoring via DigitalOcean platform
-
-✅ RESULTADO:
-- Deploy automático funcionando
-- Zero falhas de pipeline
-- Integration nativa com GitHub
-- Notificações de deploy via email
-```
-
-### **❌ → ✅ Upload System (RESOLVIDO)**
-```bash
-❌ PROBLEMA ANTES:
-- MulterError: Unexpected field
-- LIMIT_UNEXPECTED_FILE errors
-- Incompatibilidade entre 'audioFiles' vs 'file' fields
-- Sistema completamente inoperante
-
-✅ SOLUÇÃO APLICADA:
-- Flexible upload middleware criado
-- Aceita 'audioFiles', 'file', ou single file
-- Fallback system para diferentes tipos de request
-- Error handling melhorado
-
-✅ RESULTADO:
-- Upload funcionando com qualquer field name
-- Zero MulterError
-- Compatibilidade com diferentes clientes
-- Upload rate: 100% success
-```
-
-### **❌ → ✅ File Serving (RESOLVIDO - MAIS CRÍTICO)**
-```bash
-❌ PROBLEMA ANTES:
-- Arquivos uploadados mas retornavam 404 quando acessados
-- Express não servindo static files  
-- Problema de múltiplas instâncias (arquivo em A, request em B)
-- Frontend não conseguia reproduzir áudios
-
-✅ SOLUÇÃO APLICADA:
-- Express.static middleware adicionado:
-  app.use('/audio', express.static(audioPath))
-- Redução de instance_count de 2 para 1
-- Environment variables para paths configuráveis
-
-✅ RESULTADO:
-- Arquivos acessíveis via HTTP em /audio/filename
-- Content-Type headers corretos
-- CORS funcionando
-- Frontend pode reproduzir áudios
-- File serving rate: 100% success
-```
-
-### **❌ → ✅ Mixed Content/HTTPS (RESOLVIDO)**
-```bash
-❌ PROBLEMA ANTES:
-- PWA com warnings de mixed content HTTP/HTTPS
-- Service Worker v5 não resolvia todas as referências
-- Frontend não funcionava corretamente em produção
-
-✅ SOLUÇÃO APLICADA:
-- Backend em HTTPS automático via DigitalOcean
-- CORS headers configurados corretamente
-- Environment variables para FRONTEND_URL
-
-✅ RESULTADO:
-- Zero mixed content warnings
-- PWA funcionando corretamente
-- Comunicação frontend-backend segura
-- Service Worker operacional
 ```
