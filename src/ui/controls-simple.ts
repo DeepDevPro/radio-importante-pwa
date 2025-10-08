@@ -91,6 +91,20 @@ export class Controls {
           align-items: center;
           gap: 20px;
         ">
+          <button id="nextButton" style="
+            width: 50px;
+            height: 50px;
+            border: none;
+            border-radius: 50%;
+            background: #666;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          ">⏭️</button>
+          
           <button id="playButton" style="
             width: 60px;
             height: 60px;
@@ -105,20 +119,6 @@ export class Controls {
             justify-content: center;
             transition: all 0.2s;
           ">▶️</button>
-          
-          <button id="nextButton" style="
-            width: 50px;
-            height: 50px;
-            border: none;
-            border-radius: 50%;
-            background: #666;
-            color: white;
-            font-size: 20px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          ">⏭️</button>
         </div>
       </div>
     `;

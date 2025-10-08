@@ -1,0 +1,22 @@
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0  104k    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+HTTP/2 200 
+date: Tue, 07 Oct 2025 13:40:19 GMT
+content-type: video/MP2T
+content-length: 106972
+x-powered-by: Express
+access-control-allow-methods: GET, POST, PUT, DELETE, OPTIONS
+access-control-allow-headers: Range
+cache-control: public, max-age=86400
+access-control-allow-origin: *
+accept-ranges: bytes
+x-do-app-origin: 5be5afe1-c230-4209-b92a-b37af761d25a
+x-do-orig-status: 200
+last-modified: Tue, 07 Oct 2025 13:40:19 GMT
+cf-cache-status: MISS
+set-cookie: __cf_bm=ifNyPtzL0NJoqFoSdp5jUCSVCxSVqLjc9TuzN48foxk-1759844419-1.0.1.1-LG7ROydgEGl.fKS..hIg5fY4Xjxwyu6M5cceDf.CCgOmyjmXkcX2FI4VNfNkTJFolzgXYXRMdcLCEu0DICl9t2alER26aQN7gybCLJhO7B8; path=/; expires=Tue, 07-Oct-25 14:10:19 GMT; domain=.ondigitalocean.app; HttpOnly; Secure; SameSite=None
+server: cloudflare
+cf-ray: 98adcf42da741595-GRU
+alt-svc: h3=":443"; ma=86400
+

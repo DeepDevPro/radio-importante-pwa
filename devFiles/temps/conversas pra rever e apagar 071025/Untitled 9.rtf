@@ -1,0 +1,53 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2822
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs40 \cf0 Resposta curta:  \
+1) Provavelmente sim, mas ainda falta um teste f\'edsico completo no iPhone real.  \
+2) O CHECKLIST-HLS-ROTATIVO.md continua \'fatil como trilha de endurecimento p\'f3s-go-live (alguns itens ainda n\'e3o foram exercitados).\
+\
+Detalhes:\
+\
+iPhone real\
+- O dry run provou: playlists v\'e1lidas, headers corretos, lat\'eancia baixa, segmenta\'e7\'e3o consistente.  \
+- Ainda n\'e3o foi medido em dispositivo real: tFirstAudio real, stallCount, background lock-screen continuidade, teste \uc0\u8805 5\'9610 min cont\'ednuos.  \
+- Risco residual: condi\'e7\'f5es de rede vari\'e1vel, pol\'edticas de energia/background do iOS, fallback autom\'e1tico em caso de falha real.  \
+Teste r\'e1pido recomendado agora:\
+1. Abrir em Safari: https://radio.importantestudio.com/hls/latest/index.m3u8  \
+2. Cronometrar at\'e9 in\'edcio \'e1udio (<5s alvo).  \
+3. Deixar tocando \uc0\u8805 10 min: observar troca de segments sem sil\'eancio.  \
+4. Bloquear tela: confirmar continuidade + controle no lock screen (se implementado).  \
+5. (Opcional) For\'e7ar rede ruim (Modo Dados / Wi\uc0\u8209 Fi fraco) e ver se mant\'e9m continuidade.  \
+6. Abrir rolling: confirmar segue sem cortes.  \
+7. Simular falha (em staging antes): derrubar gera\'e7\'e3o e ver fallback MP3 (n\'e3o fazer agora em produ\'e7\'e3o limpa).  \
+\
+Sobre CHECKLIST-HLS-ROTATIVO.md\
+Status por se\'e7\'e3o:  \
+1 Capacidade: \uc0\u9989   \
+2 Latest: \uc0\u9989   \
+3 Rolling: \uc0\u9989   \
+4 Proxy & Acesso: \uc0\u9989  (falta s\'f3 validar aliases /api/hls/* explicitamente, se quiser marcar)  \
+5 Diagnostics: \uc0\u9989   \
+6 Rolling Playback: Parcial (n\'e3o medido sess\'e3o longa nem background real)  \
+7 Safari Analysis + Hypothesis: \uc0\u10060  (n\'e3o documentado m\'e9tricas / hip\'f3tese formal)  \
+8 Fallback Chain: Parcial (n\'e3o simulada falha real para observar troca para MP3)  \
+9 Rollback & Snapshot: Parcial (primeira gera\'e7\'e3o sem prev; testar em pr\'f3xima gera\'e7\'e3o real para garantir snapshot + rollback efetivo)  \
+10 Janitor: \uc0\u9989  b\'e1sico; faltou m\'e9tricas bytes freed / \'f3rf\'e3os >24h (n\'e3o existiam ainda)  \
+11 Smoke & Stability: Parcial (tem 1 execu\'e7\'e3o; falta s\'e9rie temporal / <5% falhas em N execu\'e7\'f5es)  \
+12 Debug UI Integration: \uc0\u10060  (n\'e3o validado endpoints debug-status/last-diagnostics)  \
+Gate Criteria: Atendidos para go-live m\'ednimo, exceto itens de estabilidade longitudinal e an\'e1lise Safari aprofundada.\
+\
+Recomenda\'e7\'e3o\
+- N\'e3o descartar o checklist: promover a partes \'93Hardening P\'f3s-Go-Live\'94.  \
+- Marcar explicitamente o que virou \'93monitoramento cont\'ednuo\'94 (smoke recorrente, janitor m\'e9tricas, fallback drills).  \
+- Criar mini-planos:  \
+  - Plano A: Validar Safari real + documentar m\'e9tricas (Se\'e7\'f5es 6/7).  \
+  - Plano B: Teste de rollback real ap\'f3s segunda gera\'e7\'e3o (Se\'e7\'e3o 9).  \
+  - Plano C: Instrumentar job peri\'f3dico smoke + coleta P95 (Se\'e7\'e3o 11).  \
+  - Plano D: Expor/validar endpoints debug (Se\'e7\'e3o 12).  \
+\
+Se quiser, posso gerar uma vers\'e3o anotada do CHECKLIST-HLS-ROTATIVO.md marcando cada item com \uc0\u9989  / \u55357 \u56580  / \u9203  para o ciclo p\'f3s-go-live. \'c9 s\'f3 pedir.\
+Sim, mas n\'e3o precisa criar uma nova vers\'e3o do arquivo pra n\'e3o ficar duplicando como antes. Pode atualizar este mesmo.}

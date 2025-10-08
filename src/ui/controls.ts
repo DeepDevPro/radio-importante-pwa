@@ -58,12 +58,12 @@ export class Controls {
 
         <!-- Main Controls -->
         <div class="controls">
+          <button class="btn btn-next" id="nextButton" title="Próxima">
+            <img src="/icons/next.svg" alt="Next" />
+          </button>
           <button class="btn btn-play" id="playButton" title="Reproduzir/Pausar">
             <img src="/icons/play.svg" class="play-icon" alt="Play" />
             <img src="/icons/pause.svg" class="pause-icon" style="display: none;" alt="Pause" />
-          </button>
-          <button class="btn btn-next" id="nextButton" title="Próxima">
-            <img src="/icons/next.svg" alt="Next" />
           </button>
           <button class="btn btn-info" id="infoButton" title="Informações">
             <img src="/icons/info.svg" alt="Info" />

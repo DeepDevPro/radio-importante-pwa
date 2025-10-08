@@ -1,0 +1,1 @@
+{"success":true,"mode":"rolling","simulate":false,"capability":{"hasFfmpegStatic":true,"ffmpegPath":"/usr/src/app/node_modules/ffmpeg-static/ffmpeg","canSpawn":true,"ffmpegVersion":"6.0-static","spawnLatencyMs":19,"error":null},"action":"rolling_published","detected":{"playlistExists":true,"firstSegmentExists":true},"durationMs":96,"windowSegments":10,"uploadDurationMs":22}

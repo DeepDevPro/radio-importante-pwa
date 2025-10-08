@@ -1,0 +1,1 @@
+{"success":true,"capability":{"hasFfmpegStatic":true,"ffmpegPath":"/usr/src/app/node_modules/ffmpeg-static/ffmpeg","canSpawn":true,"ffmpegVersion":"6.0-static","spawnLatencyMs":24,"error":null},"durationMs":25}

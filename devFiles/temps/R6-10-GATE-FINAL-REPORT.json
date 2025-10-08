@@ -1,18 +1,18 @@
 {
-  "timestamp": "2025-10-06T23:01:39.748Z",
+  "timestamp": "2025-10-07T13:33:22.069Z",
   "success": true,
   "criteria": {
     "tasksComplete": true,
     "smokeFailureRate": 0,
     "no500Errors": true,
-    "diagnosticsP95": 44
+    "diagnosticsP95": 40
   },
   "r6Tasks": {
     "R6-1": {
       "name": "Checklist Reconciliation",
       "success": true,
       "message": "Checklist found",
-      "duration": 0
+      "duration": 1
     },
     "R6-2": {
       "name": "Smoke Test Implementation",
@@ -24,7 +24,7 @@
       "name": "Diagnostics Real + Thresholds",
       "success": true,
       "message": "Diagnostics endpoint working",
-      "duration": 360,
+      "duration": 306,
       "data": {
         "success": true,
         "mode": "latest",
@@ -49,32 +49,32 @@
           "headOkCount": 3,
           "totalProbes": 3,
           "timings": [
-            14,
-            14,
-            15
+            13,
+            23,
+            17
           ],
           "sampleSegments": [
             {
               "index": 0,
               "name": "segment_000.ts",
               "success": true,
-              "durationMs": 14
+              "durationMs": 13
             },
             {
               "index": 8,
               "name": "segment_008.ts",
               "success": true,
-              "durationMs": 14
+              "durationMs": 23
             },
             {
               "index": 15,
               "name": "segment_015.ts",
               "success": true,
-              "durationMs": 15
+              "durationMs": 17
             }
           ]
         },
-        "durationMs": 46,
+        "durationMs": 47,
         "thresholds": {
           "warnings": [],
           "hasWarnings": false
@@ -85,7 +85,7 @@
       "name": "Rollback Snapshot",
       "success": true,
       "message": "Rollback system available",
-      "duration": 188,
+      "duration": 447,
       "data": {
         "success": true,
         "mode": "latest",
@@ -104,26 +104,26 @@
           }
         ],
         "error": null,
-        "durationMs": 1
+        "durationMs": 0
       }
     },
     "R6-5": {
       "name": "Fallback Chain Validation",
       "success": true,
       "message": "Fallback chain healthy",
-      "duration": 189,
+      "duration": 433,
       "data": {
         "status": "healthy",
         "service": "radio-importante-backend",
         "version": "2.2.4",
-        "timestamp": "2025-10-06T23:00:55.365Z"
+        "timestamp": "2025-10-07T13:32:42.295Z"
       }
     },
     "R6-6": {
       "name": "Janitor Inteligente",
       "success": true,
       "message": "Janitor system operational",
-      "duration": 202,
+      "duration": 576,
       "data": {
         "success": true,
         "status": {
@@ -141,35 +141,46 @@
       "name": "Estabilidade 24h + Automation",
       "success": true,
       "message": "24h automation script found",
-      "duration": 1
+      "duration": 0
     },
     "R6-8": {
       "name": "iPhone Playback Validation",
       "success": true,
       "message": "iOS test script found",
-      "duration": 0
+      "duration": 1
     },
     "R6-9": {
       "name": "Debug UI Integration",
       "success": true,
       "message": "Debug UI endpoints working",
-      "duration": 201,
+      "duration": 471,
       "data": {
         "success": true,
-        "timestamp": 1759791655763,
+        "timestamp": 1759843963341,
         "cache": {
           "status": "active",
           "ttl": 300000
         },
         "stats": {
           "diagnostics": {
-            "available": []
+            "available": [
+              "latest",
+              "rolling"
+            ],
+            "lastUpdated": 1759843961413,
+            "ttl": 300000
           },
           "hypothesis": {
-            "available": []
+            "available": [],
+            "lastUpdated": null,
+            "ttl": 900000
+          },
+          "memory": {
+            "cacheSize": 495,
+            "timestamp": 1759843963341
           }
         },
-        "uptime": 650.162139895,
+        "uptime": 51917.048028706,
         "duration": 0
       }
     }
@@ -178,61 +189,61 @@
     {
       "iteration": 1,
       "success": true,
-      "duration": 6357,
-      "capabilities": 200,
-      "generation": 200,
-      "diagnostics": 200,
-      "diagDuration": 43
-    },
-    {
-      "iteration": 2,
-      "success": true,
-      "duration": 4378,
-      "capabilities": 200,
-      "generation": 200,
-      "diagnostics": 200,
-      "diagDuration": 43
-    },
-    {
-      "iteration": 3,
-      "success": true,
-      "duration": 4204,
-      "capabilities": 200,
-      "generation": 200,
-      "diagnostics": 200,
-      "diagDuration": 29
-    },
-    {
-      "iteration": 4,
-      "success": true,
-      "duration": 3956,
-      "capabilities": 200,
-      "generation": 200,
-      "diagnostics": 200,
-      "diagDuration": 31
-    },
-    {
-      "iteration": 5,
-      "success": true,
-      "duration": 4353,
+      "duration": 4006,
       "capabilities": 200,
       "generation": 200,
       "diagnostics": 200,
       "diagDuration": 32
     },
     {
-      "iteration": 6,
+      "iteration": 2,
       "success": true,
-      "duration": 4221,
+      "duration": 3804,
       "capabilities": 200,
       "generation": 200,
       "diagnostics": 200,
-      "diagDuration": 44
+      "diagDuration": 33
+    },
+    {
+      "iteration": 3,
+      "success": true,
+      "duration": 4007,
+      "capabilities": 200,
+      "generation": 200,
+      "diagnostics": 200,
+      "diagDuration": 40
+    },
+    {
+      "iteration": 4,
+      "success": true,
+      "duration": 3896,
+      "capabilities": 200,
+      "generation": 200,
+      "diagnostics": 200,
+      "diagDuration": 29
+    },
+    {
+      "iteration": 5,
+      "success": true,
+      "duration": 3883,
+      "capabilities": 200,
+      "generation": 200,
+      "diagnostics": 200,
+      "diagDuration": 33
+    },
+    {
+      "iteration": 6,
+      "success": true,
+      "duration": 3818,
+      "capabilities": 200,
+      "generation": 200,
+      "diagnostics": 200,
+      "diagDuration": 33
     },
     {
       "iteration": 7,
       "success": true,
-      "duration": 4097,
+      "duration": 3842,
       "capabilities": 200,
       "generation": 200,
       "diagnostics": 200,
@@ -241,42 +252,42 @@
     {
       "iteration": 8,
       "success": true,
-      "duration": 4186,
+      "duration": 3949,
+      "capabilities": 200,
+      "generation": 200,
+      "diagnostics": 200,
+      "diagDuration": 36
+    },
+    {
+      "iteration": 9,
+      "success": true,
+      "duration": 3895,
       "capabilities": 200,
       "generation": 200,
       "diagnostics": 200,
       "diagDuration": 31
     },
     {
-      "iteration": 9,
-      "success": true,
-      "duration": 4077,
-      "capabilities": 200,
-      "generation": 200,
-      "diagnostics": 200,
-      "diagDuration": 40
-    },
-    {
       "iteration": 10,
       "success": true,
-      "duration": 4309,
+      "duration": 3825,
       "capabilities": 200,
       "generation": 200,
       "diagnostics": 200,
-      "diagDuration": 28
+      "diagDuration": 32
     }
   ],
   "diagnosticsMetrics": [
-    28,
     29,
     31,
-    31,
     32,
+    32,
+    33,
+    33,
+    33,
     34,
-    40,
-    43,
-    43,
-    44
+    36,
+    40
   ],
   "errors": [],
   "warnings": []

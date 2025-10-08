@@ -1,0 +1,24 @@
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0   641    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+HTTP/2 200 
+date: Tue, 07 Oct 2025 13:39:11 GMT
+content-type: application/vnd.apple.mpegurl
+content-length: 641
+x-powered-by: Express
+access-control-allow-methods: GET, POST, PUT, DELETE, OPTIONS
+access-control-allow-headers: Range
+cache-control: no-cache, no-store, must-revalidate
+pragma: no-cache
+expires: 0
+access-control-allow-origin: *
+x-do-app-origin: 5be5afe1-c230-4209-b92a-b37af761d25a
+x-do-orig-status: 200
+last-modified: Tue, 07 Oct 2025 13:39:11 GMT
+cf-cache-status: MISS
+accept-ranges: bytes
+set-cookie: __cf_bm=oHsH3FUEmofcD4FEkBeYzqD8erj3jMlaaV7EJoWCOIk-1759844351-1.0.1.1-9_a36No55MwLdjXJlSCSu9i9wycma5JW1MZimXU8l5Dpie1RXXCC4AnCMs2qKLdyyOO0q9VlZ7_V5VKCYo7r9SkX2QAotioGC8oBwoW6iGM; path=/; expires=Tue, 07-Oct-25 14:09:11 GMT; domain=.ondigitalocean.app; HttpOnly; Secure; SameSite=None
+server: cloudflare
+cf-ray: 98adcd9bbd45a405-GRU
+alt-svc: h3=":443"; ma=86400
+

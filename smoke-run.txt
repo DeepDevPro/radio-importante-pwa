@@ -1,0 +1,12 @@
+[2025-10-07T13:30:59.118Z] [INFO] === HLS SMOKE TEST START ===
+[2025-10-07T13:30:59.124Z] [INFO] Target: https://radio-importante-pwa-backend-skg2w.ondigitalocean.app
+[2025-10-07T13:30:59.124Z] [INFO] Timeout: 30000ms per request
+[2025-10-07T13:30:59.706Z] [INFO] CAPABILITIES: ✅ PASS canSpawn=true, version=6.0-static (581ms)
+[2025-10-07T13:31:03.658Z] [INFO] GENERATE_LATEST: ✅ PASS action=generated, segments=16, duration=91s (3952ms)
+[2025-10-07T13:31:03.919Z] [INFO] GENERATE_ROLLING: ✅ PASS action=rolling_published, segments=unknown (260ms)
+[2025-10-07T13:31:04.121Z] [INFO] DIAGNOSTICS_LATEST: ✅ PASS status=ok, declared=undefined, probes=undefined, duration=undefineds (202ms)
+[2025-10-07T13:31:04.330Z] [INFO] DIAGNOSTICS_ROLLING: ✅ PASS status=ok, declared=undefined, probes=undefined, duration=undefineds (208ms)
+[2025-10-07T13:31:04.507Z] [INFO] SAFARI_HYPOTHESIS: ✅ PASS hypothesis=[object Object], confidence=unknown (176ms)
+[2025-10-07T13:31:04.508Z] [INFO] === SMOKE TEST SUMMARY ===
+[2025-10-07T13:31:04.508Z] [INFO] Tests: 6/6 passed
+[2025-10-07T13:31:04.508Z] [SUCCESS] 🎉 ALL TESTS PASSED

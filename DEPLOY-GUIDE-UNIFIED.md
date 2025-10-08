@@ -2,8 +2,45 @@
 
 ## 📋 Procedimento Padrão para Deploy
 
-### 🎯 Deploy Staging (Teste)
+### 🚀 Workflow de Melhorias Incrementais (Recomendado)
+
+**Para pequenas melhorias e ajustes de UX:**
+
 ```bash
+1. 🎯 PLANEJAMENTO
+   - Escolher 1 melhoria pequena por vez
+   - Exemplo: "Remover checkboxes desnecessários"
+
+2. 🔧 IMPLEMENTAÇÃO
+   - Fazer a mudança no código
+   - Ir direto para deploy (teste no staging)
+
+3. 📤 DEPLOY
+   git add .
+   git commit -m "feat: remover checkboxes desnecessários da lista"
+   git push origin staging
+
+4. ✅ VALIDAÇÃO
+   - Aguardar deploy automático (~2 min)
+   - Testar no staging: https://radio-importante-frontend-stagin-6rjzv.ondigitalocean.app/admin.html
+   - Se OK → próxima melhoria
+   - Se problema → git revert [commit-hash]
+
+5. 🔄 REPETIR
+   - Uma melhoria por commit
+   - Sempre testar antes da próxima
+```
+
+**Vantagens do Workflow Incremental:**
+- ✅ Feedback rápido (2 min vs teste local + deploy)
+- ✅ Staging sempre funcional (mudanças pequenas)
+- ✅ Rollback fácil com git revert
+- ✅ Histórico limpo (1 feature = 1 commit)
+
+### 🎯 Deploy Staging Tradicional
+```bash
+# Para mudanças maiores que precisam de teste local primeiro:
+
 # 1. Adicionar alterações
 git add .
 
@@ -47,7 +84,7 @@ git push origin main
 ### Frontend Staging
 - **Trigger**: Push na branch `staging` com alterações em `src/**`
 - **Destino**: DigitalOcean Static Site
-- **URL**: https://staging.radio.importantestudio.com
+- **URL**: https://radio-importante-frontend-stagin-6rjzv.ondigitalocean.app
 - **Arquivo**: `.github/workflows/deploy-staging-digital-ocean.yml`
 
 ### Frontend Produção
@@ -87,7 +124,7 @@ curl https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/api/hls/lates
 ### 3. Testar Frontend
 ```bash
 # Staging
-curl -I https://staging.radio.importantestudio.com
+curl -I https://radio-importante-frontend-stagin-6rjzv.ondigitalocean.app
 
 # Produção
 curl -I https://radio.importantestudio.com
