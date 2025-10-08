@@ -211,6 +211,23 @@
     </style>
 </head>
 <body>
+    <!-- SIMPLE ADMIN PASSWORD GUARD (Plano: planoAdminPasswordSimples) -->
+    <script>
+        // TODO: Trocar senha antes de produção
+        const SIMPLE_ADMIN_PASSWORD = 'radio2025';
+        (function guard(){
+            document.documentElement.style.visibility = 'hidden';
+            const val = prompt('Senha de acesso ao Admin:');
+            if (val === SIMPLE_ADMIN_PASSWORD) {
+                document.documentElement.style.visibility = 'visible';
+            } else {
+                if (val !== null) alert('Acesso negado');
+                window.location.replace('/');
+            }
+        })();
+    </script>
+    <!-- /SIMPLE ADMIN PASSWORD GUARD -->
+
     <div class="container">
         <h1>🎵 Radio Importante - Admin</h1>
 
