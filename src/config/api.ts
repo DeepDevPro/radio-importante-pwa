@@ -22,14 +22,23 @@ function detectEnvironment(): 'staging' | 'production' {
 
 const environment = detectEnvironment();
 
-// URLs da API por ambiente - apenas produção
-const BACKEND_URLS = {
-  staging: 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app',
-  production: 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app'
+// URLs da API por ambiente - ENV com fallback
+export function getApiBaseUrl(): string {
+  const envUrl = (import.meta as any).env.VITE_API_BASE_URL;
+  if (envUrl) {
+    return envUrl;
+  }
+  
+  // Fallback para compatibilidade
+  const BACKEND_URLS = {
+    staging: 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app',
+    production: 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app'
+  };
+  return BACKEND_URLS[environment];
 };
 
 const API_CONFIG: ApiConfig = {
-  baseUrl: BACKEND_URLS[environment],
+  baseUrl: getApiBaseUrl(),
   endpoints: {
     health: '/health',
     catalog: '/api/catalog',

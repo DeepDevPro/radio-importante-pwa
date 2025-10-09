@@ -8,6 +8,8 @@
     "release": "echo \"Use: git tag v1.0.0 && git push origin v1.0.0\"",
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:staging": "vite build --mode staging",
+    "build:prod": "vite build --mode production",
     "build:deploy": "tsc --noEmit && vite build",
     "build:production": "./build-production.sh",
     "deploy:prepare": "npm run build:production && echo 'Arquivos prontos em dist/ - Suba para S3!'",
