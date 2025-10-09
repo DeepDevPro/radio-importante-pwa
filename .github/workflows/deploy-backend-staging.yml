@@ -26,10 +26,6 @@ jobs:
           echo "🔗 Expected URL: https://stingray-app-backend-staging-4wpcx.ondigitalocean.app/"
           echo "📦 Repository: ${{ github.repository }}"
           echo "🌿 Branch: ${{ github.ref_name }}"
-          echo ""
-          echo "⚠️  POTENTIAL ISSUE: App Spec shows name 'radio-importante-backend-staging'"
-          echo "⚠️  But actual URL uses 'stingray-app-backend-staging-4wpcx'"
-          echo "⚠️  This name mismatch may cause deployment failures"
         
       - name: Deploy Backend to Digital Ocean Staging
         id: deploy
@@ -48,18 +44,12 @@ jobs:
             echo "📦 App name: stingray-app-backend-staging-4wpcx"
             echo "🔄 Updated with server/ directory structure"
           else
-            echo "❌ Deploy failed - Name mismatch detected!"
+            echo "❌ Deploy failed!"
             echo ""
-            echo "🔧 SOLUTIONS:"
-            echo "1. Update App Spec name from 'radio-importante-backend-staging' to 'stingray-app-backend-staging-4wpcx'"
-            echo "2. OR rename app in DigitalOcean to match spec: 'radio-importante-backend-staging'"  
-            echo "3. Verify DIGITALOCEAN_ACCESS_TOKEN has Apps:write permissions"
-            echo ""
-            echo "� Current App Spec shows:"
-            echo "   name: radio-importante-backend-staging"
-            echo "   service.name: radio-importante-backend-staging"
-            echo ""
-            echo "📋 But GitHub Actions expects:"
-            echo "   app_name: stingray-app-backend-staging-4wpcx"
+            echo "🔧 TROUBLESHOOTING:"
+            echo "1. Verify App Spec has been updated with correct names"
+            echo "2. Check DIGITALOCEAN_ACCESS_TOKEN has Apps:write permissions"
+            echo "3. Ensure app 'stingray-app-backend-staging-4wpcx' exists in DigitalOcean"
+            echo "4. Verify GitHub integration is properly configured"
             exit 1
           fi

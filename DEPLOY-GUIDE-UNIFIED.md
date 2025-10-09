@@ -1,4 +1,4 @@
-# 🚀 GUIA UNIFICADO DE DEPLOY - Radio Importante PWA
+# 🚀 GUIA DE DEPLOY COM BACKENDS SEPARADOS - Radio Importante PWA
 
 ## 📋 Procedimento Padrão para Deploy
 
@@ -70,16 +70,18 @@ git push origin main
 ## 🔧 Workflows Automáticos
 
 ### Backend Staging
-- **Trigger**: Push na branch `staging` com alterações em `backend/**`
-- **Destino**: DigitalOcean App (radio-importante-pwa-backend)
-- **URL**: https://radio-importante-pwa-backend-skg2w.ondigitalocean.app
-- **Arquivo**: `.github/workflows/deploy-backend-staging.yml`
+- **Trigger**: Push na branch `staging` com alterações em `server/**`
+- **Destino**: DigitalOcean App (stingray-app-backend-staging-4wpcx)
+- **URL**: https://stingray-app-backend-staging-4wpcx.ondigitalocean.app
+- **Comportamento**: Frontend staging consome este backend exclusivamente
+- **Arquivo**: `.github/workflows/deploy-backend-staging.yml` (ativo)
 
 ### Backend Produção
-- **Trigger**: Push na branch `main` com alterações em `backend/**`
-- **Destino**: DigitalOcean App (radio-importante-pwa-backend-prod)
-- **URL**: https://radio-importante-pwa-backend-production.ondigitalocean.app
-- **Arquivo**: `.github/workflows/deploy-backend.yml`
+- **Trigger**: Push na branch `main` com alterações em `server/**`
+- **Destino**: DigitalOcean App (radio-importante-pwa-backend-skg2w)
+- **URL**: https://radio-importante-pwa-backend-skg2w.ondigitalocean.app
+- **Comportamento**: Frontend produção consome este backend exclusivamente
+- **Arquivo**: `.github/workflows/deploy-backend-production.yml` (ativo)
 
 ### Frontend Staging
 - **Trigger**: Push na branch `staging` com alterações em `src/**`
@@ -114,11 +116,23 @@ git push origin main
 
 ### 2. Testar Endpoints
 ```bash
-# Backend Health Check
+# Backend Staging Health Check
+curl https://stingray-app-backend-staging-4wpcx.ondigitalocean.app/health
+
+# Backend Produção Health Check  
 curl https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/health
 
-# HLS Status
+# HLS Status Staging
+curl https://stingray-app-backend-staging-4wpcx.ondigitalocean.app/api/hls/latest/diagnostics
+
+# HLS Status Produção
 curl https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/api/hls/latest/diagnostics
+
+# Verificar CORS para frontend staging
+curl -H "Origin: https://radio-importante-frontend-stagin-6rjzv.ondigitalocean.app" https://stingray-app-backend-staging-4wpcx.ondigitalocean.app/health
+
+# Verificar CORS para frontend produção
+curl -H "Origin: https://radio.importantestudio.com" https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/health
 ```
 
 ### 3. Testar Frontend
@@ -145,6 +159,33 @@ git revert HEAD
 git push origin staging  # ou main
 ```
 
+### Rollback de Experimentos/Projetos Grandes
+```bash
+# 1. Criar branch de backup ANTES de começar experimento
+git checkout staging
+git checkout -b backup-staging-pre-[nome-do-projeto]
+git push origin backup-staging-pre-[nome-do-projeto]
+
+# 2. Rollback por commits específicos (preferido)
+git checkout staging
+git revert <commit-hash-1> <commit-hash-2>  # múltiplos commits
+git push origin staging
+
+# 3. Rollback completo para estado anterior (drástico)
+git checkout staging
+git reset --hard backup-staging-pre-[nome-do-projeto]
+git push origin staging --force
+
+# 4. Verificar histórico para rollback seletivo
+git log --oneline -10  # ver últimos 10 commits
+git revert <commit-específico>  # reverter só o que deu problema
+```
+
+**Estratégia para Projetos Multi-Etapas:**
+- Cada etapa = 1 commit com prefixo claro (ex: "feat(mp3): etapa 2 - gerar cues")
+- Rollback etapa por etapa se necessário
+- Manter branch de backup até projeto 100% estável
+
 ### Logs de Produção
 - **GitHub Actions**: https://github.com/DeepDevPro/radio-importante-pwa/actions
 - **DigitalOcean Apps**: https://cloud.digitalocean.com/apps
@@ -152,13 +193,23 @@ git push origin staging  # ou main
 
 ## 📝 Variáveis de Ambiente Necessárias
 
-### Backend (DigitalOcean Apps)
+### Backend Staging (DigitalOcean Apps)
+```
+NODE_ENV=staging
+DO_SPACES_KEY=<chave-digital-ocean-staging>
+DO_SPACES_SECRET=<secret-digital-ocean-staging>
+DO_SPACES_ENDPOINT=atl1.digitaloceanspaces.com
+DO_SPACES_REGION=atl1
+DO_SPACES_BUCKET=radio-importante-audio
+```
+
+### Backend Produção (DigitalOcean Apps)
 ```
 NODE_ENV=production
-DO_SPACES_KEY=<chave-digital-ocean>
-DO_SPACES_SECRET=<secret-digital-ocean>
+DO_SPACES_KEY=<chave-digital-ocean-producao>
+DO_SPACES_SECRET=<secret-digital-ocean-producao>
 DO_SPACES_ENDPOINT=atl1.digitaloceanspaces.com
-DO_SPACES_REGION=nyc3
+DO_SPACES_REGION=atl1
 DO_SPACES_BUCKET=radio-importante-audio
 ```
 
@@ -170,10 +221,10 @@ DIGITALOCEAN_ACCESS_TOKEN=<token-digital-ocean>
 ## 🎯 Checklist de Deploy
 
 ### Antes do Deploy
-- [ ] Testes locais aprovados
 - [ ] Código revisado
 - [ ] Commit com mensagem clara
 - [ ] Branch staging atualizada
+- [ ] **Para projetos grandes**: Branch de backup criada
 
 ### Durante o Deploy
 - [ ] GitHub Actions executando
@@ -184,8 +235,36 @@ DIGITALOCEAN_ACCESS_TOKEN=<token-digital-ocean>
 - [ ] Health check OK
 - [ ] Funcionalidades testadas
 - [ ] Performance verificada
-- [ ] iPhone/Safari testado (HLS)
+- [ ] iPhone/Safari testado (se aplicável)
+- [ ] **Para experimentos**: Evidências documentadas para rollback se necessário
+
+## 🔧 Comandos Úteis de Debug
+
+### Verificar Estado do Deploy
+```bash
+# Status atual dos deployments
+git log --oneline -5
+
+# Verificar diferenças entre branches
+git diff staging main --name-only
+
+# Ver últimas GitHub Actions
+# https://github.com/DeepDevPro/radio-importante-pwa/actions
+```
+
+### Testes Rápidos Pós-Deploy
+```bash
+# Health checks básicos
+curl -I https://radio-importante-frontend-stagin-6rjzv.ondigitalocean.app
+curl https://stingray-app-backend-staging-4wpcx.ondigitalocean.app/health
+curl https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/health
+
+# Verificar headers específicos (Range, CORS, etc)
+curl -H "Range: bytes=0-1023" -I [URL-DO-ARQUIVO]
+curl -H "Origin: https://radio.importantestudio.com" -I [URL-COM-CORS]
+```
 
 ---
-**Última atualização**: 07/10/2025
-**Versão**: v2.0 (Unificado)
+**Última atualização**: 09/10/2025
+**Versão**: v2.2 (Atualizado para arquitetura com backends separados - staging e produção)
+````
