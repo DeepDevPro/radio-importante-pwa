@@ -52,7 +52,8 @@ app.get('/api/debug/files', async (req, res) => {
     
     const command = new ListObjectsV2Command({
       Bucket: process.env.DO_SPACES_BUCKET,
-      MaxKeys: 50
+      MaxKeys: 100,
+      Prefix: req.query.prefix || ''
     });
     
     const response = await s3Client.send(command);
@@ -66,12 +67,47 @@ app.get('/api/debug/files', async (req, res) => {
     res.json({
       bucket: process.env.DO_SPACES_BUCKET,
       fileCount: files.length,
+      prefix: req.query.prefix || '',
       files: files
     });
   } catch (error) {
     console.error('Error listing files:', error);
     res.status(500).json({ 
       error: 'Failed to list files',
+      details: error.message 
+    });
+  }
+});
+
+// HLS-specific debug endpoint
+app.get('/api/debug/hls', async (req, res) => {
+  try {
+    console.log('Listing HLS files specifically...');
+    
+    const command = new ListObjectsV2Command({
+      Bucket: process.env.DO_SPACES_BUCKET,
+      Prefix: 'generated/hls/',
+      MaxKeys: 50
+    });
+    
+    const response = await s3Client.send(command);
+    
+    const files = response.Contents?.map(obj => ({
+      key: obj.Key,
+      size: obj.Size,
+      lastModified: obj.LastModified
+    })) || [];
+    
+    res.json({
+      bucket: process.env.DO_SPACES_BUCKET,
+      prefix: 'generated/hls/',
+      fileCount: files.length,
+      files: files
+    });
+  } catch (error) {
+    console.error('Error listing HLS files:', error);
+    res.status(500).json({ 
+      error: 'Failed to list HLS files',
       details: error.message 
     });
   }
