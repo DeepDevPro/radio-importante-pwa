@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "staging" ]
     paths:
-      - "backend/**"
+      - "server/**"
       - ".github/workflows/deploy-backend-staging.yml"
   workflow_dispatch:
 
@@ -19,16 +19,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         
-      - name: Deploy Backend to Digital Ocean
+      - name: Deploy Backend to Digital Ocean Staging
         uses: digitalocean/app_action@v1.1.5
         with:
-          app_name: radio-importante-pwa-backend
+          app_name: stingray-app-backend-staging-4wpcx
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
           
       - name: Notify Backend Deploy Success
         run: |
-          echo "🚧 Backend deploy completed successfully!"
-          echo "🔗 URL: https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/"
-          echo "📋 Environment: staging/production backend"
-          echo "📦 App name: radio-importante-pwa-backend"
-          echo "🔄 Updated with F1 features: music-metadata support"
+          echo "🚧 Backend staging deploy completed successfully!"
+          echo "🔗 URL: https://stingray-app-backend-staging-4wpcx.ondigitalocean.app/"
+          echo "📋 Environment: staging backend"
+          echo "📦 App name: stingray-app-backend-staging-4wpcx"
+          echo "🔄 Updated with server/ directory structure"
