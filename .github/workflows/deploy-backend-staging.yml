@@ -19,16 +19,34 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         
+      - name: Verify App Configuration
+        run: |
+          echo "🔍 Attempting deploy to DigitalOcean App: stingray-app-backend-staging-4wpcx"
+          echo "📋 Environment: staging backend"
+          echo "🔗 Expected URL: https://stingray-app-backend-staging-4wpcx.ondigitalocean.app/"
+          echo "📦 Repository: ${{ github.repository }}"
+          echo "🌿 Branch: ${{ github.ref_name }}"
+        
       - name: Deploy Backend to Digital Ocean Staging
+        id: deploy
+        continue-on-error: true
         uses: digitalocean/app_action@v1.1.5
         with:
           app_name: stingray-app-backend-staging-4wpcx
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
           
-      - name: Notify Backend Deploy Success
+      - name: Handle Deploy Result
         run: |
-          echo "🚧 Backend staging deploy completed successfully!"
-          echo "🔗 URL: https://stingray-app-backend-staging-4wpcx.ondigitalocean.app/"
-          echo "📋 Environment: staging backend"
-          echo "📦 App name: stingray-app-backend-staging-4wpcx"
-          echo "🔄 Updated with server/ directory structure"
+          if [ "${{ steps.deploy.outcome }}" = "success" ]; then
+            echo "✅ Backend staging deploy completed successfully!"
+            echo "🔗 URL: https://stingray-app-backend-staging-4wpcx.ondigitalocean.app/"
+            echo "📋 Environment: staging backend"
+            echo "📦 App name: stingray-app-backend-staging-4wpcx"
+            echo "🔄 Updated with server/ directory structure"
+          else
+            echo "❌ Deploy failed - App may need manual configuration in DigitalOcean"
+            echo "🔧 Check if app 'stingray-app-backend-staging-4wpcx' exists and has GitHub integration"
+            echo "🔧 Verify DIGITALOCEAN_ACCESS_TOKEN has sufficient permissions"
+            echo "🔧 App should be configured to build from /server directory"
+            exit 1
+          fi

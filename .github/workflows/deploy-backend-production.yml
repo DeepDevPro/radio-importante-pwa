@@ -19,16 +19,34 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         
+      - name: Verify App Configuration
+        run: |
+          echo "🔍 Attempting deploy to DigitalOcean App: radio-importante-pwa-backend-skg2w"
+          echo "📋 Environment: production backend"
+          echo "🔗 Expected URL: https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/"
+          echo "📦 Repository: ${{ github.repository }}"
+          echo "🌿 Branch: ${{ github.ref_name }}"
+          
       - name: Deploy Backend to Digital Ocean Production
+        id: deploy
+        continue-on-error: true
         uses: digitalocean/app_action@v1.1.5
         with:
           app_name: radio-importante-pwa-backend-skg2w
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
           
-      - name: Notify Backend Deploy Success
+      - name: Handle Deploy Result
         run: |
-          echo "🚀 Backend production deploy completed successfully!"
-          echo "🔗 URL: https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/"
-          echo "📋 Environment: production backend"
-          echo "📦 App name: radio-importante-pwa-backend-skg2w"
-          echo "🔄 Updated with server/ directory structure"
+          if [ "${{ steps.deploy.outcome }}" = "success" ]; then
+            echo "✅ Backend production deploy completed successfully!"
+            echo "🔗 URL: https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/"
+            echo "📋 Environment: production backend"
+            echo "📦 App name: radio-importante-pwa-backend-skg2w"
+            echo "🔄 Updated with server/ directory structure"
+          else
+            echo "❌ Deploy failed - App may need manual configuration in DigitalOcean"
+            echo "🔧 Check if app 'radio-importante-pwa-backend-skg2w' exists and has GitHub integration"
+            echo "🔧 Verify DIGITALOCEAN_ACCESS_TOKEN has sufficient permissions"
+            echo "🔧 App should be configured to build from /server directory"
+            exit 1
+          fi
