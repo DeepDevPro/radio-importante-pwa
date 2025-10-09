@@ -1,6 +1,6 @@
 Backend Produção (Digital Ocean): https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/
 
-Backend Staging (Digital Ocean): https://stingray-app-backend-staging-4wpcx.ondigitalocean.app/
+Backend Staging (Digital Ocean): https://rd-importante-backend-staging-cudbw.ondigitalocean.app/
 
 Frontend Produção (Digital Ocean): https://radio.importantestudio.com/
 
