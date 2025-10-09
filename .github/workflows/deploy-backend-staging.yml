@@ -21,9 +21,9 @@ jobs:
         
       - name: Verify App Configuration
         run: |
-          echo "🔍 Attempting deploy to DigitalOcean App: stingray-app-backend-staging-4wpcx"
+          echo "🔍 Attempting deploy to DigitalOcean App: rd-importante-backend-staging"
           echo "📋 Environment: staging backend"
-          echo "🔗 Expected URL: https://stingray-app-backend-staging-4wpcx.ondigitalocean.app/"
+          echo "🔗 Expected URL: https://rd-importante-backend-staging-cudbw.ondigitalocean.app/"
           echo "📦 Repository: ${{ github.repository }}"
           echo "🌿 Branch: ${{ github.ref_name }}"
         
@@ -32,16 +32,16 @@ jobs:
         continue-on-error: true
         uses: digitalocean/app_action@v1.1.5
         with:
-          app_name: stingray-app-backend-staging-4wpcx
+          app_name: rd-importante-backend-staging
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
           
       - name: Handle Deploy Result
         run: |
           if [ "${{ steps.deploy.outcome }}" = "success" ]; then
             echo "✅ Backend staging deploy completed successfully!"
-            echo "🔗 URL: https://stingray-app-backend-staging-4wpcx.ondigitalocean.app/"
+            echo "🔗 URL: https://rd-importante-backend-staging-cudbw.ondigitalocean.app/"
             echo "📋 Environment: staging backend"
-            echo "📦 App name: stingray-app-backend-staging-4wpcx"
+            echo "📦 App name: rd-importante-backend-staging"
             echo "🔄 Updated with server/ directory structure"
           else
             echo "❌ Deploy failed!"
@@ -49,7 +49,7 @@ jobs:
             echo "🔧 TROUBLESHOOTING:"
             echo "1. Verify App Spec has been updated with correct names"
             echo "2. Check DIGITALOCEAN_ACCESS_TOKEN has Apps:write permissions"
-            echo "3. Ensure app 'stingray-app-backend-staging-4wpcx' exists in DigitalOcean"
+            echo "3. Ensure app 'rd-importante-backend-staging' exists in DigitalOcean"
             echo "4. Verify GitHub integration is properly configured"
             exit 1
           fi
