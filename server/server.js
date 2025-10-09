@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, GetObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
 
 dotenv.config();
 
@@ -43,6 +43,38 @@ app.get('/', (req, res) => {
     },
     timestamp: new Date().toISOString()
   });
+});
+
+// Debug endpoint - List files in Spaces
+app.get('/api/debug/files', async (req, res) => {
+  try {
+    console.log('Listing files in Spaces bucket...');
+    
+    const command = new ListObjectsV2Command({
+      Bucket: process.env.DO_SPACES_BUCKET,
+      MaxKeys: 50
+    });
+    
+    const response = await s3Client.send(command);
+    
+    const files = response.Contents?.map(obj => ({
+      key: obj.Key,
+      size: obj.Size,
+      lastModified: obj.LastModified
+    })) || [];
+    
+    res.json({
+      bucket: process.env.DO_SPACES_BUCKET,
+      fileCount: files.length,
+      files: files
+    });
+  } catch (error) {
+    console.error('Error listing files:', error);
+    res.status(500).json({ 
+      error: 'Failed to list files',
+      details: error.message 
+    });
+  }
 });
 
 // API Routes
