@@ -79,6 +79,35 @@ app.get('/api/debug/files', async (req, res) => {
   }
 });
 
+// Test endpoint - Try to access a simple audio file we know exists
+app.get('/api/test/audio', async (req, res) => {
+  try {
+    console.log('Testing access to known audio file...');
+    
+    const command = new GetObjectCommand({
+      Bucket: process.env.DO_SPACES_BUCKET,
+      Key: 'audio/1759353027049-01_Ancestors.mp3'
+    });
+    
+    const response = await s3Client.send(command);
+    
+    res.json({
+      success: true,
+      message: 'Audio file access successful',
+      size: response.ContentLength,
+      contentType: response.ContentType,
+      lastModified: response.LastModified
+    });
+  } catch (error) {
+    console.error('Error accessing audio file:', error);
+    res.status(500).json({ 
+      error: 'Failed to access audio file',
+      details: error.message,
+      code: error.Code
+    });
+  }
+});
+
 // HLS-specific debug endpoint
 app.get('/api/debug/hls', async (req, res) => {
   try {
