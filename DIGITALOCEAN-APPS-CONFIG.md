@@ -7,65 +7,56 @@ triggering deploy: unable to create-deployment for app: exit status 1
 ```
 
 ## 🔍 Causa do Problema
-Os apps do DigitalOcean precisam ser configurados para aceitar deploys via GitHub Actions. Atualmente eles existem mas não têm integração com GitHub configurada.
+**INCONSISTÊNCIA DE NOMES DETECTADA:**
 
-## ✅ Solução: Configurar Apps no DigitalOcean
+### App Staging:
+- **URL Real**: `https://stingray-app-backend-staging-4wpcx.ondigitalocean.app/` ✅ (funciona)
+- **App Spec Name**: `radio-importante-backend-staging` ❌ (inconsistente)
+- **GitHub Actions**: `stingray-app-backend-staging-4wpcx` ✅ (correto)
 
-### 1. Backend Produção: `radio-importante-pwa-backend-skg2w`
+### Configuração Atual (Spec):
+```yaml
+name: radio-importante-backend-staging  # ❌ INCONSISTENTE
+services:
+- name: radio-importante-backend-staging  # ❌ INCONSISTENTE
+  github:
+    branch: staging                        # ✅ CORRETO
+    deploy_on_push: true                  # ✅ CORRETO (Autodeploy ON)
+    repo: DeepDevPro/radio-importante-pwa # ✅ CORRETO
+  source_dir: /server                     # ✅ CORRETO
+```
 
-1. **Acessar DigitalOcean Apps Console**
-   - URL: https://cloud.digitalocean.com/apps
-   - Localizar app: `radio-importante-pwa-backend-skg2w`
+## ✅ Solução: Corrigir Inconsistência de Nomes
 
-2. **Configurar Source (GitHub)**
-   - Settings → Source
-   - Repository: `DeepDevPro/radio-importante-pwa`
-   - Branch: `main`
-   - Source Directory: `/server`
-   - Autodeploy: `Yes` (ON)
-
-3. **Configurar Build Settings**
-   - Build Command: `npm install`
-   - Run Command: `node server.js`
-   - Environment: `Node.js`
-
-4. **Variáveis de Ambiente** (App Settings → App-Level Environment Variables)
-   ```
-   NODE_ENV=production
-   DO_SPACES_KEY=[sua-chave-produção]
-   DO_SPACES_SECRET=[seu-secret-produção]
-   DO_SPACES_ENDPOINT=atl1.digitaloceanspaces.com
-   DO_SPACES_REGION=atl1
-   DO_SPACES_BUCKET=radio-importante-audio
-   ```
-
-### 2. Backend Staging: `stingray-app-backend-staging-4wpcx`
-
+### OPÇÃO 1: Renomear App no DigitalOcean (Recomendado)
 1. **Acessar DigitalOcean Apps Console**
    - URL: https://cloud.digitalocean.com/apps
    - Localizar app: `stingray-app-backend-staging-4wpcx`
 
-2. **Configurar Source (GitHub)**
-   - Settings → Source
-   - Repository: `DeepDevPro/radio-importante-pwa`
-   - Branch: `staging`
-   - Source Directory: `/server`
-   - Autodeploy: `Yes` (ON)
+2. **Renomear App e Service**
+   - Settings → General → App Info
+   - Alterar nome para: `radio-importante-backend-staging`
+   - Na seção Services, renomear service para: `radio-importante-backend-staging`
+   - Isso fará com que a URL mude para: `https://radio-importante-backend-staging-xxxxx.ondigitalocean.app/`
 
-3. **Configurar Build Settings**
-   - Build Command: `npm install`
-   - Run Command: `node server.js`
-   - Environment: `Node.js`
+3. **Atualizar Workflows**
+   - Alterar `app_name` nos workflows para: `radio-importante-backend-staging`
+   - Atualizar URLs nos documentos
 
-4. **Variáveis de Ambiente** (App Settings → App-Level Environment Variables)
+### OPÇÃO 2: Atualizar App Spec (Alternativa)
+1. **Manter nomes atuais**
+2. **Atualizar App Spec para match**:
+   ```yaml
+   name: stingray-app-backend-staging-4wpcx
+   services:
+   - name: stingray-app-backend-staging-4wpcx
    ```
-   NODE_ENV=staging
-   DO_SPACES_KEY=DO801CMT2RNWEJ6BD8XY
-   DO_SPACES_SECRET=Sm1GteWTsQodjmQ1+fwWtXpP2BMk9IOlFkvk6fZ1rpI
-   DO_SPACES_ENDPOINT=atl1.digitaloceanspaces.com
-   DO_SPACES_REGION=atl1
-   DO_SPACES_BUCKET=radio-importante-audio
-   ```
+
+### Backend Staging: Configuração Atual ✅
+- ✅ Source: Repository `DeepDevPro/radio-importante-pwa`, branch `staging`
+- ✅ Source Directory: `/server`  
+- ✅ Autodeploy: **ON** (`deploy_on_push: true`)
+- ❌ **Nome inconsistente** (principal problema)
 
 ## 🔑 Verificar Token de Acesso
 
