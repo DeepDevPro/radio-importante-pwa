@@ -87,7 +87,7 @@ app.get('/api/playlist', async (req, res) => {
     
     const command = new GetObjectCommand({
       Bucket: process.env.DO_SPACES_BUCKET,
-      Key: 'latest-playlist.m3u8'
+      Key: 'generated/hls/latest/index.m3u8'
     });
     
     const response = await s3Client.send(command);
@@ -111,7 +111,7 @@ app.get('/api/rolling-playlist', async (req, res) => {
   try {
     const command = new GetObjectCommand({
       Bucket: process.env.DO_SPACES_BUCKET,
-      Key: 'rolling-playlist.m3u8'
+      Key: 'generated/hls/rolling/index.m3u8'
     });
     
     const response = await s3Client.send(command);
