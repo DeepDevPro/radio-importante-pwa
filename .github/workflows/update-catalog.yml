@@ -1,3 +1,3 @@
-# ARCHIVED WORKFLOW (update-catalog.yml)
-# Arquivado em 2025-10-08.
-# Não há processo automático de atualização de catálogo ativo.
+# Workflow disabled - empty file
+# This workflow was causing failures due to empty YAML content
+# Re-enable when functionality is needed
