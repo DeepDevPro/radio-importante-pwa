@@ -23,7 +23,7 @@ jobs:
         run: |
           echo "🔍 Attempting deploy to DigitalOcean App: radio-importante-pwa-backend"
           echo "📋 Environment: production backend"
-          echo "🔗 Expected URL: https://radio-importante-pwa-backend.ondigitalocean.app/"
+          echo "🔗 Expected URL: https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/"
           echo "📦 Repository: ${{ github.repository }}"
           echo "🌿 Branch: ${{ github.ref_name }}"
           
