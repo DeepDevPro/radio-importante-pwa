@@ -178,9 +178,10 @@ app.get('/audio/continuous/radio-importante-continuous.mp3', async (req, res) =>
   try {
     console.log('Proxying continuous MP3 from Spaces...');
     
+    // Para demonstração, usar um arquivo MP3 existente
     const command = new GetObjectCommand({
       Bucket: process.env.DO_SPACES_BUCKET,
-      Key: 'continuous/radio-importante-continuous.mp3'
+      Key: 'audio/1759353027049-01_Ancestors.mp3'
     });
     
     const response = await s3Client.send(command);
@@ -221,23 +222,52 @@ app.get('/audio/continuous/radio-importante-continuous.mp3', async (req, res) =>
 
 app.get('/audio/continuous/track-cues.json', async (req, res) => {
   try {
-    console.log('Fetching track cues from Spaces...');
+    console.log('Serving demo track cues...');
     
-    const command = new GetObjectCommand({
-      Bucket: process.env.DO_SPACES_BUCKET,
-      Key: 'continuous/track-cues.json'
-    });
-    
-    const response = await s3Client.send(command);
-    const data = await response.Body.transformToString();
+    // Demo track cues para validação do conceito
+    const demoTrackCues = {
+      mode: 'single',
+      totalDuration: 3600, // 1 hora exemplo
+      trackCount: 10,
+      generatedAt: new Date().toISOString(),
+      tracks: [
+        {
+          id: "track_demo_1",
+          title: "01 Ancestors",
+          artist: "Demo Artist",
+          startTime: 0,
+          endTime: 360,
+          duration: 360,
+          filename: "1759353027049-01_Ancestors.mp3"
+        },
+        {
+          id: "track_demo_2", 
+          title: "02 I Don't Wanna Stop",
+          artist: "Demo Artist",
+          startTime: 360,
+          endTime: 720,
+          duration: 360,
+          filename: "demo_track_2.mp3"
+        },
+        {
+          id: "track_demo_3",
+          title: "03 In The Town", 
+          artist: "Demo Artist",
+          startTime: 720,
+          endTime: 1080,
+          duration: 360,
+          filename: "demo_track_3.mp3"
+        }
+      ]
+    };
     
     res.set({
       'Content-Type': 'application/json',
       'Cache-Control': 'public, max-age=60'
     });
-    res.send(data);
+    res.json(demoTrackCues);
   } catch (error) {
-    console.error('Error fetching track cues:', error);
+    console.error('Error serving track cues:', error);
     res.status(500).json({ 
       error: 'Failed to fetch track cues',
       details: error.message
