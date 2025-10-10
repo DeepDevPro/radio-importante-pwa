@@ -21,9 +21,9 @@ jobs:
         
       - name: Verify App Configuration
         run: |
-          echo "🔍 Attempting deploy to DigitalOcean App: radio-importante-pwa-backend-skg2w"
+          echo "🔍 Attempting deploy to DigitalOcean App: radio-importante-pwa-backend"
           echo "📋 Environment: production backend"
-          echo "🔗 Expected URL: https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/"
+          echo "🔗 Expected URL: https://radio-importante-pwa-backend.ondigitalocean.app/"
           echo "📦 Repository: ${{ github.repository }}"
           echo "🌿 Branch: ${{ github.ref_name }}"
           
@@ -41,7 +41,7 @@ jobs:
         continue-on-error: true
         uses: digitalocean/app_action@v1.1.5
         with:
-          app_name: radio-importante-pwa-backend-skg2w
+          app_name: radio-importante-pwa-backend
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
           
       - name: Debug Deploy Result
@@ -61,13 +61,13 @@ jobs:
         run: |
           if [ "${{ steps.deploy.outcome }}" = "success" ]; then
             echo "✅ Backend production deploy completed successfully!"
-            echo "🔗 URL: https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/"
+            echo "🔗 URL: https://radio-importante-pwa-backend.ondigitalocean.app/"
             echo "📋 Environment: production backend"
-            echo "📦 App name: radio-importante-pwa-backend-skg2w"
+            echo "📦 App name: radio-importante-pwa-backend"
             echo "🔄 Updated with server/ directory structure"
           else
             echo "❌ Deploy failed - App may need manual configuration in DigitalOcean"
-            echo "🔧 Check if app 'radio-importante-pwa-backend-skg2w' exists and has GitHub integration"
+            echo "🔧 Check if app 'radio-importante-pwa-backend' exists and has GitHub integration"
             echo "🔧 Verify DIGITALOCEAN_ACCESS_TOKEN has sufficient permissions"
             echo "🔧 App should be configured to build from /server directory"
             exit 1

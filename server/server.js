@@ -3,7 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { S3Client, GetObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
 
-// Backend produção e staging separados - v2.2 - teste final deploy produção GitHub Actions
+// Backend produção e staging separados - v2.2 - correção final URLs workflow produção
 dotenv.config();
 
 const app = express();
