@@ -1,9 +1,18 @@
 # Plano de Migração: iOS PWA → MP3- [ ] Ordem segura das etapas:
   - [x] Etapa 1 (Design) – sem código ✅
   - [x] Etapa 2 (Scripts locais) ✅
-  - [x] Etapa 3 (Upload/CORS no Spaces) ✅
-  - [x] Etapa 4 (Backend – staging): mudanças podem ser aditivas ou substitutivas; alterar rotas existentes em staging é permitido; produção só após Gate 4.1 ✅
-  - ⚠️ Etapa 5 (Frontend) – mudança apenas para iOS PWA instaladonuo (sem impactar outras plataformas)
+  - [x] Etapa 3 (Upload/CORS no Micropassos:
+- [x] Em `src/player/audio.ts`, substituir `tryEnableHLSForIPhone/loadHLSForIOSPWA` por lógica "contínuo apenas":
+  - Fetch de `${BACKEND_STAGING}/audio/continuous/track-cues.json`.
+  - `audio.src = ${BACKEND_STAGING}/audio/continuous/radio-importante-continuous.mp3`.
+  - Em produção, usar os equivalentes `${BACKEND_PROD}`.
+  - Preservar otimizações já usadas no iOS (preload, crossOrigin=null, etc.).
+- [x] Adicionar kill switch de runtime (para desligar rapidamente):
+  - Query param `?mp3c=off` OU `localStorage.setItem('iospwaContinuous','off')` para forçar fallback ao comportamento anterior.
+  - Logar no console quando o kill switch estiver ativo.
+- [x] Manter `seekToTrackInContinuous(trackId)` sem alterações funcionais.
+- [x] Garantir que Android/desktop e Safari em aba normal continuam usando o comportamento atual (faixas individuais / fallback existente). - [x] Etapa 4 (Backend – staging): mudanças podem ser aditivas ou substitutivas; alterar rotas existentes em staging é permitido; produção só após Gate 4.1 ✅
+  - ⚠️ Etapa 5 (Frontend) – mudança apenas para iOS PWA instalado (EM ANDAMENTO)
 
 > Escopo: Ao detectar PWA instalado em iPhone, tocar um único arquivo MP3 contínuo, dirigindo UI/metadata/controles via track cues. Não alterar o comportamento atual em Android, Desktop ou Safari em aba normal. Alinhar com padrões de `PLANO_EXECUCAO.md` e `GUIA_TECNICO_DETALHADO.md`.
 >
@@ -189,6 +198,7 @@ Testes práticos (staging, iPhone PWA instalado):
 - [ ] Ativar kill switch e confirmar que retorna ao comportamento antigo imediatamente.
 
 Commit/deploy: sim. Seguir `DEPLOY-GUIDE-UNIFIED.md` (frontend staging).
+✅ Implementado em commit d1671cc: "feat: implementar Etapa 5 - iOS PWA contínuo apenas com kill switch"
 
 ---
 ## 6) Shuffle e Precisão de Seek
