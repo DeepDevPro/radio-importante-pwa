@@ -192,13 +192,17 @@ Micropassos:
 - [ ] Garantir que Android/desktop e Safari em aba normal continuam usando o comportamento atual (faixas individuais / fallback existente).
 
 Testes práticos (staging, iPhone PWA instalado):
-- [ ] Reproduzir ≥5 minutos com tela bloqueada; confirmar continuidade sem quedas.
-- [ ] Verificar updates de Media Session (título/artista/capa) a cada boundary de cue.
-- [ ] Usar botão Next e controles do sistema (nexttrack) → validar seek para início da próxima faixa.
-- [ ] Ativar kill switch e confirmar que retorna ao comportamento antigo imediatamente.
+- [ ] Reproduzir ≥5 minutos com tela bloqueada; confirmar continuidade sem quedas. (AGUARDANDO DEVICE)
+- [ ] Verificar updates de Media Session (título/artista/capa) a cada boundary de cue. (AGUARDANDO DEVICE)
+- [ ] Usar botão Next e controles do sistema (nexttrack) → validar seek para início da próxima faixa. (AGUARDANDO DEVICE)
+- [ ] Ativar kill switch e confirmar que retorna ao comportamento antigo imediatamente. (AGUARDANDO DEVICE)
 
 Commit/deploy: sim. Seguir `DEPLOY-GUIDE-UNIFIED.md` (frontend staging).
 ✅ Implementado em commit d1671cc: "feat: implementar Etapa 5 - iOS PWA contínuo apenas com kill switch"
+✅ Backend staging validado e respondendo às rotas /audio/continuous/*
+✅ Frontend staging deployed com novas configurações
+
+Status: Implementação técnica concluída. Necessário teste em iPhone físico para validação completa.
 
 ---
 ## 6) Shuffle e Precisão de Seek

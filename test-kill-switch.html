@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Kill Switch - iOS PWA MP3 Contínuo</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        .test-section { 
+            margin: 20px 0; 
+            padding: 15px; 
+            border: 1px solid #ddd; 
+            border-radius: 5px; 
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        button { padding: 10px 15px; margin: 5px; }
+        #log { 
+            background: #f8f9fa; 
+            border: 1px solid #dee2e6; 
+            padding: 10px; 
+            height: 300px; 
+            overflow-y: scroll; 
+            font-family: monospace; 
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Teste Kill Switch - iOS PWA MP3 Contínuo</h1>
+    
+    <div class="test-section">
+        <h3>🔧 Ambiente de Teste</h3>
+        <p><strong>URL atual:</strong> <span id="currentUrl"></span></p>
+        <p><strong>Hostname:</strong> <span id="hostname"></span></p>
+        <p><strong>Parâmetros URL:</strong> <span id="urlParams"></span></p>
+        <p><strong>LocalStorage iospwaContinuous:</strong> <span id="localStorage"></span></p>
+    </div>
+
+    <div class="test-section">
+        <h3>🎛️ Controles de Teste</h3>
+        <button onclick="testKillSwitchQuery()">Testar ?mp3c=off</button>
+        <button onclick="testKillSwitchLocal()">Testar localStorage</button>
+        <button onclick="clearKillSwitches()">Limpar Kill Switches</button>
+        <button onclick="testNormalMode()">Testar Modo Normal</button>
+    </div>
+
+    <div class="test-section">
+        <h3>🏗️ Teste Configuração API</h3>
+        <button onclick="testApiConfig()">Testar Detecção de Ambiente</button>
+        <button onclick="testBackendUrls()">Testar URLs Backend</button>
+        <div id="apiResults" style="margin-top: 10px;"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>📱 Simulação Device Detection</h3>
+        <button onclick="simulateIPhonePWA()">Simular iPhone PWA</button>
+        <button onclick="testDeviceDetection()">Testar Device Detection</button>
+        <div id="deviceResults" style="margin-top: 10px;"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>📋 Log de Testes</h3>
+        <button onclick="clearLog()">Limpar Log</button>
+        <div id="log"></div>
+    </div>
+
+    <script>
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function updateStatus() {
+            document.getElementById('currentUrl').textContent = window.location.href;
+            document.getElementById('hostname').textContent = window.location.hostname;
+            document.getElementById('urlParams').textContent = window.location.search || '(nenhum)';
+            document.getElementById('localStorage').textContent = localStorage.getItem('iospwaContinuous') || '(não definido)';
+        }
+
+        function testKillSwitchQuery() {
+            log('🧪 Testando kill switch via query parameter...');
+            const hasKillSwitch = window.location.search.includes('mp3c=off');
+            log(`   Query parameter mp3c=off: ${hasKillSwitch ? '✅ ATIVO' : '❌ INATIVO'}`);
+            
+            if (!hasKillSwitch) {
+                log('   💡 Para testar, adicione ?mp3c=off na URL');
+            }
+        }
+
+        function testKillSwitchLocal() {
+            log('🧪 Testando kill switch via localStorage...');
+            localStorage.setItem('iospwaContinuous', 'off');
+            updateStatus();
+            log('   ✅ localStorage.iospwaContinuous definido como "off"');
+        }
+
+        function clearKillSwitches() {
+            log('🧹 Limpando todos os kill switches...');
+            localStorage.removeItem('iospwaContinuous');
+            updateStatus();
+            log('   ✅ localStorage limpo');
+            log('   💡 Para limpar query param, remova ?mp3c=off da URL');
+        }
+
+        function testNormalMode() {
+            log('🧪 Testando modo normal (sem kill switches)...');
+            localStorage.removeItem('iospwaContinuous');
+            const hasQueryKill = window.location.search.includes('mp3c=off');
+            updateStatus();
+            
+            if (!hasQueryKill) {
+                log('   ✅ Modo normal: sem kill switches ativos');
+            } else {
+                log('   ⚠️  Query parameter mp3c=off ainda presente na URL');
+            }
+        }
+
+        async function testApiConfig() {
+            log('🧪 Testando configuração da API...');
+            try {
+                // Simular detecção de ambiente
+                const hostname = window.location.hostname;
+                const isStaging = hostname.includes('staging') || hostname.includes('stagin');
+                const environment = isStaging ? 'staging' : 'production';
+                
+                log(`   🌐 Hostname: ${hostname}`);
+                log(`   📍 Ambiente detectado: ${environment}`);
+                
+                const expectedBackend = isStaging 
+                    ? 'https://rd-importante-backend-staging-cudbw.ondigitalocean.app'
+                    : 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app';
+                
+                log(`   🔗 Backend esperado: ${expectedBackend}`);
+                
+                // Testar URLs contínuas
+                const trackCuesUrl = `${expectedBackend}/audio/continuous/track-cues.json`;
+                const mp3Url = `${expectedBackend}/audio/continuous/radio-importante-continuous.mp3`;
+                
+                log(`   📄 Track cues URL: ${trackCuesUrl}`);
+                log(`   🎵 MP3 contínuo URL: ${mp3Url}`);
+                
+                document.getElementById('apiResults').innerHTML = `
+                    <p><strong>Ambiente:</strong> ${environment}</p>
+                    <p><strong>Backend:</strong> ${expectedBackend}</p>
+                    <p><strong>Track Cues:</strong> <a href="${trackCuesUrl}" target="_blank">Testar</a></p>
+                    <p><strong>MP3 Contínuo:</strong> <a href="${mp3Url}" target="_blank">Testar</a></p>
+                `;
+                
+            } catch (error) {
+                log(`   ❌ Erro ao testar configuração: ${error.message}`);
+            }
+        }
+
+        async function testBackendUrls() {
+            log('🧪 Testando conectividade com backend...');
+            const hostname = window.location.hostname;
+            const isStaging = hostname.includes('staging') || hostname.includes('stagin');
+            const backendUrl = isStaging 
+                ? 'https://rd-importante-backend-staging-cudbw.ondigitalocean.app'
+                : 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app';
+            
+            try {
+                // Testar health check
+                const healthResponse = await fetch(`${backendUrl}/health`);
+                log(`   ❤️  Health check: ${healthResponse.ok ? '✅ OK' : '❌ FALHOU'}`);
+                
+                // Testar track cues
+                const cuesResponse = await fetch(`${backendUrl}/audio/continuous/track-cues.json`);
+                log(`   📄 Track cues: ${cuesResponse.ok ? '✅ OK' : '❌ FALHOU'}`);
+                
+                // Testar MP3 (apenas HEAD)
+                const mp3Response = await fetch(`${backendUrl}/audio/continuous/radio-importante-continuous.mp3`, { method: 'HEAD' });
+                log(`   🎵 MP3 contínuo: ${mp3Response.ok ? '✅ OK' : '❌ FALHOU'}`);
+                
+            } catch (error) {
+                log(`   ❌ Erro de conectividade: ${error.message}`);
+            }
+        }
+
+        function testDeviceDetection() {
+            log('🧪 Testando detecção de dispositivo...');
+            const userAgent = navigator.userAgent;
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                               Boolean((window.navigator).standalone);
+            
+            const isIPhone = /iPhone|iPod/.test(userAgent);
+            const isIPad = /iPad/.test(userAgent);
+            const isAndroid = /Android/.test(userAgent);
+            
+            log(`   📱 User Agent: ${userAgent}`);
+            log(`   🖥️  Standalone mode: ${isStandalone ? '✅ SIM' : '❌ NÃO'}`);
+            log(`   📱 iPhone detectado: ${isIPhone ? '✅ SIM' : '❌ NÃO'}`);
+            log(`   📱 iPad detectado: ${isIPad ? '✅ SIM' : '❌ NÃO'}`);
+            log(`   🤖 Android detectado: ${isAndroid ? '✅ SIM' : '❌ NÃO'}`);
+            
+            const wouldBeIPhonePWA = isIPhone && isStandalone;
+            log(`   🎯 Seria iPhone PWA: ${wouldBeIPhonePWA ? '✅ SIM' : '❌ NÃO'}`);
+            
+            document.getElementById('deviceResults').innerHTML = `
+                <p><strong>iPhone PWA:</strong> ${wouldBeIPhonePWA ? '✅ SIM' : '❌ NÃO'}</p>
+                <p><strong>Standalone:</strong> ${isStandalone ? '✅ SIM' : '❌ NÃO'}</p>
+                <p><strong>Platform:</strong> ${isIPhone ? 'iPhone' : isIPad ? 'iPad' : isAndroid ? 'Android' : 'Desktop'}</p>
+            `;
+        }
+
+        function simulateIPhonePWA() {
+            log('🧪 Simulando condições iPhone PWA...');
+            log('   💡 Para simular completamente iPhone PWA:');
+            log('   1. Abra no Safari iOS');
+            log('   2. Adicione à tela inicial');
+            log('   3. Abra como PWA');
+            log('   4. Execute este teste');
+            log('   📱 No desktop, a detecção será limitada');
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        // Inicializar status
+        updateStatus();
+        log('🚀 Teste kill switch inicializado');
+        log('💡 Use os botões acima para testar diferentes cenários');
+    </script>
+</body>
+</html>
