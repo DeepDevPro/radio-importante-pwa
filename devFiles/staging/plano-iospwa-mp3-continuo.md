@@ -1,4 +1,9 @@
-# Plano de Migração: iOS PWA → MP3 Contínuo (sem impactar outras plataformas)
+# Plano de Migração: iOS PWA → MP3- [ ] Ordem segura das etapas:
+  - [x] Etapa 1 (Design) – sem código ✅
+  - [x] Etapa 2 (Scripts locais) ✅
+  - [x] Etapa 3 (Upload/CORS no Spaces) ✅
+  - [x] Etapa 4 (Backend – staging): mudanças podem ser aditivas ou substitutivas; alterar rotas existentes em staging é permitido; produção só após Gate 4.1 ✅
+  - ⚠️ Etapa 5 (Frontend) – mudança apenas para iOS PWA instaladonuo (sem impactar outras plataformas)
 
 > Escopo: Ao detectar PWA instalado em iPhone, tocar um único arquivo MP3 contínuo, dirigindo UI/metadata/controles via track cues. Não alterar o comportamento atual em Android, Desktop ou Safari em aba normal. Alinhar com padrões de `PLANO_EXECUCAO.md` e `GUIA_TECNICO_DETALHADO.md`.
 >
@@ -131,9 +136,9 @@ Micropassos (UI do Spaces):
 - [x] Se necessário, ajustar headers via: Files → selecionar objeto → More → Edit Headers.
 
 Validações (staging, via backend proxy):
-- [ ] HEAD `${BACKEND_STAGING}/audio/radio-importante-continuous.mp3` contém `Accept-Ranges: bytes`, `Content-Type: audio/mpeg` e `Content-Length`.
-- [ ] HEAD `${BACKEND_STAGING}/audio/continuous/track-cues.json` contém `Content-Type: application/json` e `Cache-Control` leve.
-- [ ] GET parcial com `Range: bytes=0-1023` no MP3 via backend retorna `206 Partial Content`.
+- [x] HEAD `${BACKEND_STAGING}/audio/radio-importante-continuous.mp3` contém `Accept-Ranges: bytes`, `Content-Type: audio/mpeg` e `Content-Length`.
+- [x] HEAD `${BACKEND_STAGING}/audio/continuous/track-cues.json` contém `Content-Type: application/json` e `Cache-Control` leve.
+- [x] GET parcial com `Range: bytes=0-1023` no MP3 via backend retorna `206 Partial Content`.
 
 Notas:
 - O app consumirá via backend proxy; ainda assim, manter CORS correto no Spaces facilita debug e futuros acessos diretos controlados.
@@ -144,14 +149,14 @@ Notas:
 Objetivo: Garantir que o backend sirva os novos caminhos sob `/audio/continuous/*` e permitir ajustes necessários em staging sem impactar produção.
 
 Micropassos:
-- [ ] Criar (ou adaptar) rota: `GET /audio/continuous/radio-importante-continuous.mp3` (proxy → Spaces `continuous/radio-importante-continuous.mp3`).
-- [ ] Adicionar rota: `GET /audio/continuous/track-cues.json` (proxy → Spaces `continuous/track-cues.json`).
-- [ ] Assegurar headers: `Content-Type` adequado, `Accept-Ranges: bytes`, `Cache-Control` não agressivo (ex.: `max-age=3600`).
-- [ ] Testar no staging as novas URLs (200 OK, CORS e Range conforme esperado) e validar que endpoints antigos continuam íntegros.
+- [x] Criar (ou adaptar) rota: `GET /audio/continuous/radio-importante-continuous.mp3` (proxy → Spaces `continuous/radio-importante-continuous.mp3`).
+- [x] Adicionar rota: `GET /audio/continuous/track-cues.json` (proxy → Spaces `continuous/track-cues.json`).
+- [x] Assegurar headers: `Content-Type` adequado, `Accept-Ranges: bytes`, `Cache-Control` não agressivo (ex.: `max-age=3600`).
+- [x] Testar no staging as novas URLs (200 OK, CORS e Range conforme esperado) e validar que endpoints antigos continuam íntegros.
 
 Testes práticos (staging):
-- [ ] Abrir no iPhone as duas URLs novas (MP3 e cues) e checar acesso e cabeçalhos via DevTools.
-- [ ] Validar que `/api` e demais rotas existentes continuam respondendo como antes.
+- [x] Abrir no iPhone as duas URLs novas (MP3 e cues) e checar acesso e cabeçalhos via DevTools.
+- [x] Validar que `/api` e demais rotas existentes continuam respondendo como antes.
 
 Commit/deploy: sim. Seguir `DEPLOY-GUIDE-UNIFIED.md` (workflows separados: staging e produção).
 
