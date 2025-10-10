@@ -23,7 +23,9 @@ Observações:
 Objetivo: Executar o plano sem risco para produção, pois o backend é único para staging e produção.
 
 Micropassos:
-- [ ] Backup prévio do estado atual (seguir seção "Rollback de Experimentos" no `DEPLOY-GUIDE-UNIFIED.md`).
+- [x] Backup prévio do estado atual (seguir seção "Rollback de Experimentos" no `DEPLOY-GUIDE-UNIFIED.md`).
+  - ✅ Backup main: `backup-main-pre-ios-mp3-continuo` 
+  - ✅ Backup staging: `backup-staging-pre-ios-mp3-continuo`
 - [ ] Ordem segura das etapas:
   - ✅ Etapa 1 (Design) – sem código
   - ✅ Etapa 2 (Scripts locais)
