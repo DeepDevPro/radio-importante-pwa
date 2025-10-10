@@ -2,7 +2,23 @@
   - [x] Etapa 1 (Design) – sem código ✅
   - [x] Etapa 2 (Scripts locais) ✅
   - [x] Etapa 3 (Upload/CORS no Micropassos:
-- [x] Em `src/player/audio.ts`, substituir `tryEnableHLSForIPhone/loadHLSForIOSPWA` por lógica "contínuo apenas":
+- [x] Em `src/player/au## 6) Shuffle e Precisão de Seek
+Objetivo: Validar lógica de shuffle baseada em cues e calibrar precisão de início.
+
+Micropassos:
+- [x] Implementar shuffle automático: Fisher–Yates simplificado sobre a lista de cues.
+  - HIPÓTESE 1: Modo sequencial até última faixa → auto-ativar shuffle
+  - HIPÓTESE 2: Usuário pressiona Next → sempre shuffle
+- [x] Mapear Next/Prev/NextTrack (Media Session) para seek por `cue.startTime` otimizado.
+- [x] Afinar precisão: aplicar guard band de 40ms e micro fade-in para evitar cliques.
+- [x] Implementar histórico de shuffle e previous inteligente.
+
+Testes práticos (staging):
+- [ ] Executar sequência de 10 avanços (next) em shuffle e inspecionar se inícios soam "no ponto". (AGUARDANDO DEVICE)
+- [ ] Alternar foreground/background/lock e repetir 3 transições sem perda de continuidade. (AGUARDANDO DEVICE)
+
+Commit/deploy: sim, se houver ajustes. Seguir `DEPLOY-GUIDE-UNIFIED.md`.
+✅ Implementado em commit a67b6b1: "feat: implementar Etapa 6 - Shuffle automático e precisão de seek"tituir `tryEnableHLSForIPhone/loadHLSForIOSPWA` por lógica "contínuo apenas":
   - Fetch de `${BACKEND_STAGING}/audio/continuous/track-cues.json`.
   - `audio.src = ${BACKEND_STAGING}/audio/continuous/radio-importante-continuous.mp3`.
   - Em produção, usar os equivalentes `${BACKEND_PROD}`.
@@ -11,8 +27,9 @@
   - Query param `?mp3c=off` OU `localStorage.setItem('iospwaContinuous','off')` para forçar fallback ao comportamento anterior.
   - Logar no console quando o kill switch estiver ativo.
 - [x] Manter `seekToTrackInContinuous(trackId)` sem alterações funcionais.
-- [x] Garantir que Android/desktop e Safari em aba normal continuam usando o comportamento atual (faixas individuais / fallback existente). - [x] Etapa 4 (Backend – staging): mudanças podem ser aditivas ou substitutivas; alterar rotas existentes em staging é permitido; produção só após Gate 4.1 ✅
-  - ⚠️ Etapa 5 (Frontend) – mudança apenas para iOS PWA instalado (EM ANDAMENTO)
+- [x] Garantir que Android/desktop e Safari em aba normal continuam usando o comportamento atual (faixas individuais / fallback existente).   - [x] Etapa 4 (Backend – staging): mudanças podem ser aditivas ou substitutivas; alterar rotas existentes em staging é permitido; produção só após Gate 4.1 ✅
+  - [x] Etapa 5 (Frontend) – mudança apenas para iOS PWA instalado ✅
+  - [x] Etapa 6 (Shuffle e Precisão) – shuffle automático invisível ao usuário ✅
 
 > Escopo: Ao detectar PWA instalado em iPhone, tocar um único arquivo MP3 contínuo, dirigindo UI/metadata/controles via track cues. Não alterar o comportamento atual em Android, Desktop ou Safari em aba normal. Alinhar com padrões de `PLANO_EXECUCAO.md` e `GUIA_TECNICO_DETALHADO.md`.
 >
