@@ -173,23 +173,40 @@ export class AudioPlayer {
     try {
       console.log('🍎 Carregando stream contínua para iOS PWA...');
       
-      // Usar backend de produção para carregar track cues
-      const backendUrl = 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app';
-      const response = await fetch(`${backendUrl}/audio/hls/track-cues.json`);
+      // Kill switch: verificar se contínuo está desabilitado
+      const killSwitchQuery = window.location.search.includes('mp3c=off');
+      const killSwitchLocal = localStorage.getItem('iospwaContinuous') === 'off';
+      
+      if (killSwitchQuery || killSwitchLocal) {
+        console.log('🛑 Kill switch ativo - retornando ao comportamento anterior');
+        if (killSwitchQuery) console.log('  → Ativado via ?mp3c=off');
+        if (killSwitchLocal) console.log('  → Ativado via localStorage');
+        this.hlsMode = false;
+        return;
+      }
+      
+      // Usar API_CONFIG para determinar backend correto (staging ou produção)
+      const { API_CONFIG } = await import('../config/api.js');
+      const backendUrl = API_CONFIG.baseUrl;
+      
+      console.log(`🌐 Usando backend: ${backendUrl}`);
+      
+      // Fetch track cues das novas rotas /audio/continuous/*
+      const response = await fetch(`${backendUrl}/audio/continuous/track-cues.json`);
       if (response.ok) {
         const data = await response.json();
         this.trackCues = data.tracks;
         console.log(`✅ Track cues carregados: ${this.trackCues.length} faixas`);
         
-        // Configurar arquivo único MP3 do backend de produção (CRÍTICO: iPhone PWA só funciona com MP3)
-        this.audio.src = `${backendUrl}/audio/radio-importante-continuous.mp3`;
+        // Configurar arquivo único MP3 contínuo das novas rotas (CRÍTICO: iPhone PWA só funciona com MP3)
+        this.audio.src = `${backendUrl}/audio/continuous/radio-importante-continuous.mp3`;
         this.hlsMode = true;
-        console.log('🎵 Stream contínua MP3 configurada para iOS PWA');
+        console.log('🎵 Stream contínua MP3 configurada para iOS PWA via /audio/continuous/*');
       } else {
-        console.warn('⚠️ Track cues não encontrados, usando modo normal');
+        console.warn('⚠️ Track cues não encontrados nas rotas /audio/continuous/*, usando modo normal');
       }
-    } catch {
-      console.warn('⚠️ Falha ao carregar track cues, usando modo normal');
+    } catch (error) {
+      console.warn('⚠️ Falha ao carregar track cues das rotas contínuas, usando modo normal:', error);
     }
   }
 
