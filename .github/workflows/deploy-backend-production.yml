@@ -27,6 +27,15 @@ jobs:
           echo "📦 Repository: ${{ github.repository }}"
           echo "🌿 Branch: ${{ github.ref_name }}"
           
+      - name: Test DigitalOcean API Access
+        run: |
+          echo "🔧 Testing DigitalOcean API access..."
+          curl -X GET \
+            -H "Authorization: Bearer ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            "https://api.digitalocean.com/v2/apps" \
+            | jq -r '.apps[] | select(.spec.name=="radio-importante-pwa-backend") | .id' || echo "API test failed"
+          
       - name: Deploy Backend to Digital Ocean Production
         id: deploy
         continue-on-error: true
@@ -34,6 +43,19 @@ jobs:
         with:
           app_name: radio-importante-pwa-backend-skg2w
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          
+      - name: Debug Deploy Result
+        if: steps.deploy.outcome == 'failure'
+        run: |
+          echo "🔍 Deploy failed, gathering debug info..."
+          echo "Deploy step outcome: ${{ steps.deploy.outcome }}"
+          echo "Deploy step outputs: ${{ toJSON(steps.deploy.outputs) }}"
+          echo ""
+          echo "🔧 Checking if app exists via API..."
+          curl -X GET \
+            -H "Authorization: Bearer ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            "https://api.digitalocean.com/v2/apps" | jq '.apps[] | {id, spec: {name: .spec.name}}'
           
       - name: Handle Deploy Result
         run: |
