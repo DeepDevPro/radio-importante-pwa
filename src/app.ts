@@ -389,16 +389,35 @@ class RadioImportanteApp {
   }
 
   private async handleNext(): Promise<void> {
-    console.log('⏭️ Avançando para próxima faixa');
+    console.log('⏭️ Avançando para próxima faixa (acionado pelo usuário)');
     
     const wasPlaying = this.stateManager.getState().isPlaying;
     
+    // Etapa 6: Para iPhone PWA com arquivo contínuo, usar seek ao invés de recarregar
+    if (this.audioPlayer.isInContinuousMode() && this.audioPlayer.hasTrackCues()) {
+      // HIPÓTESE 2: Usuário apertou Next - sempre usar shuffle
+      this.stateManager.nextTrackManual();
+      const currentIndex = this.stateManager.getState().currentTrackIndex;
+      
+      // Seek para nova posição no arquivo contínuo
+      if (this.audioPlayer.seekToTrackInContinuousByIndex?.(currentIndex)) {
+        const newTrack = this.stateManager.getCurrentTrack();
+        if (newTrack) {
+          console.log(`🎯 iPhone PWA: Seek para faixa ${newTrack.title} (índice ${currentIndex})`);
+          this.controls.updateTrackInfo(newTrack.title, newTrack.artist);
+          this.mediaSession.updateMetadata(newTrack.title, newTrack.artist, '/img/Leo_R_161_small.webp');
+        }
+        return;
+      }
+    }
+    
+    // Fallback: comportamento tradicional para outras plataformas
     // Parar o áudio atual se estiver tocando
     if (this.audioPlayer.isPlaying()) {
       this.audioPlayer.stop();
     }
     
-    this.stateManager.nextTrack();
+    this.stateManager.nextTrackManual(); // HIPÓTESE 2: Manual = shuffle
     const newTrack = this.stateManager.getCurrentTrack();
     
     if (newTrack) {
@@ -473,7 +492,28 @@ class RadioImportanteApp {
   }
 
   private async handlePrevious(): Promise<void> {
-    this.stateManager.previousTrack();
+    console.log('⏮️ Voltando para faixa anterior');
+    
+    // Etapa 6: Para iPhone PWA com arquivo contínuo, usar seek ao invés de recarregar
+    if (this.audioPlayer.isInContinuousMode() && this.audioPlayer.hasTrackCues()) {
+      // Usar lógica inteligente para previous
+      this.stateManager.previousTrackSmart();
+      const currentIndex = this.stateManager.getState().currentTrackIndex;
+      
+      // Seek para nova posição no arquivo contínuo
+      if (this.audioPlayer.seekToTrackInContinuousByIndex(currentIndex)) {
+        const newTrack = this.stateManager.getCurrentTrack();
+        if (newTrack) {
+          console.log(`🎯 iPhone PWA: Seek para faixa anterior ${newTrack.title} (índice ${currentIndex})`);
+          this.controls.updateTrackInfo(newTrack.title, newTrack.artist);
+          this.mediaSession.updateMetadata(newTrack.title, newTrack.artist, '/img/Leo_R_161_small.webp');
+        }
+        return;
+      }
+    }
+    
+    // Fallback: comportamento tradicional para outras plataformas
+    this.stateManager.previousTrackSmart();
     const newTrack = this.stateManager.getCurrentTrack();
     
     if (newTrack) {
@@ -500,8 +540,27 @@ class RadioImportanteApp {
   private async handleAudioEnded(): Promise<void> {
     console.log('🔚 Música terminou, avançando para próxima automaticamente');
     
-    // Avançar para próxima faixa
-    this.stateManager.nextTrack();
+    // Etapa 6: Para iPhone PWA com arquivo contínuo, usar seek ao invés de recarregar
+    if (this.audioPlayer.isInContinuousMode() && this.audioPlayer.hasTrackCues()) {
+      // HIPÓTESE 1: Final da faixa - usar lógica automática (sequencial até fim, depois shuffle)
+      this.stateManager.nextTrackAuto();
+      const currentIndex = this.stateManager.getState().currentTrackIndex;
+      
+      // Seek para nova posição no arquivo contínuo (sem parar reprodução)
+      if (this.audioPlayer.seekToTrackInContinuousByIndex(currentIndex)) {
+        const newTrack = this.stateManager.getCurrentTrack();
+        if (newTrack) {
+          console.log(`🎯 iPhone PWA: Auto-seek para próxima faixa ${newTrack.title} (índice ${currentIndex})`);
+          this.controls.updateTrackInfo(newTrack.title, newTrack.artist);
+          this.mediaSession.updateMetadata(newTrack.title, newTrack.artist, '/img/Leo_R_161_small.webp');
+        }
+        return;
+      }
+    }
+    
+    // Fallback: comportamento tradicional para outras plataformas
+    // HIPÓTESE 1: Final automático da faixa
+    this.stateManager.nextTrackAuto();
     const newTrack = this.stateManager.getCurrentTrack();
     
     if (newTrack) {

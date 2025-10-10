@@ -444,7 +444,7 @@ export class AudioPlayer {
     throw lastError || new Error('Todas as URLs falharam');
   }
 
-  // Método para buscar faixa específica no arquivo contínuo (iPhone PWA)
+  // Método para buscar faixa específica no arquivo contínuo (iPhone PWA) - Etapa 6: Precisão melhorada
   public seekToTrackInContinuous(trackId: string): boolean {
     if (!this.deviceDetection.isIPhonePWA() || !this.hlsMode || this.trackCues.length === 0) {
       return false;
@@ -456,11 +456,44 @@ export class AudioPlayer {
       return false;
     }
 
-    console.log(`🎯 iPhone PWA: Buscando faixa ${trackCue.title} na posição ${trackCue.startTime}s`);
-    this.audio.currentTime = trackCue.startTime;
+    // Etapa 6: Aplicar guard band de 40ms para evitar cliques
+    const guardBandMs = 40;
+    const guardBandSeconds = guardBandMs / 1000;
+    const targetTime = Math.max(0, trackCue.startTime + guardBandSeconds);
+
+    console.log(`🎯 iPhone PWA: Buscando faixa ${trackCue.title} na posição ${targetTime.toFixed(3)}s (com guard band +${guardBandMs}ms)`);
+    
+    // Aplicar micro fade-in para suavizar transição
+    const originalVolume = this.audio.volume;
+    this.audio.volume = 0.3; // Reduzir volume temporariamente
+    
+    this.audio.currentTime = targetTime;
     this.currentTrackIndex = this.trackCues.findIndex(cue => cue.id === trackId);
     
+    // Restaurar volume gradualmente após seek
+    setTimeout(() => {
+      if (this.audio && !this.audio.paused) {
+        this.audio.volume = originalVolume;
+        console.log(`🔊 Volume restaurado após seek para ${trackCue.title}`);
+      }
+    }, 100);
+    
     return true;
+  }
+
+  // Etapa 6: Seek por índice de cue (para uso com shuffle)
+  public seekToTrackInContinuousByIndex(cueIndex: number): boolean {
+    if (!this.deviceDetection.isIPhonePWA() || !this.hlsMode || this.trackCues.length === 0) {
+      return false;
+    }
+
+    if (cueIndex < 0 || cueIndex >= this.trackCues.length) {
+      console.warn(`⚠️ Índice de cue inválido: ${cueIndex}`);
+      return false;
+    }
+
+    const trackCue = this.trackCues[cueIndex];
+    return this.seekToTrackInContinuous(trackCue.id);
   }
 
   public async play(): Promise<void> {
@@ -513,6 +546,28 @@ export class AudioPlayer {
 
   public getCurrentTime(): number {
     return this.isInitialized ? this.audio.currentTime : 0;
+  }
+
+  // Etapa 6: Métodos públicos para verificação de estado
+  public isInHLSMode(): boolean {
+    return this.hlsMode;
+  }
+
+  public isDeviceIPhonePWA(): boolean {
+    return this.deviceDetection.isIPhonePWA();
+  }
+
+  public hasContinuousAudio(): boolean {
+    return this.hlsMode && this.audio && this.audio.src.includes('radio-importante-continuous');
+  }
+
+  // Etapa 6: Métodos públicos para verificação de estado
+  public isInContinuousMode(): boolean {
+    return this.deviceDetection.isIPhonePWA() && this.hlsMode;
+  }
+
+  public hasTrackCues(): boolean {
+    return this.trackCues.length > 0;
   }
 
   public getDuration(): number {
