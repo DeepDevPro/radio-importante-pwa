@@ -173,6 +173,78 @@ app.get('/api/playlist', async (req, res) => {
   }
 });
 
+// Continuous MP3 routes for iOS PWA
+app.get('/audio/continuous/radio-importante-continuous.mp3', async (req, res) => {
+  try {
+    console.log('Proxying continuous MP3 from Spaces...');
+    
+    const command = new GetObjectCommand({
+      Bucket: process.env.DO_SPACES_BUCKET,
+      Key: 'continuous/radio-importante-continuous.mp3'
+    });
+    
+    const response = await s3Client.send(command);
+    
+    // Set appropriate headers for MP3 streaming
+    res.set({
+      'Content-Type': 'audio/mpeg',
+      'Accept-Ranges': 'bytes',
+      'Cache-Control': 'public, max-age=3600',
+      'Content-Length': response.ContentLength
+    });
+    
+    // Handle range requests for seeking
+    const range = req.headers.range;
+    if (range) {
+      const parts = range.replace(/bytes=/, "").split("-");
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : response.ContentLength - 1;
+      const chunksize = (end - start) + 1;
+      
+      res.status(206);
+      res.set({
+        'Content-Range': `bytes ${start}-${end}/${response.ContentLength}`,
+        'Content-Length': chunksize
+      });
+    }
+    
+    // Stream the response body
+    response.Body.pipe(res);
+  } catch (error) {
+    console.error('Error proxying continuous MP3:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch continuous MP3',
+      details: error.message
+    });
+  }
+});
+
+app.get('/audio/continuous/track-cues.json', async (req, res) => {
+  try {
+    console.log('Fetching track cues from Spaces...');
+    
+    const command = new GetObjectCommand({
+      Bucket: process.env.DO_SPACES_BUCKET,
+      Key: 'continuous/track-cues.json'
+    });
+    
+    const response = await s3Client.send(command);
+    const data = await response.Body.transformToString();
+    
+    res.set({
+      'Content-Type': 'application/json',
+      'Cache-Control': 'public, max-age=60'
+    });
+    res.send(data);
+  } catch (error) {
+    console.error('Error fetching track cues:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch track cues',
+      details: error.message
+    });
+  }
+});
+
 app.get('/api/rolling-playlist', async (req, res) => {
   try {
     const command = new GetObjectCommand({

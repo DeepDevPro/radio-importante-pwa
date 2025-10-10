@@ -7,9 +7,14 @@
 ---
 ## 0) Referências e Pré-requisitos
 - URLs (de `devFiles/secrets/urlsImportantes.md`):
-  - Backend (staging/prod): https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/
+  - Backend Staging: https://rd-importante-backend-staging-cudbw.ondigitalocean.app/
+  - Backend Produção: https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/
   - Frontend Produção: https://radio.importantestudio.com/
   - Frontend Staging: https://radio-importante-frontend-stagin-6rjzv.ondigitalocean.app/
+- Placeholders (variáveis para este plano):
+  - `BACKEND_STAGING` = https://rd-importante-backend-staging-cudbw.ondigitalocean.app/
+  - `BACKEND_PROD` = https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/
+  - Observação: Nos exemplos, use `${BACKEND_STAGING}` no staging e `${BACKEND_PROD}` na produção.
 - Confirmado: URL base do Spaces (Origin Endpoint) para o prefixo `continuous/`:
   - Base: https://radio-importante-audio.atl1.digitaloceanspaces.com/continuous/
   - MP3 contínuo (URL absoluta): https://radio-importante-audio.atl1.digitaloceanspaces.com/continuous/radio-importante-continuous.mp3
@@ -18,9 +23,10 @@
 Observações:
 - HLS permanecerá inalterado para outras plataformas até a conclusão da migração iOS PWA. Não remover nada antes dos testes finais.
 - Os cues continuarão sendo a “fonte de verdade” para: Agora Tocando, Media Session, Next/Prev/Shuffle e Seek.
+- Fonte de verdade: apenas Spaces; não manter cópias locais permanentes em `public/continuous/`.
 
-### 0.1) Estratégia de Proteção (backend unificado)
-Objetivo: Executar o plano sem risco para produção, pois o backend é único para staging e produção.
+### 0.1) Estratégia de Proteção (backends separados)
+Objetivo: Minimizar risco em produção aplicando e testando mudanças no backend de staging; produção permanece intocada até promoção explícita.
 
 Micropassos:
 - [x] Backup prévio do estado atual (seguir seção "Rollback de Experimentos" no `DEPLOY-GUIDE-UNIFIED.md`).
@@ -30,32 +36,34 @@ Micropassos:
   - ✅ Etapa 1 (Design) – sem código
   - ✅ Etapa 2 (Scripts locais)
   - ✅ Etapa 3 (Upload/CORS no Spaces)
-  - ⚠️ Etapa 4 (Backend) – somente mudanças aditivas (rotas novas em paralelo); não alterar rotas existentes
+  - ⚠️ Etapa 4 (Backend – staging): mudanças podem ser aditivas ou substitutivas; alterar rotas existentes em staging é permitido; produção só após Gate 4.1
   - ✅ Etapa 5 (Frontend) – mudança apenas para iOS PWA instalado
 - [ ] Política de backend nesta migração:
-  - Criar novas rotas sob `/audio/continuous/*` em paralelo às existentes.
-  - Não modificar endpoints existentes até que a solução esteja validada.
-  - Manter fallback e possibilidade de desligar o uso das rotas novas no frontend (kill switch).
+  - Staging: pode criar/adaptar rotas existentes para simplificar a implementação iOS PWA.
+  - Produção: preferir promover rotas como aditivas; alterar rotas existentes apenas após Gate 4.1 e com plano de rollback.
+  - Manter kill switch no frontend para desligar rapidamente o contínuo se necessário.
 - [ ] Rollback rápido:
   - Reverter commit do backend (ver guia) e redeploy.
-  - Como as rotas novas são aditivas, a remoção do commit restaura o comportamento anterior.
+  - Staging: revert do commit restaura o comportamento anterior. Produção: preparar rollback equivalente antes da promoção.
 
 ---
 ## 1) Design e Alinhamento (sem código)
 Objetivo: Congelar decisões e pontos de integração antes da implementação.
 
 Micropassos:
-- [ ] Documentar o alvo de artefatos:
+- [x] Documentar o alvo de artefatos:
   - MP3 contínuo em Spaces: `continuous/radio-importante-continuous.mp3`
   - Cues em Spaces: `continuous/track-cues.json` (ou caminho acordado)
   - MP3 contínuo (URL absoluta): https://radio-importante-audio.atl1.digitaloceanspaces.com/continuous/radio-importante-continuous.mp3
   - Cues (URL absoluta): https://radio-importante-audio.atl1.digitaloceanspaces.com/continuous/track-cues.json
-- [ ] Definir caminho público consumido pelo app (via backend proxy — rotas aditivas):
-  - MP3 (nova rota aditiva): `${BACKEND}/audio/continuous/radio-importante-continuous.mp3`
-  - Cues: `${BACKEND}/audio/continuous/track-cues.json`
-  - Alias futuro (opcional, pós Gate 4.1): `${BACKEND}/audio/radio-importante-continuous.mp3` → apontar para `continuous/`
-- [ ] Confirmar que NÃO haverá uso de HLS no iOS PWA instalado.
-- [ ] Registrar que Android/desktop permanecem com fluxo atual (sem contínuo obrigatório).
+- [x] Definir caminho público consumido pelo app (via backend proxy — rotas aditivas):
+  - MP3 (staging): `${BACKEND_STAGING}/audio/continuous/radio-importante-continuous.mp3`
+  - Cues (staging): `${BACKEND_STAGING}/audio/continuous/track-cues.json`
+  - MP3 (produção): `${BACKEND_PROD}/audio/continuous/radio-importante-continuous.mp3`
+  - Cues (produção): `${BACKEND_PROD}/audio/continuous/track-cues.json`
+  - Alias futuro (opcional, pós Gate 4.1): `${BACKEND_STAGING}/audio/radio-importante-continuous.mp3` → apontar para `continuous/`
+- [x] Confirmar que NÃO haverá uso de HLS no iOS PWA instalado.
+- [x] Registrar que Android/desktop permanecem com fluxo atual (sem contínuo obrigatório).
 
 Testes desta etapa: nenhum. Commit/deploy: não, é etapa de alinhamento.
 
@@ -64,15 +72,15 @@ Testes desta etapa: nenhum. Commit/deploy: não, é etapa de alinhamento.
 Objetivo: Ter um único gerador de cues precisos, alinhados ao arquivo contínuo.
 
 Micropassos:
-- [ ] Adicionar (ou validar) uso de ffprobe para medir duração real de cada faixa (catálogo atual).
-- [ ] Gerar `track-cues.json` com campos: `{ id, title, artist, startTime, endTime, duration, filename }`.
-- [ ] Aplicar guard band/offset (±20–40ms) opcional documentado; manter coerência ao seek.
-- [ ] Salvar `track-cues.json` em diretório local `public/continuous/` (espelho do destino em Spaces).
-- [ ] Preparar rotina de upload para Spaces (via Admin/rotina existente) para `continuous/track-cues.json`.
-- [ ] Validar diretamente no Spaces (Origin Endpoint): `https://radio-importante-audio.atl1.digitaloceanspaces.com/continuous/track-cues.json` (200 OK, CORS ok). A validação via backend ocorrerá na Etapa 4.
+- [x] Adicionar (ou validar) uso de ffprobe para medir duração real de cada faixa (catálogo atual).
+- [x] Gerar `track-cues.json` com campos: `{ id, title, artist, startTime, endTime, duration, filename }`.
+- [x] Aplicar guard band/offset (±20–40ms) opcional documentado; manter coerência ao seek.
+- [x] Gerar localmente e fazer upload para Spaces; não manter cópia permanente em `public/continuous/`.
+- [x] Preparar rotina de upload para Spaces (via Admin/rotina existente) para `continuous/track-cues.json`.
+- [x] Validar diretamente no Spaces (Origin Endpoint): `https://radio-importante-audio.atl1.digitaloceanspaces.com/continuous/track-cues.json` (200 OK, CORS ok). A validação via backend ocorrerá na Etapa 4.
 
 Testes práticos (staging):
-- [ ] Abrir a URL de cues (Spaces) no navegador do iPhone e verificar JSON e CORS.
+- [x] Abrir a URL de cues (Spaces) no navegador do iPhone e verificar JSON e CORS.
 
 Commit/deploy: sim, após ajustes no script. Seguir `DEPLOY-GUIDE-UNIFIED.md`.
 
@@ -81,17 +89,17 @@ Commit/deploy: sim, após ajustes no script. Seguir `DEPLOY-GUIDE-UNIFIED.md`.
 Objetivo: Produzir e publicar o arquivo contínuo com parâmetros simples e estáveis.
 
 Micropassos:
-- [ ] Atualizar `scripts/generate-audio.js` para gerar MP3 contínuo (concat das faixas do catálogo) com:
+- [x] Atualizar `scripts/generate-audio.js` para gerar MP3 contínuo (concat das faixas do catálogo) com:
   - Bitrate CBR 96k, 44.1kHz, 2 canais, joint stereo.
   - Sem VBR, sem filtros adicionais.
-- [ ] Salvar em `public/continuous/radio-importante-continuous.mp3`.
-- [ ] Publicar no Spaces em `continuous/radio-importante-continuous.mp3` (mesmo nome).
-- [ ] Verificar no Spaces headers padrão: `Content-Type: audio/mpeg`, `Accept-Ranges: bytes`, CORS para Range.
-- [ ] Executar HEAD e Range (parcial) diretamente no Spaces (Origin Endpoint) para confirmar 206 e bytes corretos. A validação via backend ocorrerá na Etapa 4.
+- [x] Gerar localmente e publicar no Spaces; não manter cópia permanente em `public/continuous/`.
+- [x] Publicar no Spaces em `continuous/radio-importante-continuous.mp3` (mesmo nome).
+- [x] Verificar no Spaces headers padrão: `Content-Type: audio/mpeg`, `Accept-Ranges: bytes`, CORS para Range.
+- [x] Executar HEAD e Range (parcial) diretamente no Spaces (Origin Endpoint) para confirmar 206 e bytes corretos. A validação via backend ocorrerá na Etapa 4.
 
 Testes práticos (staging):
-- [ ] HEAD `https://radio-importante-audio.atl1.digitaloceanspaces.com/continuous/radio-importante-continuous.mp3` → 200 + `Accept-Ranges: bytes`.
-- [ ] GET parcial com Range (ex.: bytes=0-1023) → 206.
+- [x] HEAD `https://radio-importante-audio.atl1.digitaloceanspaces.com/continuous/radio-importante-continuous.mp3` → 200 + `Accept-Ranges: bytes`.
+- [x] GET parcial com Range (ex.: bytes=0-1023) → 206.
 
 Commit/deploy: sim (se houve mudança no script). Seguir `DEPLOY-GUIDE-UNIFIED.md`.
 
@@ -99,8 +107,8 @@ Commit/deploy: sim (se houve mudança no script). Seguir `DEPLOY-GUIDE-UNIFIED.m
 Objetivo: Garantir que o navegador e o backend possam acessar os artefatos com cabeçalhos corretos.
 
 Micropassos (UI do Spaces):
-- [ ] Abrir o Space `radio-importante-audio` → Settings → CORS Configuration → Edit JSON
-- [ ] Aplicar a política CORS (ajuste origens se necessário):
+- [x] Abrir o Space `radio-importante-audio` → Settings → CORS Configuration → Edit JSON
+- [x] Aplicar a política CORS (ajuste origens se necessário):
   ```json
   [
     {
@@ -116,15 +124,15 @@ Micropassos (UI do Spaces):
     }
   ]
   ```
-- [ ] Verificar objetos em `continuous/`:
+- [x] Verificar objetos em `continuous/`:
   - `radio-importante-continuous.mp3`: `Content-Type = audio/mpeg`, `Cache-Control = public, max-age=3600`
   - `track-cues.json`: `Content-Type = application/json`, `Cache-Control = public, max-age=60`
   - Observação: `Accept-Ranges: bytes` é provido automaticamente pelo Spaces; não requer configuração manual.
-- [ ] Se necessário, ajustar headers via: Files → selecionar objeto → More → Edit Headers.
+- [x] Se necessário, ajustar headers via: Files → selecionar objeto → More → Edit Headers.
 
 Validações (staging, via backend proxy):
-- [ ] HEAD `${BACKEND}/audio/radio-importante-continuous.mp3` contém `Accept-Ranges: bytes`, `Content-Type: audio/mpeg` e `Content-Length`.
-- [ ] HEAD `${BACKEND}/audio/continuous/track-cues.json` contém `Content-Type: application/json` e `Cache-Control` leve.
+- [ ] HEAD `${BACKEND_STAGING}/audio/radio-importante-continuous.mp3` contém `Accept-Ranges: bytes`, `Content-Type: audio/mpeg` e `Content-Length`.
+- [ ] HEAD `${BACKEND_STAGING}/audio/continuous/track-cues.json` contém `Content-Type: application/json` e `Cache-Control` leve.
 - [ ] GET parcial com `Range: bytes=0-1023` no MP3 via backend retorna `206 Partial Content`.
 
 Notas:
@@ -132,11 +140,11 @@ Notas:
 - Restringir `AllowedOrigins` às três URLs indicadas reduz exposição desnecessária.
 
 ---
-## 4) Backend: Proxy contínuo e paths (Mudanças Aditivas Somente)
-Objetivo: Garantir que o backend sirva os novos caminhos sob `/audio/continuous/*` sem alterar rotas existentes nesta fase.
+## 4) Backend: Proxy contínuo e paths (Mudanças em Staging)
+Objetivo: Garantir que o backend sirva os novos caminhos sob `/audio/continuous/*` e permitir ajustes necessários em staging sem impactar produção.
 
 Micropassos:
-- [ ] Criar nova rota aditiva: `GET /audio/continuous/radio-importante-continuous.mp3` (proxy → Spaces `continuous/radio-importante-continuous.mp3`). Não alterar a rota existente `/audio/radio-importante-continuous.mp3` nesta fase.
+- [ ] Criar (ou adaptar) rota: `GET /audio/continuous/radio-importante-continuous.mp3` (proxy → Spaces `continuous/radio-importante-continuous.mp3`).
 - [ ] Adicionar rota: `GET /audio/continuous/track-cues.json` (proxy → Spaces `continuous/track-cues.json`).
 - [ ] Assegurar headers: `Content-Type` adequado, `Accept-Ranges: bytes`, `Cache-Control` não agressivo (ex.: `max-age=3600`).
 - [ ] Testar no staging as novas URLs (200 OK, CORS e Range conforme esperado) e validar que endpoints antigos continuam íntegros.
@@ -145,14 +153,13 @@ Testes práticos (staging):
 - [ ] Abrir no iPhone as duas URLs novas (MP3 e cues) e checar acesso e cabeçalhos via DevTools.
 - [ ] Validar que `/api` e demais rotas existentes continuam respondendo como antes.
 
-Commit/deploy: sim. Seguir `DEPLOY-GUIDE-UNIFIED.md` (backend unificado).
+Commit/deploy: sim. Seguir `DEPLOY-GUIDE-UNIFIED.md` (workflows separados: staging e produção).
 
-### 4.1) Gate de Promoção/Switch (opcional após estabilidade)
-- [ ] Após período de observação sem incidentes, considerar alinhar alias principal:
-  - Opção A: Manter ambas as rotas (antiga e contínua) indefinidamente.
-  - Opção B: Atualizar rota existente `/audio/radio-importante-continuous.mp3` para apontar ao prefixo `continuous/`, mantendo por tempo determinado a rota nova como fallback.
+### 4.1) Gate de Promoção/Switch (decisão: canonicalizar em `continuous/`)
+- [ ] Política acordada: tornar `/audio/continuous/*` os caminhos canônicos em produção para estes artefatos.
+- [ ] Manter o alias legado `/audio/radio-importante-continuous.mp3` apenas como fallback temporário (janela de depreciação: 4 semanas) e removê-lo após o período.
 - [ ] Confirmar que produção não quebrou (smoke tests + validação de headers + logs do backend).
-- [ ] Rollback: revert do commit do backend que alterou o alias restaura comportamento anterior.
+- [ ] Rollback: revert do commit do backend que alterou/retirou o alias restaura comportamento anterior.
 
 ---
 ## 5) Frontend: iOS PWA “contínuo apenas” (com kill switch)
@@ -160,8 +167,9 @@ Objetivo: Redirecionar apenas o iOS PWA instalado para usar MP3 contínuo + cues
 
 Micropassos:
 - [ ] Em `src/player/audio.ts`, substituir `tryEnableHLSForIPhone/loadHLSForIOSPWA` por lógica “contínuo apenas”:
-  - Fetch de `${BACKEND}/audio/continuous/track-cues.json`.
-  - `audio.src = ${BACKEND}/audio/continuous/radio-importante-continuous.mp3`.
+  - Fetch de `${BACKEND_STAGING}/audio/continuous/track-cues.json`.
+  - `audio.src = ${BACKEND_STAGING}/audio/continuous/radio-importante-continuous.mp3`.
+  - Em produção, usar os equivalentes `${BACKEND_PROD}`.
   - Preservar otimizações já usadas no iOS (preload, crossOrigin=null, etc.).
 - [ ] Adicionar kill switch de runtime (para desligar rapidamente):
   - Query param `?mp3c=off` OU `localStorage.setItem('iospwaContinuous','off')` para forçar fallback ao comportamento anterior.
@@ -224,10 +232,10 @@ Encerramento:
 ## Anexos e Notas
 - Flag/terminologia: a flag `hlsMode` hoje serve como “modo contínuo/HLS”. Para evitar regressão, manter a flag e apenas documentar seu uso no iOS PWA como “contínuo”. Renomear em uma refatoração futura opcional.
 - Cuidado com cache/CDN: evitar `max-age` agressivo no MP3 contínuo e nos cues; invalidações só se necessário.
-- Backend unificado: quaisquer mudanças de rota devem ser aditivas e reversíveis; validar produção não afetada após cada deploy.
+- Backends separados: em staging mudanças podem ser não aditivas; em produção preferir aditivas e reversíveis; validação via smoke tests após cada deploy.
 - Kill switch: manter documentado o parâmetro/flag e o comportamento esperado em caso de desligamento.
 - Pedidos pendentes ao usuário:
   - [x] Confirmado: URL base do Spaces para o prefixo `continuous/` → https://radio-importante-audio.atl1.digitaloceanspaces.com/continuous/
-  - [ ] Confirmar se deseja manter uma cópia local (em `public/continuous/`) além do Spaces.
+  - [x] Decisão: usar apenas Spaces como fonte de verdade; não manter cópia local permanente em `public/continuous/`.
 
 > Sonnet: após concluir cada micropasso, marque-o como concluído no arquivo e prossiga. Para cada deploy de staging, siga o `DEPLOY-GUIDE-UNIFIED.md`.
