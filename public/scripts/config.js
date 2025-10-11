@@ -26,17 +26,20 @@ export const isDevelopment = ENVIRONMENT === 'development';
 export const API_CONFIG = {
     backends: {
         local: 'http://localhost:8080',
-        staging: 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app', // Compartilhado inicialmente
+        staging: 'https://rd-importante-backend-staging-cudbw.ondigitalocean.app', // Ajustado para backend de staging
         production: 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app'
     },
     backendUrl: ENVIRONMENT === 'development' ? 'http://localhost:8080' : 
-                ENVIRONMENT === 'staging' ? 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app' :
+                ENVIRONMENT === 'staging' ? 'https://rd-importante-backend-staging-cudbw.ondigitalocean.app' :
                 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app',
     productionUrl: 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app',
     productionUrlBackup: 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app',
     currentBackend: null,
     environment: ENVIRONMENT
 };
+
+// Inicializar currentBackend com a URL ativa do ambiente
+API_CONFIG.currentBackend = API_CONFIG.backendUrl;
 
 // Configurações de UI
 export const UI_CONFIG = {
@@ -57,7 +60,7 @@ export const APP_STATE = {
 
 // Função para obter URL do backend baseado no ambiente
 export function getBackendUrl() {
-    return API_CONFIG.currentBackend;
+    return API_CONFIG.backendUrl;
 }
 
 // Função para validar arquivo de upload
