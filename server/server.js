@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import multer from 'multer';
 import { S3Client, GetObjectCommand, ListObjectsV2Command, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 
 // Backend produção e staging separados - v2.2 - teste validação token GitHub Actions
@@ -12,6 +13,23 @@ const port = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Configure multer for file uploads (memory storage)
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB limit per file
+    files: 10 // Max 10 files per upload
+  },
+  fileFilter: (req, file, cb) => {
+    // Accept only audio files
+    if (file.mimetype.startsWith('audio/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only audio files are allowed'), false);
+    }
+  }
+});
 
 // Configure AWS S3 Client (v3)
 const s3Client = new S3Client({
@@ -436,6 +454,129 @@ app.get('/api/rolling-playlist', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch rolling playlist' });
   }
 });
+
+// Upload endpoint for audio files
+app.post('/api/upload', upload.array('audioFiles'), async (req, res) => {
+  try {
+    console.log('📤 Upload request received');
+    console.log('Files:', req.files?.length || 0);
+    console.log('Body keys:', Object.keys(req.body || {}));
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'No files uploaded' 
+      });
+    }
+
+    const uploadResults = [];
+    const timestamp = Date.now();
+
+    // Process each uploaded file
+    for (let i = 0; i < req.files.length; i++) {
+      const file = req.files[i];
+      const durationKey = `duration_${i}`;
+      const duration = req.body[durationKey] ? parseInt(req.body[durationKey]) : 0;
+
+      // Generate safe filename
+      const fileExtension = file.originalname.split('.').pop();
+      const safeFilename = `${timestamp}-${file.originalname.replace(/[^a-zA-Z0-9\-_.]/g, '_')}`;
+      const s3Key = `audio/${safeFilename}`;
+
+      console.log(`📁 Processing file ${i + 1}: ${file.originalname} → ${safeFilename}`);
+
+      // Upload to Spaces
+      const uploadCommand = new PutObjectCommand({
+        Bucket: process.env.DO_SPACES_BUCKET,
+        Key: s3Key,
+        Body: file.buffer,
+        ContentType: file.mimetype,
+        ACL: 'public-read',
+        Metadata: {
+          'original-name': file.originalname,
+          'upload-timestamp': timestamp.toString(),
+          'duration': duration.toString()
+        }
+      });
+
+      await s3Client.send(uploadCommand);
+
+      uploadResults.push({
+        id: `track_${timestamp}_${i}`,
+        title: file.originalname.replace(/\.[^/.]+$/, ''), // Remove extension
+        artist: 'Artista não definido',
+        filename: safeFilename,
+        duration: duration,
+        format: fileExtension || 'mp3',
+        originalName: file.originalname,
+        uploadTimestamp: timestamp
+      });
+
+      console.log(`✅ File ${i + 1} uploaded successfully: ${s3Key}`);
+    }
+
+    // Update catalog with new tracks
+    await updateCatalogWithNewTracks(uploadResults);
+
+    res.json({
+      success: true,
+      message: `Successfully uploaded ${uploadResults.length} file(s)`,
+      tracks: uploadResults,
+      timestamp: timestamp
+    });
+
+  } catch (error) {
+    console.error('❌ Upload error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Upload failed',
+      details: error.message
+    });
+  }
+});
+
+// Helper function to update catalog
+async function updateCatalogWithNewTracks(newTracks) {
+  try {
+    // Get existing catalog
+    let existingCatalog = { tracks: [] };
+    
+    try {
+      const getCommand = new GetObjectCommand({
+        Bucket: process.env.DO_SPACES_BUCKET,
+        Key: 'catalog/metadata.json'
+      });
+      const response = await s3Client.send(getCommand);
+      const data = await response.Body.transformToString();
+      existingCatalog = JSON.parse(data);
+    } catch {
+      console.log('📝 No existing catalog found, creating new one');
+    }
+
+    // Add new tracks to catalog
+    const updatedCatalog = {
+      ...existingCatalog,
+      tracks: [...(existingCatalog.tracks || []), ...newTracks],
+      lastUpdated: new Date().toISOString()
+    };
+
+    // Save updated catalog
+    const putCommand = new PutObjectCommand({
+      Bucket: process.env.DO_SPACES_BUCKET,
+      Key: 'catalog/metadata.json',
+      Body: JSON.stringify(updatedCatalog, null, 2),
+      ContentType: 'application/json',
+      ACL: 'public-read'
+    });
+
+    await s3Client.send(putCommand);
+    console.log('📋 Catalog updated with new tracks');
+
+  } catch (error) {
+    console.error('❌ Error updating catalog:', error);
+    throw error;
+  }
+}
 
 // NEW: Log ingestion endpoint for frontend observability
 app.post('/api/logs/media-session', (req, res) => {
