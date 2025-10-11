@@ -48,6 +48,7 @@ export class AudioPlayer {
   private backgroundSuspensionDetections = 0; // contagens de suspeitas de suspensão
   private backgroundMonitorInterval?: number; // interval id
   private lastSuspensionLogTs = 0; // evitar log spam
+  private manualSeekInProgress = false; // Flag para controlar seek manual
   private recoveryAttemptCount = 0; // (futuro) tentativas – ainda não usado
   private recoverySuccessCount = 0; // (futuro) sucessos – ainda não usado
   // ==== Fim Instrumentação ====
@@ -463,12 +464,15 @@ export class AudioPlayer {
       return false;
     }
 
+    // Ativar flag de seek manual para evitar conflitos com detecção automática
+    this.manualSeekInProgress = true;
+
     // Etapa 6: Aplicar guard band de 40ms para evitar cliques
     const guardBandMs = 40;
     const guardBandSeconds = guardBandMs / 1000;
     const targetTime = Math.max(0, trackCue.startTime + guardBandSeconds);
     
-    console.log(`🎯 iPhone PWA: Buscando faixa ${trackCue.title} na posição ${targetTime.toFixed(3)}s (com guard band +${guardBandMs}ms)`);
+    console.log(`🎯 iPhone PWA: Seek manual para faixa ${trackCue.title} na posição ${targetTime.toFixed(3)}s (com guard band +${guardBandMs}ms)`);
     
     // Aplicar micro fade-in para suavizar transição
     const originalVolume = this.audio.volume;
@@ -477,21 +481,26 @@ export class AudioPlayer {
     this.audio.currentTime = targetTime;
     this.currentTrackIndex = this.trackCues.findIndex(cue => cue.id === trackId);
     
-    // Restaurar volume gradualmente após seek
+    // Forçar atualização imediata dos metadados
+    this.events.onTrackChange?.(trackCue);
+    
+    // Restaurar volume e desativar flag após um delay
     setTimeout(() => {
       if (this.audio && !this.audio.paused) {
         this.audio.volume = originalVolume;
         console.log(`🔊 Volume restaurado após seek para ${trackCue.title}`);
       }
-    }, 100);
+      // Desativar flag após seek completar
+      this.manualSeekInProgress = false;
+    }, 200);
     
     return true;
   }
 
   // Detectar mudança de faixa baseada no currentTime vs trackCues
   private detectTrackChangeInContinuous(currentTime: number): void {
-    if (!this.hlsMode || this.trackCues.length === 0) {
-      return;
+    if (!this.hlsMode || this.trackCues.length === 0 || this.manualSeekInProgress) {
+      return; // Não detectar mudanças durante seek manual
     }
 
     // Encontrar a faixa atual baseada no currentTime
@@ -507,7 +516,7 @@ export class AudioPlayer {
         const oldIndex = this.currentTrackIndex;
         this.currentTrackIndex = newTrackIndex;
         
-        console.log(`🎵 Mudança de faixa detectada: ${currentTrackCue.title} - ${currentTrackCue.artist} (${oldIndex} → ${newTrackIndex})`);
+        console.log(`🎵 Mudança de faixa detectada automaticamente: ${currentTrackCue.title} - ${currentTrackCue.artist} (${oldIndex} → ${newTrackIndex})`);
         
         // Notificar mudança de faixa via eventos
         this.events.onTrackChange?.(currentTrackCue);

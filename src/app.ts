@@ -404,9 +404,8 @@ class RadioImportanteApp {
       if (this.audioPlayer.seekToTrackInContinuousByIndex?.(currentIndex)) {
         const newTrack = this.stateManager.getCurrentTrack();
         if (newTrack) {
-          console.log(`🎯 iPhone PWA: Seek para faixa ${newTrack.title} (índice ${currentIndex})`);
-          this.controls.updateTrackInfo(newTrack.title, newTrack.artist);
-          this.mediaSession.updateMetadata(newTrack.title, newTrack.artist, '/img/Leo_R_161_small.webp');
+          console.log(`🎯 iPhone PWA: Seek manual para faixa ${newTrack.title} (índice ${currentIndex})`);
+          // Os metadados serão atualizados automaticamente via onTrackChange do seekToTrackInContinuous
         }
         return;
       }
@@ -505,9 +504,8 @@ class RadioImportanteApp {
       if (this.audioPlayer.seekToTrackInContinuousByIndex(currentIndex)) {
         const newTrack = this.stateManager.getCurrentTrack();
         if (newTrack) {
-          console.log(`🎯 iPhone PWA: Seek para faixa anterior ${newTrack.title} (índice ${currentIndex})`);
-          this.controls.updateTrackInfo(newTrack.title, newTrack.artist);
-          this.mediaSession.updateMetadata(newTrack.title, newTrack.artist, '/img/Leo_R_161_small.webp');
+          console.log(`🎯 iPhone PWA: Seek manual para faixa anterior ${newTrack.title} (índice ${currentIndex})`);
+          // Os metadados serão atualizados automaticamente via onTrackChange do seekToTrackInContinuous
         }
         return;
       }
@@ -539,7 +537,7 @@ class RadioImportanteApp {
   }
 
   private handleTrackChange(trackCue: import('./player/trackCuesLoader').TrackCue): void {
-    console.log(`🎵 Mudança de faixa automática: ${trackCue.title} - ${trackCue.artist}`);
+    console.log(`🎵 Atualizando metadados: ${trackCue.title} - ${trackCue.artist}`);
     
     // Atualizar UI e Media Session com nova faixa
     this.controls.updateTrackInfo(trackCue.title, trackCue.artist);
