@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { S3Client, GetObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
+import { S3Client, GetObjectCommand, ListObjectsV2Command, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 
 // Backend produção e staging separados - v2.2 - teste validação token GitHub Actions
 dotenv.config();
@@ -173,6 +173,33 @@ app.get('/api/playlist', async (req, res) => {
   }
 });
 
+// Helper: metadata manifest in Spaces
+const MANIFEST_KEY = process.env.CATALOG_MANIFEST_KEY || 'catalog/metadata.json';
+
+async function loadMetadataManifest() {
+  try {
+    const resp = await s3Client.send(new GetObjectCommand({
+      Bucket: process.env.DO_SPACES_BUCKET,
+      Key: MANIFEST_KEY
+    }));
+    const text = await resp.Body.transformToString();
+    const json = JSON.parse(text);
+    return json && typeof json === 'object' ? json : {};
+  } catch (err) {
+    console.warn('Manifest not found or unreadable:', err?.message || err);
+    return {};
+  }
+}
+
+async function saveMetadataManifest(manifest) {
+  await s3Client.send(new PutObjectCommand({
+    Bucket: process.env.DO_SPACES_BUCKET,
+    Key: MANIFEST_KEY,
+    Body: JSON.stringify(manifest, null, 2),
+    ContentType: 'application/json'
+  }));
+}
+
 // NEW: Dynamic catalog from DigitalOcean Spaces (Option A)
 app.get('/api/catalog', async (req, res) => {
   try {
@@ -182,8 +209,12 @@ app.get('/api/catalog', async (req, res) => {
       MaxKeys: 1000
     });
 
-    const response = await s3Client.send(command);
-    const contents = response.Contents || [];
+    const [listResp, manifest] = await Promise.all([
+      s3Client.send(command),
+      loadMetadataManifest()
+    ]);
+
+    const contents = listResp.Contents || [];
 
     const tracks = contents
       .filter(obj => obj.Key && !obj.Key.endsWith('/') && obj.Size > 0)
@@ -194,16 +225,16 @@ app.get('/api/catalog', async (req, res) => {
         const ext = (filename.split('.').pop() || '').toLowerCase();
         const titleBase = filename.replace(/\.[^/.]+$/, '');
         const prettyTitle = decodeURIComponent(titleBase).replace(/[_-]+/g, ' ').trim();
+        const meta = manifest[filename] || {};
         return {
-          id: filename, // stable id based on filename
-          title: prettyTitle || filename,
-          artist: '',
+          id: filename,
+          title: (meta.title || prettyTitle || filename),
+          artist: (meta.artist || ''),
           filename,
-          duration: 0,
+          duration: Number(meta.duration || 0),
           format: ext
         };
       })
-      // sort by lastModified ascending (older first)
       .sort((a, b) => {
         const aObj = contents.find(c => c.Key?.endsWith(a.filename));
         const bObj = contents.find(c => c.Key?.endsWith(b.filename));
@@ -229,6 +260,90 @@ app.get('/api/catalog', async (req, res) => {
       error: 'Failed to build catalog',
       details: error.message
     });
+  }
+});
+
+// NEW: Update track metadata (title/artist/duration) and persist to manifest in Spaces
+app.put('/api/tracks/:id/metadata', async (req, res) => {
+  try {
+    const id = decodeURIComponent(req.params.id || '');
+    if (!id) return res.status(400).json({ error: 'Missing track id' });
+
+    const { title, artist, duration } = req.body || {};
+    if (title == null && artist == null && duration == null) {
+      return res.status(400).json({ error: 'No metadata provided' });
+    }
+
+    const manifest = await loadMetadataManifest();
+    const entry = manifest[id] || {};
+
+    if (title != null) entry.title = String(title);
+    if (artist != null) entry.artist = String(artist);
+    if (duration != null && !Number.isNaN(Number(duration))) entry.duration = Number(duration);
+
+    manifest[id] = entry;
+    await saveMetadataManifest(manifest);
+
+    res.json({ success: true, id, metadata: entry });
+  } catch (error) {
+    console.error('Error updating metadata:', error);
+    res.status(500).json({ error: 'Failed to update metadata', details: error.message });
+  }
+});
+
+// NEW: Delete a track file from Spaces and update manifest
+app.delete('/api/delete/:id', async (req, res) => {
+  try {
+    const id = decodeURIComponent(req.params.id || '');
+    if (!id) return res.status(400).json({ error: 'Missing track id' });
+
+    // Delete object in Spaces
+    await s3Client.send(new DeleteObjectCommand({
+      Bucket: process.env.DO_SPACES_BUCKET,
+      Key: `audio/${id}`
+    }));
+
+    // Update manifest
+    const manifest = await loadMetadataManifest();
+    if (manifest[id]) delete manifest[id];
+    await saveMetadataManifest(manifest);
+
+    res.json({ success: true, id });
+  } catch (error) {
+    console.error('Error deleting track:', error);
+    res.status(500).json({ error: 'Failed to delete track', details: error.message });
+  }
+});
+
+// NEW: Proxy single audio files for preview
+app.get('/audio/:filename', async (req, res) => {
+  try {
+    const filename = decodeURIComponent(req.params.filename);
+    const params = {
+      Bucket: process.env.DO_SPACES_BUCKET,
+      Key: `audio/${filename}`,
+    };
+    if (req.headers.range) params.Range = req.headers.range;
+
+    const response = await s3Client.send(new GetObjectCommand(params));
+
+    res.set({
+      'Content-Type': response.ContentType || 'audio/mpeg',
+      'Accept-Ranges': 'bytes',
+      'Cache-Control': 'public, max-age=3600'
+    });
+    if (req.headers.range && response.ContentRange) {
+      res.status(206);
+      res.set({ 'Content-Range': response.ContentRange });
+    }
+    if (response.ContentLength != null) {
+      res.set('Content-Length', String(response.ContentLength));
+    }
+
+    response.Body.pipe(res);
+  } catch (error) {
+    console.error('Error proxying audio file:', error);
+    res.status(404).json({ error: 'Audio file not found' });
   }
 });
 
