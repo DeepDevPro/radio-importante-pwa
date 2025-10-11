@@ -103,15 +103,14 @@ async function updateTotalsOnly(): Promise<void> {
     }
 
     try {
-        let response = await fetch(`${currentBackend}/api/catalog`);
+        // Preferir backend dinâmico (Opção A)
+        let response = await fetch(`${currentBackend}/api/catalog`, { cache: 'no-store' });
         if (!response.ok) {
-            // Fallback para arquivo estático do frontend quando API não existir (404)
             console.warn(`⚠️ /api/catalog retornou ${response.status}. Usando fallback /data/catalog.json`);
             response = await fetch(`/data/catalog.json?t=${Date.now()}`);
         }
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        
-        const catalog = await response.json(); 
+        const catalog = await response.json();
         const tracks = catalog.tracks || [];
         
         // Atualizar apenas o elemento de totais
@@ -561,7 +560,6 @@ function clearFiles() {
  */
 async function loadMusicList() {
     if (!currentBackend) {
-        console.error('❌ Backend não disponível para carregar lista de músicas');
         // Mesmo sem backend, tentar carregar lista estática local para exibir algo
         try {
             const musicListFallback = document.getElementById('music-list');
@@ -605,23 +603,19 @@ async function loadMusicList() {
 
     const musicList = document.getElementById('music-list');
     const musicTotals = document.getElementById('music-totals');
-    
     if (!musicList) return;
 
     try {
         musicList.innerHTML = '🔄 Carregando músicas...';
-        
-        // Primeiro tenta via API do backend
-        let response = await fetch(`${currentBackend}/api/catalog`);
+
+        // Preferir backend dinâmico (Opção A)
+        let response = await fetch(`${currentBackend}/api/catalog`, { cache: 'no-store' });
         if (!response.ok) {
-            // Fallback para arquivo estático quando endpoint não existir (404)
             console.warn(`⚠️ /api/catalog retornou ${response.status}. Usando fallback /data/catalog.json`);
             response = await fetch(`/data/catalog.json?t=${Date.now()}`);
         }
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
-        
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
         const catalog = await response.json();
         const tracks = catalog.tracks || [];
         

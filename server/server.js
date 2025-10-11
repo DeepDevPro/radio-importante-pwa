@@ -173,6 +173,65 @@ app.get('/api/playlist', async (req, res) => {
   }
 });
 
+// NEW: Dynamic catalog from DigitalOcean Spaces (Option A)
+app.get('/api/catalog', async (req, res) => {
+  try {
+    const command = new ListObjectsV2Command({
+      Bucket: process.env.DO_SPACES_BUCKET,
+      Prefix: 'audio/',
+      MaxKeys: 1000
+    });
+
+    const response = await s3Client.send(command);
+    const contents = response.Contents || [];
+
+    const tracks = contents
+      .filter(obj => obj.Key && !obj.Key.endsWith('/') && obj.Size > 0)
+      .filter(obj => !obj.Key.includes('continuous/') && !obj.Key.endsWith('.m3u8'))
+      .map(obj => {
+        const key = obj.Key;
+        const filename = key.replace(/^audio\//, '');
+        const ext = (filename.split('.').pop() || '').toLowerCase();
+        const titleBase = filename.replace(/\.[^/.]+$/, '');
+        const prettyTitle = decodeURIComponent(titleBase).replace(/[_-]+/g, ' ').trim();
+        return {
+          id: filename, // stable id based on filename
+          title: prettyTitle || filename,
+          artist: '',
+          filename,
+          duration: 0,
+          format: ext
+        };
+      })
+      // sort by lastModified ascending (older first)
+      .sort((a, b) => {
+        const aObj = contents.find(c => c.Key?.endsWith(a.filename));
+        const bObj = contents.find(c => c.Key?.endsWith(b.filename));
+        const aTime = aObj?.LastModified ? new Date(aObj.LastModified).getTime() : 0;
+        const bTime = bObj?.LastModified ? new Date(bObj.LastModified).getTime() : 0;
+        return aTime - bTime;
+      });
+
+    const totalDuration = tracks.reduce((sum, t) => sum + (t.duration || 0), 0);
+
+    res.set('Cache-Control', 'no-cache');
+    return res.json({
+      tracks,
+      metadata: {
+        totalTracks: tracks.length,
+        totalDuration,
+        lastUpdated: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    console.error('Error building catalog from Spaces:', error);
+    return res.status(500).json({
+      error: 'Failed to build catalog',
+      details: error.message
+    });
+  }
+});
+
 // Continuous MP3 routes for iOS PWA
 app.get('/audio/continuous/radio-importante-continuous.mp3', async (req, res) => {
   try {
