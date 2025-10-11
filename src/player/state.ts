@@ -578,8 +578,17 @@ export class StateManager {
 
         console.log('✅ Estado restaurado do localStorage');
       }
+
+      // REGRA: Nova sessão sempre ativa shuffle automaticamente
+      this.enableShuffleMode();
+      console.log('🔀 Shuffle ativado automaticamente em nova sessão');
+      
     } catch (error) {
       console.warn('⚠️ Não foi possível carregar estado salvo:', error);
+      
+      // Mesmo com erro, ativar shuffle em nova sessão
+      this.enableShuffleMode();
+      console.log('🔀 Shuffle ativado automaticamente em nova sessão (fallback)');
     }
   }
 

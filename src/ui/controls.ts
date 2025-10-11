@@ -21,7 +21,6 @@ export class Controls {
   public onPlay: (() => void) | null = null;
   public onPause: (() => void) | null = null;
   public onNext: (() => void) | null = null;
-  public onShuffle: (() => void) | null = null;
   public getCurrentTrackInfo: (() => { title: string; artist: string } | null) | null = null;
 
   constructor(container: HTMLElement) {
@@ -68,9 +67,6 @@ export class Controls {
           </button>
           <button class="btn btn-info" id="infoButton" title="Informações">
             <img src="/icons/info.svg" alt="Info" />
-          </button>
-          <button class="btn btn-shuffle" id="shuffleButton" title="Shuffle (próxima aleatória)">
-            <img src="/icons/shuffle.svg" alt="Shuffle" />
           </button>
         </div>
 
@@ -122,12 +118,6 @@ export class Controls {
     // Info button
     this.infoButton.addEventListener('click', () => {
       this.toggleInfoModal();
-    });
-
-    // Shuffle button
-    const shuffleButton = this.container.querySelector('#shuffleButton') as HTMLButtonElement;
-    shuffleButton.addEventListener('click', () => {
-      this.onShuffle?.();
     });
 
     // Admin button

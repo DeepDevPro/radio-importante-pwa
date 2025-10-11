@@ -258,7 +258,6 @@ class RadioImportanteApp {
     this.controls.onPlay = () => this.handlePlay();
     this.controls.onPause = () => this.handlePause();
     this.controls.onNext = () => this.handleNext();
-    this.controls.onShuffle = () => this.handleShuffleButton();
     this.controls.getCurrentTrackInfo = () => {
       const trackDisplay = this.stateManager.getCurrentTrackDisplay();
       return trackDisplay ? { title: trackDisplay.title, artist: trackDisplay.artist } : null;
@@ -429,23 +428,6 @@ class RadioImportanteApp {
       
       // Sempre carregar e tocar a nova faixa ao apertar Next
       await this.loadAndPlayCurrentTrack();
-    }
-  }
-
-  private handleShuffleButton(): void {
-    // Força próxima faixa aleatória e inicia reprodução
-    this.stateManager.nextTrackManual();
-    const newTrack = this.stateManager.getCurrentTrack();
-    if (newTrack) {
-      this.controls.updateTrackInfo(newTrack.title, newTrack.artist);
-      this.mediaSession.updateMetadata(newTrack.title, newTrack.artist, '/img/Leo_R_161_small.webp');
-    }
-    // Em modo contínuo, fazer seek; senão, carregar faixa
-    if (this.audioPlayer.isInContinuousMode() && this.audioPlayer.hasTrackCues()) {
-      const idx = this.stateManager.getState().currentTrackIndex;
-      this.audioPlayer.seekToTrackInContinuousByIndex(idx);
-    } else {
-      this.loadAndPlayCurrentTrack();
     }
   }
 
