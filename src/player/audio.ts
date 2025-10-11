@@ -14,6 +14,8 @@ export interface AudioPlayerEvents {
   onStalled?: () => void;
   // Novo: aviso pré-fim (para futuras otimizações de pré-carregamento)
   onPreEnd?: (remainingSeconds: number) => void;
+  // Novo: mudança de faixa no modo contínuo
+  onTrackChange?: (trackCue: TrackCue) => void;
 }
 
 // Detectar iOS PWA - mantido para compatibilidade
@@ -349,6 +351,11 @@ export class AudioPlayer {
         }
       }
 
+      // Detectar mudança de faixa no modo contínuo do iOS PWA
+      if (this.hlsMode && this.trackCues.length > 0) {
+        this.detectTrackChangeInContinuous(current);
+      }
+
       // Antes retornava totalmente em background — agora fazemos update leve
       if (!(this.isIOSPWA && this.isBackground)) {
         this.events.onTimeUpdate?.(current, duration);
@@ -460,7 +467,7 @@ export class AudioPlayer {
     const guardBandMs = 40;
     const guardBandSeconds = guardBandMs / 1000;
     const targetTime = Math.max(0, trackCue.startTime + guardBandSeconds);
-
+    
     console.log(`🎯 iPhone PWA: Buscando faixa ${trackCue.title} na posição ${targetTime.toFixed(3)}s (com guard band +${guardBandMs}ms)`);
     
     // Aplicar micro fade-in para suavizar transição
@@ -481,7 +488,32 @@ export class AudioPlayer {
     return true;
   }
 
-  // Etapa 6: Seek por índice de cue (para uso com shuffle)
+  // Detectar mudança de faixa baseada no currentTime vs trackCues
+  private detectTrackChangeInContinuous(currentTime: number): void {
+    if (!this.hlsMode || this.trackCues.length === 0) {
+      return;
+    }
+
+    // Encontrar a faixa atual baseada no currentTime
+    const currentTrackCue = this.trackCues.find(cue => 
+      currentTime >= cue.startTime && currentTime < cue.endTime
+    );
+
+    if (currentTrackCue) {
+      const newTrackIndex = this.trackCues.findIndex(cue => cue.id === currentTrackCue.id);
+      
+      // Se mudou de faixa, notificar
+      if (newTrackIndex !== this.currentTrackIndex && newTrackIndex >= 0) {
+        const oldIndex = this.currentTrackIndex;
+        this.currentTrackIndex = newTrackIndex;
+        
+        console.log(`🎵 Mudança de faixa detectada: ${currentTrackCue.title} - ${currentTrackCue.artist} (${oldIndex} → ${newTrackIndex})`);
+        
+        // Notificar mudança de faixa via eventos
+        this.events.onTrackChange?.(currentTrackCue);
+      }
+    }
+  }  // Etapa 6: Seek por índice de cue (para uso com shuffle)
   public seekToTrackInContinuousByIndex(cueIndex: number): boolean {
     if (!this.deviceDetection.isIPhonePWA() || !this.hlsMode || this.trackCues.length === 0) {
       return false;

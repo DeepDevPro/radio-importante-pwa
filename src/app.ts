@@ -273,6 +273,7 @@ class RadioImportanteApp {
       onCanPlay: () => this.handleCanPlay(),
       onError: (error) => this.handleAudioError(error),
       onStalled: () => this.handleStalled(),
+      onTrackChange: (trackCue) => this.handleTrackChange(trackCue),
     });
 
     // Configurar Media Session
@@ -535,6 +536,14 @@ class RadioImportanteApp {
   private handleAudioPause(): void {
     this.stateManager.updateState({ isPlaying: false, isLoading: false });
     this.mediaSession.setPlaybackState('paused');
+  }
+
+  private handleTrackChange(trackCue: import('./player/trackCuesLoader').TrackCue): void {
+    console.log(`🎵 Mudança de faixa automática: ${trackCue.title} - ${trackCue.artist}`);
+    
+    // Atualizar UI e Media Session com nova faixa
+    this.controls.updateTrackInfo(trackCue.title, trackCue.artist);
+    this.mediaSession.updateMetadata(trackCue.title, trackCue.artist, '/img/Leo_R_161_small.webp');
   }
 
   private async handleAudioEnded(): Promise<void> {
