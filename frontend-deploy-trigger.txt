@@ -1,1 +1,1 @@
-force-deploy-1759509863
+Deploy trigger updated: 2024-12-28 19:15:00 - Removed shuffle button UI while preserving automatic shuffle behavior
