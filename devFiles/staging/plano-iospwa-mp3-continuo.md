@@ -56,26 +56,22 @@ Observações:
 - Os cues continuarão sendo a “fonte de verdade” para: Agora Tocando, Media Session, Next/Prev/Shuffle e Seek.
 - Fonte de verdade: apenas Spaces; não manter cópias locais permanentes em `public/continuous/`.
 
-### 0.1) Estratégia de Proteção (backends separados)
-Objetivo: Minimizar risco em produção aplicando e testando mudanças no backend de staging; produção permanece intocada até promoção explícita.
+<!-- Atualização 2025-10-10: Fluxo remoto no Spaces -->
+### Atualização (2025-10-10): habilitar geração remota direto no Spaces (sem arquivos locais)
+Objetivo: Permitir gerar `continuous/radio-importante-continuous.mp3` e `continuous/track-cues.json` usando como fonte os próprios arquivos já publicados em `audio/` no DigitalOcean Spaces, evitando dependência de `public/audio` local.
 
-Micropassos:
-- [x] Backup prévio do estado atual (seguir seção "Rollback de Experimentos" no `DEPLOY-GUIDE-UNIFIED.md`).
-  - ✅ Backup main: `backup-main-pre-ios-mp3-continuo` 
-  - ✅ Backup staging: `backup-staging-pre-ios-mp3-continuo`
-- [ ] Ordem segura das etapas:
-  - ✅ Etapa 1 (Design) – sem código
-  - ✅ Etapa 2 (Scripts locais)
-  - ✅ Etapa 3 (Upload/CORS no Spaces)
-  - ⚠️ Etapa 4 (Backend – staging): mudanças podem ser aditivas ou substitutivas; alterar rotas existentes em staging é permitido; produção só após Gate 4.1
-  - ✅ Etapa 5 (Frontend) – mudança apenas para iOS PWA instalado
-- [ ] Política de backend nesta migração:
-  - Staging: pode criar/adaptar rotas existentes para simplificar a implementação iOS PWA.
-  - Produção: preferir promover rotas como aditivas; alterar rotas existentes apenas após Gate 4.1 e com plano de rollback.
-  - Manter kill switch no frontend para desligar rapidamente o contínuo se necessário.
-- [ ] Rollback rápido:
-  - Reverter commit do backend (ver guia) e redeploy.
-  - Staging: revert do commit restaura o comportamento anterior. Produção: preparar rollback equivalente antes da promoção.
+Resumo das mudanças no plano:
+- Introduzir as etapas 2R e 3R (variantes remotas de 2 e 3). Passar a preferi-las.
+- Novo script proposto: `npm run audio:remote` (gera e publica diretamente no Spaces).
+- Backend/Frontend permanecem iguais; apenas a produção dos artefatos muda de local → remoto.
+
+Parâmetros e requisitos (ambiente):
+- SPACES_PUBLIC_BASE = `https://radio-importante-audio.atl1.digitaloceanspaces.com`
+- SPACES_BUCKET = `radio-importante-audio`
+- SPACES_SOURCE_PREFIX = `audio/`
+- SPACES_TARGET_PREFIX = `continuous/`
+- Para upload autenticado via SDK: `SPACES_KEY` e `SPACES_SECRET` (não commitar; usar variáveis de ambiente/CI). Leitura HTTP é pública.
+- Endpoint/region (para SDK): `SPACES_ENDPOINT=https://atl1.digitaloceanspaces.com`, `SPACES_REGION=atl1`.
 
 ---
 ## 1) Design e Alinhamento (sem código)
@@ -115,6 +111,19 @@ Testes práticos (staging):
 
 Commit/deploy: sim, após ajustes no script. Seguir `DEPLOY-GUIDE-UNIFIED.md`.
 
+### 2R) Geração Remota de Cues (a partir do Spaces)
+Objetivo: Gerar `continuous/track-cues.json` medindo duração real das faixas hospedadas em `audio/` no Spaces.
+
+Micropassos:
+- [ ] Adicionar modo `--mode=spaces` ao gerador para aceitar URLs HTTP como entrada.
+- [ ] Obter a lista de faixas do catálogo atual (ex.: `${BACKEND_STAGING}/api/catalog` ou manifesto em Spaces) e mapear para URLs: `${SPACES_PUBLIC_BASE}/${SPACES_SOURCE_PREFIX}{filename}`.
+- [ ] Medir duração com `ffprobe` diretamente nas URLs HTTP (sem baixar), e gerar `track-cues.json` com `{ id, title, artist, startTime, endTime, duration, filename }`.
+- [ ] Publicar `track-cues.json` via SDK S3 para `${SPACES_TARGET_PREFIX}` com `Content-Type=application/json` e `Cache-Control=public, max-age=60`.
+- [ ] Validar diretamente: `${SPACES_PUBLIC_BASE}/${SPACES_TARGET_PREFIX}track-cues.json` (200 OK, CORS ok).
+
+Testes práticos (staging):
+- [ ] Abrir a URL de cues (Spaces) no iPhone e verificar JSON/CORS.
+
 ---
 ## 3) Gerar MP3 Contínuo (CBR 96k, 44.1kHz, 2 canais, Joint Stereo)
 Objetivo: Produzir e publicar o arquivo contínuo com parâmetros simples e estáveis.
@@ -134,7 +143,22 @@ Testes práticos (staging):
 
 Commit/deploy: sim (se houve mudança no script). Seguir `DEPLOY-GUIDE-UNIFIED.md`.
 
-### 3.1) Configurar CORS e Metadata no DigitalOcean Spaces (continuous/)
+### 3R) Geração Remota do MP3 contínuo (a partir do Spaces)
+Objetivo: Concatenar as faixas de `${SPACES_SOURCE_PREFIX}` via HTTP e publicar o MP3 contínuo em `${SPACES_TARGET_PREFIX}`.
+
+Micropassos:
+- [ ] Gerar arquivo `ffconcat` com linhas `file '<URL HTTP da faixa>'` na ordem do catálogo.
+- [ ] Executar `ffmpeg` com suporte a HTTP: usar `-protocol_whitelist file,https,tls,crypto` e `-safe 0`.
+- [ ] Transcodificar para MP3 CBR 96k, 44.1kHz, 2 canais, joint stereo (sem VBR), garantindo alinhamento com os cues.
+- [ ] Upload do arquivo final via SDK para `continuous/radio-importante-continuous.mp3` com `Content-Type=audio/mpeg` e `Cache-Control=public, max-age=3600`.
+- [ ] Validar `HEAD` e `Range` (206) no Origin Endpoint e via backend proxy em staging.
+
+Notas:
+- O fluxo remoto evita cópias locais. Custos de egress e tempo de processamento devem ser considerados.
+- Caso algum objeto em `audio/` seja privado no futuro, usar URL assinada ou leitura autenticada no SDK + pipe para `ffmpeg`.
+
+---
+## 3.1) Configurar CORS e Metadata no DigitalOcean Spaces (continuous/)
 Objetivo: Garantir que o navegador e o backend possam acessar os artefatos com cabeçalhos corretos.
 
 Micropassos (UI do Spaces):
@@ -209,17 +233,15 @@ Micropassos:
 - [ ] Garantir que Android/desktop e Safari em aba normal continuam usando o comportamento atual (faixas individuais / fallback existente).
 
 Testes práticos (staging, iPhone PWA instalado):
+- [ ] ⚠️ BLOQUEADOR (atualizado): gerar artefatos remotamente no Spaces executando `npm run audio:remote` → publica `continuous/radio-importante-continuous.mp3` e `continuous/track-cues.json`.
 - [ ] Reproduzir ≥5 minutos com tela bloqueada; confirmar continuidade sem quedas. (AGUARDANDO DEVICE)
 - [ ] Verificar updates de Media Session (título/artista/capa) a cada boundary de cue. (AGUARDANDO DEVICE)
 - [ ] Usar botão Next e controles do sistema (nexttrack) → validar seek para início da próxima faixa. (AGUARDANDO DEVICE)
 - [ ] Ativar kill switch e confirmar que retorna ao comportamento antigo imediatamente. (AGUARDANDO DEVICE)
 
 Commit/deploy: sim. Seguir `DEPLOY-GUIDE-UNIFIED.md` (frontend staging).
-✅ Implementado em commit d1671cc: "feat: implementar Etapa 5 - iOS PWA contínuo apenas com kill switch"
-✅ Backend staging validado e respondendo às rotas /audio/continuous/*
-✅ Frontend staging deployed com novas configurações
 
-Status: Implementação técnica concluída. Necessário teste em iPhone físico para validação completa.
+Status: Implementação técnica concluída no frontend/backend. Necessário gerar artefatos remotamente e testar em iPhone físico.
 
 ---
 ## 6) Shuffle e Precisão de Seek
@@ -273,5 +295,6 @@ Encerramento:
 - Pedidos pendentes ao usuário:
   - [x] Confirmado: URL base do Spaces para o prefixo `continuous/` → https://radio-importante-audio.atl1.digitaloceanspaces.com/continuous/
   - [x] Decisão: usar apenas Spaces como fonte de verdade; não manter cópia local permanente em `public/continuous/`.
+- Atualização 2025-10-10: Etapas 2R/3R (remotas) substituem o bloqueador anterior baseado em geração local.
 
 > Sonnet: após concluir cada micropasso, marque-o como concluído no arquivo e prossiga. Para cada deploy de staging, siga o `DEPLOY-GUIDE-UNIFIED.md`.

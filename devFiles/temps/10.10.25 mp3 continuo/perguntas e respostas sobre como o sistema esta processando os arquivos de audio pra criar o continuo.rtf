@@ -1,0 +1,109 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2822
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fswiss\fcharset0 Helvetica-Bold;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs40 \cf0 1\
+\
+- Como \'e9 gerado: hoje o gerador \'e9 o script generate-audio.js (via `npm run audio`). Ele usa ffprobe/ffmpeg para:\
+  - ler o cat\'e1logo atual (catalog.json);\
+  - calcular dura\'e7\'f5es reais por faixa;\
+  - concatenar as faixas e produzir um \'fanico `radio-importante-continuous.mp3` (CBR 96k, 44.1 kHz, 2 canais);\
+  - gerar `track-cues.json` com `\{id,title,artist,startTime,endTime,duration,filename\}`.\
+\
+- Sa\'eddas locais do script:\
+  - MP3 cont\'ednuo em `public/audio/radio-importante-continuous.mp3`;\
+  - Cues em track-cues.json.\
+\
+- Publica\'e7\'e3o/caminhos can\'f4nicos:\
+  - Os artefatos devem ser publicados no DigitalOcean Spaces em `continuous/`:\
+    - `continuous/radio-importante-continuous.mp3`\
+    - `continuous/track-cues.json`\
+  - O backend de staging j\'e1 faz proxy can\'f4nico em:\
+    - `GET /audio/continuous/radio-importante-continuous.mp3`\
+    - `GET /audio/continuous/track-cues.json`\
+\
+- Gatilho \'93a cada mudan\'e7a de repert\'f3rio\'94:\
+  - N\'e3o h\'e1 gatilho autom\'e1tico neste reposit\'f3rio (nem CI, nem endpoint backend vis\'edvel aqui) que regenere o cont\'ednuo ao mudar o cat\'e1logo.\
+  - O fluxo atual \'e9 operacional/manual: ap\'f3s mudar o repert\'f3rio (upload/sync), roda-se `npm run audio` e publica-se os dois arquivos no Spaces sob `continuous/`. O Admin mostra a mensagem \'93Gerando arquivo cont\'ednuo\'85\'94, mas n\'e3o dispara nenhuma chamada extra de rebuild no backend neste c\'f3digo.\
+  - Os guias confirmam essa inten\'e7\'e3o: o Plano (Etapas 2/3) prev\'ea gera\'e7\'e3o local + upload para Spaces, e o Guia T\'e9cnico n\'e3o documenta endpoint de \'93rebuild continuous\'94; apenas o proxy de leitura.\
+\
+Em resumo: a gera\'e7\'e3o do MP3 cont\'ednuo \'e9 feita pelo script local generate-audio.js e a publica\'e7\'e3o \'e9 manual para o Spaces; o backend s\'f3 exp\'f5e proxy de leitura. Se quisermos automatizar \'93a cada mudan\'e7a de repert\'f3rio\'94, precisaremos adicionar um endpoint/worker no backend ou um job de CI que rode `npm run audio` e publique no Spaces ao final do upload/sync.\
+\
+\
+
+\f1\b >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+\f0\b0 \
+
+\f1\b >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+\f0\b0 \
+\
+\
+\
+2\
+\
+Claro. Respostas objetivas com base no c\'f3digo e nos guias que voc\'ea indicou:\
+\
+1) O catalog.json est\'e1 catalogando automaticamente as m\'fasicas que subimos ou apagamos do Spaces?\
+- N\'e3o automaticamente por \'93watch\'94 do Spaces. O cat\'e1logo exposto em `/api/catalog` \'e9 atualizado:\
+  - Upload via Admin: pelo backend em `/api/upload` (o Admin depois recarrega a lista).\
+  - Delete via Admin: pelo backend em `/api/delete/:trackId`.\
+  - Mudan\'e7as diretas no Spaces (fora do Admin): exigem acionar manualmente `POST /api/sync-catalog?full=true` (bot\'e3o \'93Sincronizar com Spaces (Completo)\'94).\
+- Refer\'eancias: PLANO_EXECUCAO.md (F1), admin.html (syncWithSpaces), admin.ts (upload/delete).\
+\
+2) Agora as m\'fasicas que eu subir no Admin do staging v\'e3o para um lugar diferente do Admin do main?\
+- Pelo c\'f3digo atual do Admin (admin.ts) o backend usado \'e9 o de produ\'e7\'e3o (`BACKEND_CONFIG.production`). Ou seja, tanto o Admin aberto do staging quanto do main apontam para o mesmo backend de produ\'e7\'e3o, portanto sobem para o mesmo bucket/prefix no Spaces.\
+- Se/quando o Admin passar a usar um backend de staging, a\'ed sim poder\'e3o divergir.\
+\
+3) Quando o script generate-audio.js \'e9 acionado?\
+- Apenas manualmente (CLI): `npm run audio` (ou `node scripts/generate-audio.js`). N\'e3o h\'e1 gatilho autom\'e1tico pelo Admin nem pelo backend neste repo.\
+\
+4) Esse script n\'e3o tem sa\'edda para o Spaces, s\'f3 sa\'edda local?\
+- Correto. Ele gera localmente:\
+  - `public/audio/radio-importante-continuous.mp3`\
+  - track-cues.json\
+- A publica\'e7\'e3o no Spaces \'e9 um passo separado (manual/operacional).\
+\
+5) O que significa \'93caminhos can\'f4nicos\'94?\
+- S\'e3o as URLs \'93oficiais/preferidas\'94 que o app deve consumir. Aqui, os can\'f4nicos s\'e3o os do backend proxy:\
+  - `$\{BACKEND\}/audio/continuous/radio-importante-continuous.mp3`\
+  - `$\{BACKEND\}/audio/continuous/track-cues.json`\
+- Evita usar diretamente o endpoint do Spaces no app e garante headers/Range/CORS consistentes.\
+\
+6) Como os artefatos s\'e3o publicados no DO Spaces em `continuous/`?\
+- Hoje, operacionamente: gerar local com generate-audio.js e subir manualmente para o Spaces no prefixo `continuous/`:\
+  - `continuous/radio-importante-continuous.mp3`\
+  - `continuous/track-cues.json`\
+- O plano menciona \'93via Admin/rotina existente\'94 para os cues, mas n\'e3o h\'e1 implementa\'e7\'e3o no Admin atual para enviar esses dois artefatos; \'e9 publica\'e7\'e3o manual (ou via CLI/automa\'e7\'e3o externa).\
+\
+7) O que significa \'93proxy can\'f4nico\'94?\
+- O backend exp\'f5e endpoints \'93oficiais\'94 que fazem proxy dos arquivos do Spaces, padronizando headers (Content-Type, Accept-Ranges, Cache-Control) e ocultando o origin. Ex.: `/audio/continuous/*`.\
+\
+8) Quando o Admin mostra \'93Gerando arquivo cont\'ednuo...\'94?\
+- Ap\'f3s upload bem-sucedido em `/api/upload` (mensagem UI em admin.ts, linha do `uploadStatus.innerHTML`). N\'e3o \'e9 ao clicar \'93Sincronizar com Spaces (Completo)\'94. O bot\'e3o de sincroniza\'e7\'e3o apenas chama `POST /api/sync-catalog?full=true`.\
+\
+\
+\
+\
+
+\f1\b >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+\f0\b0 \
+
+\f1\b >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+\f0\b0 \
+\
+\
+\
+\
+\
+Mais perguntas:\
+\
+1. Ent\'e3o, s\'f3 pra ficar claro pra mim que sou bem leigo no assunto. De forma simples, deixa ver se eu entendi: Quando eu clicar em confirmar no botao de upload, o app vai processar o upload das musicas e quando ele terminar o upload vai acionar o `catalog.json` pra catalogar todas as m\'fasicas enviadas, correto?\
+\
+2. Isso significa que se eu fizer upload de musicas pelo admin do staging o admin do producao tamb\'e9m vai "enxergar" essas novas m\'fasicas? Por enquanto, pelo o que eu verifiquei manualmente, o admin de staging n\'e3o mostra nenhuma musica na lista, est\'e1 vazio. O Spaces do DO ainda constam as 15 musicas que tinham antes }

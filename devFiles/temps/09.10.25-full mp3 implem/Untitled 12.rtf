@@ -1,0 +1,71 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2822
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs40 \cf0 Ok, seguem minhas impress\'f5es:\
+\
+1) GERADORES\
+\
+1.1 generate-hls.js\
+Aqui temos que ser cuidadosos. N\'e3o vamos mais precisar de um gerador de HLS porque s\'f3 vamos usar o mp3 continuo, mas vamos continuar precisando das funcionalidades de cues precisos e cue track n\'e9?\
+Teremos que implementar a contagem de dura\'e7\'e3o real ffprobe em algum lugar, n\'e3o sei se nesse arquivo ou em outro.\
+E se formos manter esse arquivo ele vai ter que mudar de nome porque nao vai mais gerar HLS mas sim mp3 continuo. Mas fico na d\'favida se ele n\'e3o vai gerar duplica\'e7\'e3o com o `generate-audio.js` se for gerar duplicidade podemos descartar esse arquivo e transferir as funcionalidades necess\'e1rias citadas acima para o `generate-audio.js` caso n\'e3o existirem l\'e1 j\'e1.\
+\
+1.2 generate-smart-hls.js\
+Talvez com as modifica\'e7\'f5es em `generate-audio.js` ele n\'e3o seja mais necess\'e1rio, correto?\
+\
+1.3 generate-audio.js\
+  - taxa/est\'e9reo: CBR 96k, 44.1kHz, 2 canais, joint stereo.\
+Vamos simplificar e gerar o arquivo somente com essas caracteristicas acima, esquece o filtro, vbr, etc.\
+\
+1.4 generate-hls.js (dup)\
+ok, elimina-lo\
+\
+1.5 Origem do `radio-importante-continuous.mp3`\
+ok, acho que seria mais prudente que esse arquivo seja gerado e salvo em uma pasta especifica ao invez da ra\'edz, por exemplo `/continuous` - Adicionar essas instrucoes ao `generate-audio.js`\
+\
+\
+2) CONSUMIDORES\
+\
+2.1 trackCuesLoader.ts\
+ok, manter\
+\
+2.2 audio.ts\
+- 2.2.1: Sim. A l\'f3gica \'93`loadHLSForIOSPWA/tryEnableHLSForIPhone`\'94 deve se tornar \'93cont\'ednuo apenas\'94 para iPhone PWA: ok\
+- 2.2.2: `seekToTrackInContinuous(trackId)`: Mas seria s\'f3 modificar a flag n\'e9? Nem sei pra que serve a flag, me explique no plano depois.\
+\
+2.3 app.ts\
+- 2.3.1: Correto. Continua usando `seekToTrackInContinuous` quando detectar iPhone PWA. ok\
+\
+3) Artefatos esperados\
+Ok\
+\
+Extras a considerar (operacional)\
+- Garantir headers no Spaces/Proxy: `Accept-Ranges: bytes`, `Cache-Control` adequado (n\'e3o agressivo), CORS permitindo Range.\
+- Precis\'e3o dos cues: usar dura\'e7\'f5es reais (ffprobe), compensar encoder delay, considerar guard band de ~20\'9640 ms.\
+- Media Session: atualizar em cada boundary para lock screen/controles.\
+- Shuffle: operar sobre \'edndices de cues (funciona com MP3 cont\'ednuo).\
+- Documenta\'e7\'e3o/CI: remover tarefas de HLS, atualizar guias e scripts; manter debug.html sabendo que HLS n\'e3o ser\'e1 mais fonte de verdade.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 Ok, \'e9 s\'f3 adicionar todas as instru\'e7\'f5es no plano que garantiremos a execu\'e7\'e3o de tudo.\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 Agora quero que voc\'ea, com base nisso tudo que conversamos gere um plano completo e detalhado para implementarmos essa mudan\'e7a, que ocorrer\'e1 somente quando detectado iPhone PWA na execu\'e7\'e3o do app. Por favor, n\'e3o modifique nada que ir\'e1 influenciar as funcionalidades em outros aparelhos que j\'e1 est\'e3o bem definidas e funcionando muito bem.\
+\
+Regras importantes:\
+\
+1. Sempre respeite os padr\'f5es e regras registradas em PLANO... e GUIA... na hora de planejar as modifica\'e7\'f5es.\
+3. Tenha em mente que vou executar este plano com o Sonnet 4 em modo agente.\
+2. Formate o plano dividindo ele em etapas e dividindo cada etapa em micropassos para executarmos uma de cada vez, deixe claro ao final de cada etapa se podemos fazer commit e deploy para staging ou se ser\'e1 necess\'e1rio realizar a pr\'f3xima tarea antes disso.\
+3. Caso seja necess\'e1rio o commit e deploy para staging, mencione no momento adequado que o Sonnet deve se basear no DEPLOY... para realizar os deploys\
+4. N\'e3o vamos realizar testes em ambiente local, somente no staging, ent\'e3o nunca recomende testes em ambiente local.\
+5. No in\'edcio de cada micropasso adiciona um campo para marcarmos a conclus\'e3o da tarefa quando terminarmos. Pode mencionar no plano que o Sonnet deve atualizar a microtarefa a cada conclus\'e3o.\
+6. Quando necess\'e1rio, inclua testes praticos ap\'f3s as micro tarefas ou etapas para nos certificarmos de que as modifica\'e7\'f5es est\'e3o corretas.\
+7. Verifique as URLs corretas no arquivo URLS... antes de menciona-las no plano e se estiver faltando alguma n\'e3o assuma, me pergunte que eu verifico manualmente pra voc\'ea atualizar.\
+\
+Salve o plano em `devFiles/staging` em formato .md.\
+\
+Acho que \'e9 isso, estou esquecendo de mais alguma coisa?}

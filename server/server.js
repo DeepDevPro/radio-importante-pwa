@@ -177,39 +177,37 @@ app.get('/api/playlist', async (req, res) => {
 app.get('/audio/continuous/radio-importante-continuous.mp3', async (req, res) => {
   try {
     console.log('Proxying continuous MP3 from Spaces...');
-    
-    // Para demonstração, usar um arquivo MP3 existente
-    const command = new GetObjectCommand({
+
+    const key = 'continuous/radio-importante-continuous.mp3';
+    const params = {
       Bucket: process.env.DO_SPACES_BUCKET,
-      Key: 'audio/1759353027049-01_Ancestors.mp3'
-    });
-    
+      Key: key,
+    };
+
+    // Suporte a Range (S3 devolve ContentRange/ContentLength quando Range é usado)
+    if (req.headers.range) {
+      params.Range = req.headers.range;
+    }
+
+    const command = new GetObjectCommand(params);
     const response = await s3Client.send(command);
-    
-    // Set appropriate headers for MP3 streaming
+
+    // Headers base
     res.set({
-      'Content-Type': 'audio/mpeg',
+      'Content-Type': response.ContentType || 'audio/mpeg',
       'Accept-Ranges': 'bytes',
       'Cache-Control': 'public, max-age=3600',
-      'Content-Length': response.ContentLength
     });
-    
-    // Handle range requests for seeking
-    const range = req.headers.range;
-    if (range) {
-      const parts = range.replace(/bytes=/, "").split("-");
-      const start = parseInt(parts[0], 10);
-      const end = parts[1] ? parseInt(parts[1], 10) : response.ContentLength - 1;
-      const chunksize = (end - start) + 1;
-      
+
+    if (req.headers.range && response.ContentRange) {
       res.status(206);
-      res.set({
-        'Content-Range': `bytes ${start}-${end}/${response.ContentLength}`,
-        'Content-Length': chunksize
-      });
+      res.set({ 'Content-Range': response.ContentRange });
     }
-    
-    // Stream the response body
+
+    if (response.ContentLength != null) {
+      res.set('Content-Length', String(response.ContentLength));
+    }
+
     response.Body.pipe(res);
   } catch (error) {
     console.error('Error proxying continuous MP3:', error);
@@ -222,52 +220,24 @@ app.get('/audio/continuous/radio-importante-continuous.mp3', async (req, res) =>
 
 app.get('/audio/continuous/track-cues.json', async (req, res) => {
   try {
-    console.log('Serving demo track cues...');
-    
-    // Demo track cues para validação do conceito
-    const demoTrackCues = {
-      mode: 'single',
-      totalDuration: 3600, // 1 hora exemplo
-      trackCount: 10,
-      generatedAt: new Date().toISOString(),
-      tracks: [
-        {
-          id: "track_demo_1",
-          title: "01 Ancestors",
-          artist: "Demo Artist",
-          startTime: 0,
-          endTime: 360,
-          duration: 360,
-          filename: "1759353027049-01_Ancestors.mp3"
-        },
-        {
-          id: "track_demo_2", 
-          title: "02 I Don't Wanna Stop",
-          artist: "Demo Artist",
-          startTime: 360,
-          endTime: 720,
-          duration: 360,
-          filename: "demo_track_2.mp3"
-        },
-        {
-          id: "track_demo_3",
-          title: "03 In The Town", 
-          artist: "Demo Artist",
-          startTime: 720,
-          endTime: 1080,
-          duration: 360,
-          filename: "demo_track_3.mp3"
-        }
-      ]
-    };
-    
+    console.log('Proxying track cues from Spaces...');
+
+    const key = 'continuous/track-cues.json';
+    const command = new GetObjectCommand({
+      Bucket: process.env.DO_SPACES_BUCKET,
+      Key: key,
+    });
+
+    const response = await s3Client.send(command);
+    const data = await response.Body.transformToString();
+
     res.set({
       'Content-Type': 'application/json',
-      'Cache-Control': 'public, max-age=60'
+      'Cache-Control': 'public, max-age=60',
     });
-    res.json(demoTrackCues);
+    res.send(data);
   } catch (error) {
-    console.error('Error serving track cues:', error);
+    console.error('Error proxying track cues:', error);
     res.status(500).json({ 
       error: 'Failed to fetch track cues',
       details: error.message

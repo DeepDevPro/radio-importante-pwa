@@ -68,6 +68,9 @@ export class Controls {
           <button class="btn btn-info" id="infoButton" title="Informações">
             <img src="/icons/info.svg" alt="Info" />
           </button>
+          <button class="btn btn-shuffle" id="shuffleButton" title="Shuffle">
+            <img src="/icons/shuffle.svg" alt="Shuffle" />
+          </button>
         </div>
 
         <!-- Container da imagem customizada -->
