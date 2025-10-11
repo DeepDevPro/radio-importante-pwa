@@ -540,6 +540,13 @@ app.post('/api/upload', upload.array('audioFiles'), async (req, res) => {
         uploadTimestamp: timestamp
       });
 
+      console.log(`🔍 DEBUG uploadResults - Added track with duration: ${duration}`);
+      console.log(`  Object created:`, {
+        title: file.originalname.replace(/\.[^/.]+$/, ''),
+        duration: duration,
+        filename: safeFilename
+      });
+
       console.log(`✅ File ${i + 1} uploaded successfully: ${s3Key}`);
     }
 
@@ -566,6 +573,11 @@ app.post('/api/upload', upload.array('audioFiles'), async (req, res) => {
 // Helper function to update catalog
 async function updateCatalogWithNewTracks(newTracks) {
   try {
+    console.log(`🔍 DEBUG updateCatalogWithNewTracks - Received ${newTracks.length} tracks:`);
+    newTracks.forEach((track, index) => {
+      console.log(`  Track ${index + 1}: ${track.title} - Duration: ${track.duration}`);
+    });
+    
     // Get existing catalog
     let existingCatalog = { tracks: [] };
     
@@ -587,6 +599,9 @@ async function updateCatalogWithNewTracks(newTracks) {
       tracks: [...(existingCatalog.tracks || []), ...newTracks],
       lastUpdated: new Date().toISOString()
     };
+
+    console.log(`🔍 DEBUG updateCatalogWithNewTracks - About to save catalog with ${updatedCatalog.tracks.length} total tracks`);
+    console.log(`  Last ${newTracks.length} tracks durations:`, updatedCatalog.tracks.slice(-newTracks.length).map(t => ({ title: t.title, duration: t.duration })));
 
     // Save updated catalog
     const putCommand = new PutObjectCommand({
