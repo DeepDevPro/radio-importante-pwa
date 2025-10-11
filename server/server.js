@@ -437,6 +437,23 @@ app.get('/api/rolling-playlist', async (req, res) => {
   }
 });
 
+// NEW: Log ingestion endpoint for frontend observability
+app.post('/api/logs/media-session', (req, res) => {
+  try {
+    const logData = req.body || {};
+    const timestamp = new Date().toISOString();
+    const logEntry = { timestamp, ...logData };
+    
+    // Just acknowledge the log for now - could store in memory or send to external service
+    console.log('📊 Frontend log:', JSON.stringify(logEntry));
+    
+    res.json({ success: true, logged: timestamp });
+  } catch (error) {
+    console.error('Error logging frontend data:', error);
+    res.status(500).json({ error: 'Failed to log data' });
+  }
+});
+
 // Start server
 app.listen(port, () => {
   console.log(`🚀 Server running on port ${port}`);
