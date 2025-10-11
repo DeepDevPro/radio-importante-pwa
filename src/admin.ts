@@ -153,6 +153,47 @@ function calculateAudioDuration(file: File): Promise<number> {
 }
 
 /**
+ * Atualizar estado do botão de upload baseado no progresso das durações
+ */
+function updateUploadButtonState(): void {
+    const uploadBtn = document.getElementById('uploadBtn') as HTMLButtonElement;
+    if (!uploadBtn) return;
+    
+    const fileInput = document.getElementById('file-input') as HTMLInputElement;
+    if (!fileInput || !fileInput.files) {
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = '📁 Selecione arquivos para enviar';
+        return;
+    }
+    
+    const files = Array.from(fileInput.files);
+    const totalFiles = files.length;
+    
+    if (totalFiles === 0) {
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = '📁 Selecione arquivos para enviar';
+        return;
+    }
+    
+    // Contar quantos arquivos têm duração calculada
+    const filesWithDuration = files.filter(file => 
+        (file as any).calculatedDuration !== undefined
+    ).length;
+    
+    if (filesWithDuration === totalFiles) {
+        // Todas as durações foram calculadas
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = `🚀 Enviar ${totalFiles} arquivo${totalFiles > 1 ? 's' : ''}`;
+        uploadBtn.style.backgroundColor = '#28a745';
+    } else {
+        // Ainda calculando durações
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = `⏳ Calculando durações... (${filesWithDuration}/${totalFiles})`;
+        uploadBtn.style.backgroundColor = '#6c757d';
+    }
+}
+
+/**
  * Calcular duração para um arquivo específico no preview
  */
 function calculateDurationForFile(file: File, index: number): void {
@@ -166,10 +207,17 @@ function calculateDurationForFile(file: File, index: number): void {
                     durationElement.style.color = '#28a745';
                     // Armazenar duração no arquivo para usar no upload
                     (file as any).calculatedDuration = Math.round(duration);
+                    console.log(`✅ Duration calculated for ${file.name}: ${Math.round(duration)}s`);
                 } else {
                     durationElement.textContent = '⚠️ Duração desconhecida';
                     durationElement.style.color = '#dc3545';
+                    // Mesmo com duração desconhecida, definir um valor padrão
+                    (file as any).calculatedDuration = 0;
+                    console.warn(`⚠️ Duration unknown for ${file.name}, using 0`);
                 }
+                
+                // Verificar se todas as durações foram calculadas
+                updateUploadButtonState();
             }
         })
         .catch((error: Error) => {
@@ -177,6 +225,9 @@ function calculateDurationForFile(file: File, index: number): void {
             if (durationElement) {
                 durationElement.textContent = '❌ Erro ao ler arquivo';
                 durationElement.style.color = '#dc3545';
+                // Em caso de erro, definir duração 0 para não bloquear upload
+                (file as any).calculatedDuration = 0;
+                updateUploadButtonState();
             }
         });
 }
@@ -494,6 +545,9 @@ function handleFileSelection() {
         files.forEach((file: File, index: number) => {
             calculateDurationForFile(file, index);
         });
+        
+        // Inicializar estado do botão de upload
+        updateUploadButtonState();
     }
 }
 
@@ -506,6 +560,15 @@ async function uploadFiles() {
     const uploadBtn = document.getElementById('upload-btn') as any;
     if (!fileInput?.files || fileInput.files.length === 0) { window.alert('Selecione arquivos primeiro!'); return; }
     if (isUploading) { window.alert('Upload já em andamento!'); return; }
+    
+    // Verificar se todas as durações foram calculadas
+    const files = Array.from(fileInput.files) as any[];
+    const filesWithoutDuration = files.filter((file: any) => !file.calculatedDuration);
+    if (filesWithoutDuration.length > 0) {
+        window.alert(`❌ Aguarde o cálculo de duração terminar para ${filesWithoutDuration.length} arquivo(s) antes de fazer upload.`);
+        return;
+    }
+    
     isUploading = true; if (uploadBtn) uploadBtn.disabled = true;
     try {
         if (uploadStatus) uploadStatus.innerHTML = '📤 Iniciando upload...';
