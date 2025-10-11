@@ -102,4 +102,40 @@ router.post('/media-session', async (req, res) => {
   }
 });
 
+router.get('/media-session/list', async (req, res) => {
+  try {
+    const s3 = getS3Client();
+    if (!s3) {
+      return res.status(500).json({ ok: false, error: 'S3 client não disponível' });
+    }
+    const bucket = process.env.DO_SPACES_BUCKET || 'radio-importante-audio';
+    const env = process.env.NODE_ENV === 'production' ? 'prod' : 'staging';
+    const date = (req.query.date || todayStr()).toString();
+    const sessionId = req.query.sessionId ? String(req.query.sessionId) : null;
+
+    let prefix = `logs/media-session/${env}/${date}/`;
+    if (sessionId) prefix += `${sessionId}/`;
+
+    const keys = [];
+    let ContinuationToken;
+    do {
+      const resp = await s3.listObjectsV2({
+        Bucket: bucket,
+        Prefix: prefix,
+        ContinuationToken,
+      }).promise();
+      (resp.Contents || []).forEach(obj => keys.push(obj.Key));
+      ContinuationToken = resp.IsTruncated ? resp.NextContinuationToken : undefined;
+    } while (ContinuationToken);
+
+    const endpoint = process.env.DO_SPACES_ENDPOINT || 'atl1.digitaloceanspaces.com';
+    const urls = keys.map(k => ({ key: k, url: `https://${bucket}.${endpoint}/${k}` }));
+
+    res.json({ ok: true, count: urls.length, date, sessionId, items: urls });
+  } catch (error) {
+    console.error('❌ [media-session list] erro:', error);
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
 module.exports = router;
