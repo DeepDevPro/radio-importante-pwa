@@ -258,6 +258,7 @@ class RadioImportanteApp {
     this.controls.onPlay = () => this.handlePlay();
     this.controls.onPause = () => this.handlePause();
     this.controls.onNext = () => this.handleNext();
+    this.controls.onShuffle = () => this.handleShuffleButton();
     this.controls.getCurrentTrackInfo = () => {
       const trackDisplay = this.stateManager.getCurrentTrackDisplay();
       return trackDisplay ? { title: trackDisplay.title, artist: trackDisplay.artist } : null;
@@ -404,8 +405,8 @@ class RadioImportanteApp {
       if (this.audioPlayer.seekToTrackInContinuousByIndex?.(currentIndex)) {
         const newTrack = this.stateManager.getCurrentTrack();
         if (newTrack) {
-          console.log(`🎯 iPhone PWA: Seek manual para faixa ${newTrack.title} (índice ${currentIndex})`);
-          // Os metadados serão atualizados automaticamente via onTrackChange do seekToTrackInContinuous
+          console.log(`🎯 Continuous: Seek manual para faixa ${newTrack.title} (índice ${currentIndex})`);
+          // Metadados/UI serão atualizados via onTrackChange
         }
         return;
       }
@@ -417,7 +418,7 @@ class RadioImportanteApp {
       this.audioPlayer.stop();
     }
     
-    this.stateManager.nextTrackManual(); // HIPÓTESE 2: Manual = shuffle
+    this.stateManager.nextTrackManual();
     const newTrack = this.stateManager.getCurrentTrack();
     
     if (newTrack) {
@@ -426,10 +427,25 @@ class RadioImportanteApp {
       this.controls.updateTrackInfo(newTrack.title, newTrack.artist);
       this.mediaSession.updateMetadata(newTrack.title, newTrack.artist, '/img/Leo_R_161_small.webp');
       
-      // Se estava tocando, carregar e tocar automaticamente a nova faixa
-      if (wasPlaying) {
-        await this.loadAndPlayCurrentTrack();
-      }
+      // Sempre carregar e tocar a nova faixa ao apertar Next
+      await this.loadAndPlayCurrentTrack();
+    }
+  }
+
+  private handleShuffleButton(): void {
+    // Força próxima faixa aleatória e inicia reprodução
+    this.stateManager.nextTrackManual();
+    const newTrack = this.stateManager.getCurrentTrack();
+    if (newTrack) {
+      this.controls.updateTrackInfo(newTrack.title, newTrack.artist);
+      this.mediaSession.updateMetadata(newTrack.title, newTrack.artist, '/img/Leo_R_161_small.webp');
+    }
+    // Em modo contínuo, fazer seek; senão, carregar faixa
+    if (this.audioPlayer.isInContinuousMode() && this.audioPlayer.hasTrackCues()) {
+      const idx = this.stateManager.getState().currentTrackIndex;
+      this.audioPlayer.seekToTrackInContinuousByIndex(idx);
+    } else {
+      this.loadAndPlayCurrentTrack();
     }
   }
 
