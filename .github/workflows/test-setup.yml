@@ -1,0 +1,12 @@
+name: DISABLED - Test Setup
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Disabled. Use project-specific test workflows if needed."

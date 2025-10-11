@@ -1,0 +1,12 @@
+name: DISABLED - Deploy Complete
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Disabled consolidated deploy. Follow the unified guide workflows only."

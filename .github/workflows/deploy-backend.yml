@@ -1,0 +1,12 @@
+name: DISABLED - Backend Deploy Legacy
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "This workflow is disabled. Use deploy-backend-staging.yml or deploy-backend-production.yml as per DEPLOY-GUIDE-UNIFIED.md"

@@ -1,0 +1,12 @@
+name: DISABLED - Generic Deploy
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Disabled. Use staging/production specific workflows from the guide."

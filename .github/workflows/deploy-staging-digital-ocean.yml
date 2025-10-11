@@ -6,6 +6,8 @@ name: Deploy to Staging (Digital Ocean)
 on:
   push:
     branches: [ "staging" ]
+    paths:
+      - "src/**" # As per DEPLOY-GUIDE-UNIFIED.md: Frontend Staging triggers on changes in src/**
   workflow_dispatch:
 
 concurrency:
