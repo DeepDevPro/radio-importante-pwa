@@ -14,6 +14,17 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// Request logging middleware for uploads
+app.use('/api/upload', (req, res, next) => {
+  console.log(`📤 Upload request received:`, {
+    method: req.method,
+    contentType: req.get('Content-Type'),
+    contentLength: req.get('Content-Length'),
+    timestamp: new Date().toISOString()
+  });
+  next();
+});
+
 // Configure multer for file uploads (memory storage)
 const upload = multer({ 
   storage: multer.memoryStorage(),
@@ -461,8 +472,10 @@ app.post('/api/upload', upload.array('audioFiles'), async (req, res) => {
     console.log('📤 Upload request received');
     console.log('Files:', req.files?.length || 0);
     console.log('Body keys:', Object.keys(req.body || {}));
+    console.log('Body values:', req.body);
 
     if (!req.files || req.files.length === 0) {
+      console.log('❌ No files in request');
       return res.status(400).json({ 
         success: false, 
         error: 'No files uploaded' 
@@ -477,6 +490,15 @@ app.post('/api/upload', upload.array('audioFiles'), async (req, res) => {
       const file = req.files[i];
       const durationKey = `duration_${i}`;
       const duration = req.body[durationKey] ? parseInt(req.body[durationKey]) : 0;
+      
+      console.log(`📁 Processing file ${i + 1}/${req.files.length}:`, {
+        name: file.originalname,
+        size: file.size,
+        type: file.mimetype,
+        durationKey,
+        durationValue: req.body[durationKey],
+        durationParsed: duration
+      });
 
       console.log(`🔍 DEBUG - File ${i + 1}:`);
       console.log(`  - Original name: ${file.originalname}`);
