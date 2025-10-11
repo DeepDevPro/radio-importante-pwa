@@ -516,7 +516,12 @@ async function uploadFiles() {
             formData.append('audioFiles', file);
             // Enviar duração calculada junto com o arquivo
             if (file.calculatedDuration) {
+                console.log(`🔍 DEBUG Frontend - File ${index + 1}: ${file.name}`);
+                console.log(`  - calculatedDuration: ${file.calculatedDuration}`);
+                console.log(`  - duration key: duration_${index}`);
                 formData.append(`duration_${index}`, file.calculatedDuration.toString());
+            } else {
+                console.warn(`⚠️ File ${index + 1} (${file.name}) has no calculatedDuration!`);
             }
         });
         let progress = 0;
