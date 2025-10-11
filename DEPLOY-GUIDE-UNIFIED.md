@@ -264,7 +264,15 @@ curl -H "Range: bytes=0-1023" -I [URL-DO-ARQUIVO]
 curl -H "Origin: https://radio.importantestudio.com" -I [URL-COM-CORS]
 ```
 
+## 📝 Histórico de Deploys Recentes
+
+### 28/12/2024 - v2.2.9
+- **Shuffle Button Removal**: Removido botão shuffle da UI mantendo comportamento automático
+- **Automatic Shuffle Rules**: Next button, new session e all tracks played mantém lógica de shuffle
+- **UI Cleanup**: Interface mais limpa sem controle manual de shuffle
+- **Deploy**: Staging atualizado com sucesso
+
 ---
-**Última atualização**: 09/10/2025
-**Versão**: v2.2 (Atualizado para arquitetura com backends separados - staging e produção)
+**Última atualização**: 28/12/2024
+**Versão**: v2.2.9 (Shuffle button removal + automatic behavior preservation)
 ````
