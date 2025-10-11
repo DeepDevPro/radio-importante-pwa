@@ -478,6 +478,12 @@ app.post('/api/upload', upload.array('audioFiles'), async (req, res) => {
       const durationKey = `duration_${i}`;
       const duration = req.body[durationKey] ? parseInt(req.body[durationKey]) : 0;
 
+      console.log(`🔍 DEBUG - File ${i + 1}:`);
+      console.log(`  - Original name: ${file.originalname}`);
+      console.log(`  - Duration key: ${durationKey}`);
+      console.log(`  - Duration value from body: ${req.body[durationKey]}`);
+      console.log(`  - Parsed duration: ${duration}`);
+
       // Generate safe filename
       const fileExtension = file.originalname.split('.').pop();
       const safeFilename = `${timestamp}-${file.originalname.replace(/[^a-zA-Z0-9\-_.]/g, '_')}`;
