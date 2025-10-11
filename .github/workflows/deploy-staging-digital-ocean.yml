@@ -7,7 +7,12 @@ on:
   push:
     branches: [ "staging" ]
     paths:
-      - "src/**" # As per DEPLOY-GUIDE-UNIFIED.md: Frontend Staging triggers on changes in src/**
+      - "src/**" # main app source
+      - "admin/**" # admin panel scripts
+      - "public/**" # public assets and configs
+      - "index.html"
+      - "admin.html"
+      - "vite.config.*"
   workflow_dispatch:
 
 concurrency:
