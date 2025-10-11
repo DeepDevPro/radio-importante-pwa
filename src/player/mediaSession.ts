@@ -1,5 +1,7 @@
 // src/player/mediaSession.ts - Media Session API para controles na lock screen
 
+import { API_CONFIG } from '../config/api';
+
 export interface MediaSessionHandlers {
   onPlay?: () => void;
   onPause?: () => void;
@@ -87,7 +89,7 @@ export class MediaSessionManager {
         appTimestamp: Date.now(),
         ...data,
       };
-      await fetch('/api/logs/media-session', {
+      await fetch(`${API_CONFIG.baseUrl}/api/logs/media-session`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),

@@ -81,6 +81,10 @@ export class DeviceDetection {
     return this.deviceInfo.platform === 'iOS';
   }
 
+  public isAndroid(): boolean {
+    return this.deviceInfo.platform === 'Android';
+  }
+
   public isPWA(): boolean {
     return this.deviceInfo.isStandalone;
   }
@@ -91,6 +95,10 @@ export class DeviceDetection {
 
   public isIPadPWA(): boolean {
     return this.isIPad() && this.isPWA();
+  }
+
+  public isAndroidPWA(): boolean {
+    return this.isAndroid() && this.isPWA();
   }
 
   public getDebugInfo(): string {

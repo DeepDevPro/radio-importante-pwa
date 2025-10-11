@@ -2,6 +2,7 @@
 
 import { DeviceDetection } from '../platform/deviceDetection';
 import { TrackCue } from './trackCuesLoader';
+import { API_CONFIG } from '../config/api';
 
 export interface AudioPlayerEvents {
   onPlay?: () => void;
@@ -167,6 +168,15 @@ export class AudioPlayer {
       await this.loadHLSForIOSPWA();
     }
 
+    // Habilitar modo contínuo opcional em Android PWA para testes (atrás de flag)
+    if (this.deviceDetection.isAndroidPWA()) {
+      const enableAndroidContinuous = window.location.search.includes('androidc=on') || localStorage.getItem('androidContinuous') === 'on';
+      if (enableAndroidContinuous) {
+        console.log('🤖 Android PWA: habilitando modo contínuo (teste)');
+        await this.loadHLSForIOSPWA();
+      }
+    }
+
     this.setupEventListeners();
     this.isInitialized = true;
 
@@ -178,13 +188,13 @@ export class AudioPlayer {
       console.log('🍎 Carregando stream contínua para iOS PWA...');
       
       // Kill switch: verificar se contínuo está desabilitado
-      const killSwitchQuery = window.location.search.includes('mp3c=off');
-      const killSwitchLocal = localStorage.getItem('iospwaContinuous') === 'off';
+      const killSwitchQuery = window.location.search.includes('mp3c=off') || window.location.search.includes('androidc=off');
+      const killSwitchLocal = localStorage.getItem('iospwaContinuous') === 'off' || localStorage.getItem('androidContinuous') === 'off';
       
       if (killSwitchQuery || killSwitchLocal) {
         console.log('🛑 Kill switch ativo - retornando ao comportamento anterior');
-        if (killSwitchQuery) console.log('  → Ativado via ?mp3c=off');
-        if (killSwitchLocal) console.log('  → Ativado via localStorage');
+        if (killSwitchQuery) console.log('  → Ativado via ?mp3c=off ou ?androidc=off');
+        if (killSwitchLocal) console.log('  → Ativado via localStorage (iospwaContinuous/androidContinuous)');
         this.hlsMode = false;
         return;
       }
@@ -205,7 +215,7 @@ export class AudioPlayer {
         // Configurar arquivo único MP3 contínuo das novas rotas (CRÍTICO: iPhone PWA só funciona com MP3)
         this.audio.src = `${backendUrl}/audio/continuous/radio-importante-continuous.mp3`;
         this.hlsMode = true;
-        console.log('🎵 Stream contínua MP3 configurada para iOS PWA via /audio/continuous/*');
+        console.log('🎵 Stream contínua MP3 configurada via /audio/continuous/*');
       } else {
         console.warn('⚠️ Track cues não encontrados nas rotas /audio/continuous/*, usando modo normal');
       }
@@ -429,9 +439,9 @@ export class AudioPlayer {
 
   // Novo método para tentar múltiplas URLs
   public async loadTrackWithFallback(urls: string[]): Promise<void> {
-    // Para iPhone PWA com arquivo contínuo, não recarregar o arquivo
-    if (this.deviceDetection.isIPhonePWA() && this.hlsMode && this.audio.src.includes('radio-importante-continuous')) {
-      console.log('🍎 iPhone PWA: Arquivo contínuo já carregado, não recarregando');
+    // Para modo contínuo, não recarregar o arquivo base contínuo
+    if (this.hasContinuousAudio()) {
+      console.log('🔁 Modo contínuo ativo: Arquivo contínuo já carregado, não recarregando');
       return;
     }
     
@@ -453,9 +463,9 @@ export class AudioPlayer {
     throw lastError || new Error('Todas as URLs falharam');
   }
 
-  // Método para buscar faixa específica no arquivo contínuo (iPhone PWA) - Etapa 6: Precisão melhorada
+  // Método para buscar faixa específica no arquivo contínuo (iPhone/Android PWA) - Etapa 6: Precisão melhorada
   public seekToTrackInContinuous(trackId: string): boolean {
-    if (!this.deviceDetection.isIPhonePWA() || !this.hlsMode || this.trackCues.length === 0) {
+    if (!this.isInContinuousMode() || this.trackCues.length === 0) {
       return false;
     }
 
@@ -473,7 +483,7 @@ export class AudioPlayer {
     const guardBandSeconds = guardBandMs / 1000;
     const targetTime = Math.max(0, trackCue.startTime + guardBandSeconds);
     
-    console.log(`🎯 iPhone PWA: Seek manual para faixa ${trackCue.title} na posição ${targetTime.toFixed(3)}s (com guard band +${guardBandMs}ms)`);
+    console.log(`🎯 Continuous: Seek manual para faixa ${trackCue.title} na posição ${targetTime.toFixed(3)}s (guard band +${guardBandMs}ms)`);
     
     // Aplicar micro fade-in para suavizar transição
     const originalVolume = this.audio.volume;
@@ -487,7 +497,7 @@ export class AudioPlayer {
     // Enviar log de seek manual
     (async () => {
       try {
-        await fetch('/api/logs/media-session', {
+        await fetch(`${API_CONFIG.baseUrl}/api/logs/media-session`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -545,7 +555,7 @@ export class AudioPlayer {
         // Enviar log
         (async () => {
           try {
-            await fetch('/api/logs/media-session', {
+            await fetch(`${API_CONFIG.baseUrl}/api/logs/media-session`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -565,9 +575,11 @@ export class AudioPlayer {
         })();
       }
     }
-  }  // Etapa 6: Seek por índice de cue (para uso com shuffle)
+  }
+
+  // Etapa 6: Seek por índice de cue (para uso com shuffle)
   public seekToTrackInContinuousByIndex(cueIndex: number): boolean {
-    if (!this.deviceDetection.isIPhonePWA() || !this.hlsMode || this.trackCues.length === 0) {
+    if (!this.isInContinuousMode() || this.trackCues.length === 0) {
       return false;
     }
 
@@ -647,7 +659,7 @@ export class AudioPlayer {
 
   // Etapa 6: Métodos públicos para verificação de estado
   public isInContinuousMode(): boolean {
-    return this.deviceDetection.isIPhonePWA() && this.hlsMode;
+    return this.hasContinuousAudio();
   }
 
   public hasTrackCues(): boolean {
@@ -698,151 +710,13 @@ export class AudioPlayer {
     }
   }
 
-  /**
-   * Método específico para iPhone PWA - tenta habilitar HLS para continuidade
-   */
-  private async tryEnableHLSForIPhone(): Promise<boolean> {
-    try {
-      console.log('🍎 iPhone: Tentando habilitar HLS para continuidade...');
-      
-      // PRIMEIRO: Aplicar configurações de áudio específicas para iPhone
-      this.audio.preload = 'metadata'; // Usar metadata em vez de auto inicialmente
-      this.audio.crossOrigin = null; // Remover crossOrigin para HLS local
-      this.audio.loop = false;
-      
-      // Limpar qualquer src anterior
-      this.audio.src = '';
-      this.audio.load();
-      
-      // Aguardar um momento para elemento resetar
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Verificar se HLS está disponível
-      const response = await fetch('/audio/hls/playlist-simple.m3u8', { method: 'HEAD' });
-      if (!response.ok) {
-        console.warn('🍎 iPhone: HLS playlist não encontrada - Status:', response.status);
-        return false;
-      }
-
-      // Carregar track cues
-      const cuesResponse = await fetch('/audio/hls/track-cues.json');
-      if (cuesResponse.ok) {
-        const data = await cuesResponse.json();
-        this.trackCues = data.tracks;
-        console.log(`🍎 iPhone: Track cues carregados: ${this.trackCues.length} faixas`);
-        
-        // Configurar HLS playlist com configurações específicas para iPhone
-        this.audio.src = '/audio/hls/playlist-simple.m3u8';
-        this.hlsMode = true;
-        
-        // Carregar e aguardar
-        this.audio.load();
-        
-        console.log('🍎 iPhone: HLS configurado, aguardando carregamento...');
-        
-        // Aguardar metadata carregar antes de declarar sucesso
-        return new Promise((resolve) => {
-          const onLoadedMetadata = () => {
-            console.log('🍎 iPhone: HLS metadata carregada com sucesso');
-            this.audio.removeEventListener('loadedmetadata', onLoadedMetadata);
-            this.audio.removeEventListener('error', onError);
-            this.audio.preload = 'auto'; // Agora pode usar auto
-            resolve(true);
-          };
-          
-          const onError = () => {
-            const error = this.audio.error;
-            console.error('🍎 iPhone: Erro ao carregar HLS:', {
-              errorCode: error?.code,
-              errorMessage: error?.message
-            });
-            this.audio.removeEventListener('loadedmetadata', onLoadedMetadata);
-            this.audio.removeEventListener('error', onError);
-            this.hlsMode = false;
-            resolve(false);
-          };
-          
-          this.audio.addEventListener('loadedmetadata', onLoadedMetadata);
-          this.audio.addEventListener('error', onError);
-          
-          // Timeout de segurança
-          setTimeout(() => {
-            this.audio.removeEventListener('loadedmetadata', onLoadedMetadata);
-            this.audio.removeEventListener('error', onError);
-            if (!this.hlsMode) {
-              console.warn('🍎 iPhone: Timeout ao carregar HLS');
-              resolve(false);
-            }
-          }, 5000);
-        });
-        
-      } else {
-        console.warn('🍎 iPhone: Track cues não encontrados - Status:', cuesResponse.status);
-        return false;
-      }
-    } catch (error) {
-      console.warn('🍎 iPhone: Erro ao habilitar HLS:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Fallback para iPhone PWA quando HLS falha - carrega MP3 direto
-   */
-  private async loadDirectMP3ForIPhone(trackUrl: string): Promise<void> {
-    console.log('🍎 iPhone: Fallback MP3 direto:', trackUrl);
-    
-    return new Promise((resolve, reject) => {
-      if (!this.audio) {
-        reject(new Error('Audio element não inicializado'));
-        return;
-      }
-
-      // Resetar configurações para MP3
-      this.hlsMode = false;
-      this.audio.preload = 'none'; // Para iPhone PWA usar none
-      this.audio.crossOrigin = null;
-      
-      const handleLoad = () => {
-        console.log('✅ iPhone: MP3 fallback carregado com sucesso:', trackUrl);
-        this.currentSrc = trackUrl;
-        this.audio?.removeEventListener('canplaythrough', handleLoad);
-        this.audio?.removeEventListener('error', handleError);
-        resolve();
-      };
-
-      const handleError = () => {
-        const error = this.audio?.error;
-        console.error('❌ iPhone: Erro no fallback MP3:', {
-          url: trackUrl,
-          errorCode: error?.code,
-          errorMessage: error?.message
-        });
-        this.audio?.removeEventListener('canplaythrough', handleLoad);
-        this.audio?.removeEventListener('error', handleError);
-        reject(new Error(`Fallback MP3 falhou no iPhone: ${trackUrl} (código: ${error?.code})`));
-      };
-
-      this.audio.addEventListener('canplaythrough', handleLoad);
-      this.audio.addEventListener('error', handleError);
-      this.audio.src = trackUrl;
-      this.audio.load();
-    });
-  }
-
+  // Auxiliar: tratar avanço próximo ao fim em background (apenas marcação/log)
   private handleBackgroundAdvance(remaining: number): void {
     this.backgroundAdvanceTriggered = true;
-    console.log(`⏭️  BG Boundary detectado (restam ~${remaining.toFixed(2)}s) - preparando avanço`);
-    this.events.onPreEnd?.(remaining);
-
-    // Estratégia simples: disparar onEnded antecipado para iniciar próxima faixa
-    // (iOS permite autoplay contínuo enquanto ainda há áudio ativo)
-    setTimeout(() => {
-      // Se ainda não terminou naturalmente e player segue ativo
-      if (this.audio && !this.audio.ended) {
-        console.log('⏭️  BG Advance: disparando onEnded antecipado (pré-fim)');
-        this.events.onEnded?.();
-      }
-    }, Math.max(remaining * 1000 - 300, 0)); // tenta alinhar ~300ms antes do fim real
+    try {
+      console.log('[BG_BOUNDARY] Próximo do fim', { remaining: Number(remaining.toFixed(3)) });
+    } catch {
+      // noop
+    }
   }
 }
