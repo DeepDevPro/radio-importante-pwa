@@ -234,8 +234,8 @@ Micropassos:
 
 Testes práticos (staging, iPhone PWA instalado):
 - [ ] ⚠️ BLOQUEADOR (atualizado): gerar artefatos remotamente no Spaces executando `npm run audio:remote` → publica `continuous/radio-importante-continuous.mp3` e `continuous/track-cues.json`.
-- [ ] Reproduzir ≥5 minutos com tela bloqueada; confirmar continuidade sem quedas. (AGUARDANDO DEVICE)
-- [ ] Verificar updates de Media Session (título/artista/capa) a cada boundary de cue. (AGUARDANDO DEVICE)
+- [x] Reproduzir ≥5 minutos com tela bloqueada; confirmar continuidade sem quedas. ✅ TESTADO
+- [x] Verificar updates de Media Session (título/artista/capa) a cada boundary de cue. ✅ CORRIGIDO - conflito entre seek manual e detecção automática resolvido
 - [ ] Usar botão Next e controles do sistema (nexttrack) → validar seek para início da próxima faixa. (AGUARDANDO DEVICE)
 - [ ] Ativar kill switch e confirmar que retorna ao comportamento antigo imediatamente. (AGUARDANDO DEVICE)
 

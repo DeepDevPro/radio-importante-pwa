@@ -49,6 +49,7 @@ export class AudioPlayer {
   private backgroundMonitorInterval?: number; // interval id
   private lastSuspensionLogTs = 0; // evitar log spam
   private manualSeekInProgress = false; // Flag para controlar seek manual
+  private sessionId: string = Math.random().toString(36).slice(2);
   private recoveryAttemptCount = 0; // (futuro) tentativas – ainda não usado
   private recoverySuccessCount = 0; // (futuro) sucessos – ainda não usado
   // ==== Fim Instrumentação ====
@@ -483,6 +484,27 @@ export class AudioPlayer {
     
     // Forçar atualização imediata dos metadados
     this.events.onTrackChange?.(trackCue);
+    // Enviar log de seek manual
+    (async () => {
+      try {
+        await fetch('/api/logs/media-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId: this.sessionId,
+            eventName: 'manualSeek',
+            changeType: 'manual',
+            appTimestamp: Date.now(),
+            audioCurrentTime: targetTime,
+            cueIndex: this.currentTrackIndex,
+            cue: trackCue,
+            visibility: { hidden: document.hidden },
+          }),
+        });
+      } catch (e) {
+        // ignore log errors
+      }
+    })();
     
     // Restaurar volume e desativar flag após um delay
     setTimeout(() => {
@@ -520,6 +542,27 @@ export class AudioPlayer {
         
         // Notificar mudança de faixa via eventos
         this.events.onTrackChange?.(currentTrackCue);
+        // Enviar log
+        (async () => {
+          try {
+            await fetch('/api/logs/media-session', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                sessionId: this.sessionId,
+                eventName: 'autoTrackChange',
+                changeType: 'auto',
+                appTimestamp: Date.now(),
+                audioCurrentTime: currentTime,
+                cueIndex: this.currentTrackIndex,
+                cue: currentTrackCue,
+                visibility: { hidden: document.hidden },
+              }),
+            });
+          } catch (e) {
+            // ignore log errors
+          }
+        })();
       }
     }
   }  // Etapa 6: Seek por índice de cue (para uso com shuffle)

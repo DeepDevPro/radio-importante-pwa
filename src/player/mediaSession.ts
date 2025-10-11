@@ -20,6 +20,7 @@ export class MediaSessionManager {
   private isIOSPWA: boolean;
   private currentMetadata: MediaMetadata | null = null;
   private staticMode = false; // Para metadados estáticos durante screen lock
+  private sessionId: string = Math.random().toString(36).slice(2);
 
   constructor() {
     // Verificar se Media Session API é suportada
@@ -78,6 +79,24 @@ export class MediaSessionManager {
     });
   }
 
+  private async postLog(eventName: string, data: any = {}) {
+    try {
+      const body = {
+        sessionId: this.sessionId,
+        eventName,
+        appTimestamp: Date.now(),
+        ...data,
+      };
+      await fetch('/api/logs/media-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    } catch (e) {
+      // silencioso no cliente
+    }
+  }
+
   public updateMetadata(title: string, artist: string, artwork?: string): void {
     if (!this.isSupported) {
       return;
@@ -122,6 +141,19 @@ export class MediaSessionManager {
       }
 
       console.log(`🎵 Media Session atualizada: ${title} - ${artist}`);
+
+      // Após aplicar metadata, enviar log
+      const ms = (navigator as any).mediaSession;
+      this.postLog('updateMetadata', {
+        changeType: this.isIOSPWA ? 'iospwa' : 'web',
+        mediaSession: {
+          title,
+          artist,
+        },
+        visibility: {
+          hidden: document.hidden,
+        },
+      });
     } catch (error) {
       console.error('❌ Erro ao atualizar Media Session metadata:', error);
     }
@@ -192,6 +224,11 @@ export class MediaSessionManager {
         duration,
         playbackRate,
         position,
+      });
+
+      this.postLog('positionState', {
+        audioCurrentTime: position,
+        extra: { duration, playbackRate },
       });
     } catch (error) {
       // Alguns browsers podem não suportar setPositionState

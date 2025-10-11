@@ -64,6 +64,9 @@ app.get('/health', (req, res) => {
 // Etapa 4.1: Rotas de debug logs extraídas para routes/debugLogs.routes.js
 app.use('/', require('./routes/debugLogs.routes'));
 
+// Nova rota: logs de Media Session (envio para Spaces)
+app.use('/api/logs', require('./routes/mediaSessionLogs.routes'));
+
 // ========== HLS PROXY ROUTES ==========
 // R1: Rotas de proxy para HLS (latest e rolling)
 app.use('/', require('./routes/hlsProxy.routes'));
