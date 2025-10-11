@@ -37,12 +37,27 @@ interface Track {
 
 // Configuração do backend
 const BACKEND_CONFIG = {
+    // Preferir staging quando hostname contiver 'staging' ou 'stagin'
+    staging: 'https://rd-importante-backend-staging-cudbw.ondigitalocean.app',
     production: 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app'
 };
 
 // Estado global do admin
 let currentBackend: string | null = null;
 let isUploading = false;
+
+// Helper: detectar ambiente da página atual
+function detectEnvironment(): 'staging' | 'production' {
+    const host = window.location.hostname || '';
+    if (host.includes('staging') || host.includes('stagin')) return 'staging';
+    return 'production';
+}
+
+// Helper: obter URL do backend preferido para este ambiente
+function getPreferredBackend(): string {
+    const env = detectEnvironment();
+    return env === 'staging' ? BACKEND_CONFIG.staging : BACKEND_CONFIG.production;
+}
 
 /**
  * Formatar duração em segundos para formato legível
@@ -88,10 +103,13 @@ async function updateTotalsOnly(): Promise<void> {
     }
 
     try {
-        const response = await fetch(`${currentBackend}/api/catalog`);
+        let response = await fetch(`${currentBackend}/api/catalog`);
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+            // Fallback para arquivo estático do frontend quando API não existir (404)
+            console.warn(`⚠️ /api/catalog retornou ${response.status}. Usando fallback /data/catalog.json`);
+            response = await fetch(`/data/catalog.json?t=${Date.now()}`);
         }
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         
         const catalog = await response.json(); 
         const tracks = catalog.tracks || [];
@@ -323,23 +341,40 @@ async function checkBackendStatus() {
     try {
         statusDiv.innerHTML = '🔍 Testando conexões...';
         
-        // Usar apenas backend de produção
-        const productionStatus = await testBackend(BACKEND_CONFIG.production, 'Produção (DigitalOcean)');
+        // Preferir backend do ambiente atual (staging em staging, produção em produção)
+        const preferred = getPreferredBackend();
+        const preferredName = detectEnvironment() === 'staging' ? 'Staging (DigitalOcean)' : 'Produção (DigitalOcean)';
+        const preferredStatus = await testBackend(preferred, preferredName);
         
-        if (productionStatus.success) {
-            currentBackend = BACKEND_CONFIG.production;
+        if (preferredStatus.success) {
+            currentBackend = preferred;
             statusDiv.innerHTML = `
-                ✅ <strong>Backend Ativo:</strong> ${productionStatus.name}<br>
-                🌐 <strong>URL:</strong> ${BACKEND_CONFIG.production}<br>
-                ⏱️ <strong>Response Time:</strong> ${productionStatus.responseTime}ms<br>
-                💚 <strong>Status:</strong> ${productionStatus.data?.status || 'Healthy'}
+                ✅ <strong>Backend Ativo:</strong> ${preferredStatus.name}<br>
+                🌐 <strong>URL:</strong> ${preferred}<br>
+                ⏱️ <strong>Response Time:</strong> ${preferredStatus.responseTime}ms<br>
+                💚 <strong>Status:</strong> ${preferredStatus.data?.status || 'Healthy'}
             `;
         } else {
-            currentBackend = null;
-            statusDiv.innerHTML = `
-                ❌ <strong>Backend não disponível!</strong><br>
-                🚫 Produção: ${productionStatus.error}
-            `;
+            // Fallback: tentar o outro backend
+            const fallback = preferred === BACKEND_CONFIG.staging ? BACKEND_CONFIG.production : BACKEND_CONFIG.staging;
+            const fallbackName = preferred === BACKEND_CONFIG.staging ? 'Produção (fallback)' : 'Staging (fallback)';
+            const fbStatus = await testBackend(fallback, fallbackName);
+
+            if (fbStatus.success) {
+                currentBackend = fallback;
+                statusDiv.innerHTML = `
+                    ⚠️ <strong>Backend preferido indisponível.</strong> Usando fallback.<br>
+                    🌐 <strong>URL:</strong> ${fallback}<br>
+                    ⏱️ <strong>Response Time:</strong> ${fbStatus.responseTime}ms<br>
+                    💚 <strong>Status:</strong> ${fbStatus.data?.status || 'Healthy'}
+                `;
+            } else {
+                currentBackend = null;
+                statusDiv.innerHTML = `
+                    ❌ <strong>Nenhum backend disponível!</strong><br>
+                    🚫 Preferido: ${preferredStatus.error} | Fallback: ${fbStatus.error}
+                `;
+            }
         }
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
@@ -527,6 +562,44 @@ function clearFiles() {
 async function loadMusicList() {
     if (!currentBackend) {
         console.error('❌ Backend não disponível para carregar lista de músicas');
+        // Mesmo sem backend, tentar carregar lista estática local para exibir algo
+        try {
+            const musicListFallback = document.getElementById('music-list');
+            if (musicListFallback) musicListFallback.innerHTML = '🔄 Carregando músicas (modo somente leitura)...';
+            const resp = await fetch(`/data/catalog.json?t=${Date.now()}`);
+            if (resp.ok) {
+                const catalog = await resp.json();
+                const tracks = catalog.tracks || [];
+                const totalDuration = tracks.reduce((sum: number, t: Track) => sum + (t.duration || 0), 0);
+                updateTotals(tracks.length, totalDuration);
+                if (musicListFallback) {
+                    musicListFallback.innerHTML = tracks.map((track: Track, index: number) => `
+                        <div class="music-item" id="track-${track.id}" style="border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin: 10px 0; background: #f9f9f9; transition: all 0.2s ease;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                                <div style="background: #667eea; color: white; padding: 8px 12px; border-radius: 50%; font-weight: bold; min-width: 35px; text-align: center;">
+                                    ${index + 1}
+                                </div>
+                                <div style="flex: 1; min-width: 250px;">
+                                    <div class="music-title-container">
+                                        <div class="music-title display-mode" style="font-weight: bold; font-size: 18px; padding: 4px 8px;">
+                                            ${track.title || track.name || 'Título não definido'}
+                                        </div>
+                                    </div>
+                                    <div class="music-meta">
+                                        <span>${track.artist || 'Artista não definido'}</span>
+                                        • <span class="duration-display">${formatDuration(track.duration || 0)}</span>
+                                        • ${track.filename || 'Arquivo não identificado'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+                return;
+            }
+        } catch (e) {
+            console.error('Fallback de lista estática falhou:', e);
+        }
         return;
     }
 
@@ -538,7 +611,13 @@ async function loadMusicList() {
     try {
         musicList.innerHTML = '🔄 Carregando músicas...';
         
-        const response = await fetch(`${currentBackend}/api/catalog`);
+        // Primeiro tenta via API do backend
+        let response = await fetch(`${currentBackend}/api/catalog`);
+        if (!response.ok) {
+            // Fallback para arquivo estático quando endpoint não existir (404)
+            console.warn(`⚠️ /api/catalog retornou ${response.status}. Usando fallback /data/catalog.json`);
+            response = await fetch(`/data/catalog.json?t=${Date.now()}`);
+        }
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
         }
@@ -547,10 +626,9 @@ async function loadMusicList() {
         const tracks = catalog.tracks || [];
         
         if (musicTotals) {
-            musicTotals.innerHTML = `
-                📊 <strong>Total:</strong> ${tracks.length} música(s) • 
-                ⏱️ <strong>Duração:</strong> ${Math.round(catalog.metadata?.totalDuration || 0)}s
-            `;
+            const totalTracks = tracks.length;
+            const totalDuration = tracks.reduce((sum: number, track: Track) => sum + (track.duration || 0), 0);
+            updateTotals(totalTracks, totalDuration);
         }
         
         if (tracks.length === 0) {
@@ -562,11 +640,6 @@ async function loadMusicList() {
             `;
             return;
         }
-        
-        // Calcular totais
-        const totalTracks = tracks.length;
-        const totalDuration = tracks.reduce((sum: number, track: Track) => sum + (track.duration || 0), 0);
-        updateTotals(totalTracks, totalDuration);
         
         musicList.innerHTML = tracks.map((track: Track, index: number) => `
             <div class="music-item" id="track-${track.id}" style="border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin: 10px 0; background: #f9f9f9; transition: all 0.2s ease;">
