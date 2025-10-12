@@ -245,17 +245,57 @@ app.get('/api/catalog', async (req, res) => {
       if (catalogJson.tracks && Array.isArray(catalogJson.tracks)) {
         console.log(`📋 Using new catalog format with ${catalogJson.tracks.length} tracks`);
         
-        const totalDuration = catalogJson.tracks.reduce((sum, t) => sum + (t.duration || 0), 0);
-        
-        res.set('Cache-Control', 'no-cache');
-        return res.json({
-          tracks: catalogJson.tracks,
-          metadata: {
-            totalTracks: catalogJson.tracks.length,
-            totalDurationSeconds: totalDuration,
-            lastUpdated: catalogJson.lastUpdated
-          }
-        });
+        // Cross-check that files actually exist in Spaces to prevent 404 during playback
+        let listResp;
+        try {
+          listResp = await s3Client.send(new ListObjectsV2Command({
+            Bucket: process.env.DO_SPACES_BUCKET,
+            Prefix: 'audio/',
+            MaxKeys: 1000
+          }));
+        } catch (e) {
+          console.warn('⚠️ Failed to list audio/ objects for validation:', e?.message || e);
+          listResp = { Contents: [] };
+        }
+
+        const contents = listResp?.Contents || [];
+        const availableSet = new Set(
+          contents
+            .filter(obj => obj.Key && !obj.Key.endsWith('/') && obj.Size > 0)
+            .map(obj => obj.Key.replace(/^audio\//, ''))
+        );
+
+        const filteredTracks = catalogJson.tracks.filter((t) => t && t.filename && availableSet.has(t.filename));
+        const missingCount = catalogJson.tracks.length - filteredTracks.length;
+        if (missingCount > 0) {
+          console.log(`🧹 Filtered out ${missingCount} missing tracks from manifest (to avoid 404)`);
+        }
+
+        // If after filtering nothing remains, fall back to dynamic listing below
+        if (filteredTracks.length > 0) {
+          // Sort by LastModified (oldest first) to keep deterministic order
+          const sorted = filteredTracks.sort((a, b) => {
+            const aObj = contents.find(c => c.Key?.endsWith(a.filename));
+            const bObj = contents.find(c => c.Key?.endsWith(b.filename));
+            const aTime = aObj?.LastModified ? new Date(aObj.LastModified).getTime() : 0;
+            const bTime = bObj?.LastModified ? new Date(bObj.LastModified).getTime() : 0;
+            return aTime - bTime;
+          });
+
+          const totalDuration = sorted.reduce((sum, t) => sum + (t.duration || 0), 0);
+          
+          res.set('Cache-Control', 'no-cache');
+          return res.json({
+            tracks: sorted,
+            metadata: {
+              totalTracks: sorted.length,
+              totalDurationSeconds: totalDuration,
+              lastUpdated: catalogJson.lastUpdated
+            }
+          });
+        } else {
+          console.log('📉 No valid tracks found in manifest after filtering; falling back to dynamic listing');
+        }
       }
     } catch {
       console.log('📋 New catalog format not found, falling back to dynamic listing');
@@ -309,16 +349,12 @@ app.get('/api/catalog', async (req, res) => {
       tracks,
       metadata: {
         totalTracks: tracks.length,
-        totalDuration,
-        lastUpdated: new Date().toISOString()
+        totalDurationSeconds: totalDuration
       }
     });
   } catch (error) {
-    console.error('Error building catalog from Spaces:', error);
-    return res.status(500).json({
-      error: 'Failed to build catalog',
-      details: error.message
-    });
+    console.error('❌ Error building catalog:', error);
+    res.status(500).json({ error: 'Failed to load catalog' });
   }
 });
 
