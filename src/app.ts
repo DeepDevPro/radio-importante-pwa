@@ -547,19 +547,38 @@ class RadioImportanteApp {
     
     // Etapa 6: Para iPhone PWA com arquivo contínuo, usar seek ao invés de recarregar
     if (this.audioPlayer.isInContinuousMode() && this.audioPlayer.hasTrackCues()) {
-      // HIPÓTESE 1: Final da faixa - usar lógica automática (sequencial até fim, depois shuffle)
+      // HIPÓTESE 1: Final da faixa/arquivo contínuo - usar lógica automática (sequencial até fim, depois shuffle)
       this.stateManager.nextTrackAuto();
       const currentIndex = this.stateManager.getState().currentTrackIndex;
       
-      // Seek para nova posição no arquivo contínuo (sem parar reprodução)
+      // Seek para nova posição no arquivo contínuo (e retomar reprodução)
       if (this.audioPlayer.seekToTrackInContinuousByIndex(currentIndex)) {
         const newTrack = this.stateManager.getCurrentTrack();
         if (newTrack) {
-          console.log(`🎯 iPhone PWA: Auto-seek para próxima faixa ${newTrack.title} (índice ${currentIndex})`);
+          console.log(`🎯 iPhone/Android PWA (contínuo): Auto-seek para próxima faixa ${newTrack.title} (índice ${currentIndex})`);
           this.controls.updateTrackInfo(newTrack.title, newTrack.artist);
           this.mediaSession.updateMetadata(newTrack.title, newTrack.artist, '/img/Leo_R_161_small.webp');
         }
+        // Após fim do arquivo contínuo, precisamos retomar o play explicitamente
+        try {
+          await this.audioPlayer.play();
+        } catch (e) {
+          console.warn('⚠️ Não foi possível retomar automaticamente, tentando reiniciar do início');
+          // Fallback: buscar primeira faixa e tocar
+          if (this.audioPlayer.seekToTrackInContinuousByIndex(0)) {
+            await this.audioPlayer.play();
+          }
+        }
         return;
+      } else {
+        // Falha no seek dentro do contínuo: reiniciar do início do arquivo contínuo
+        try {
+          this.audioPlayer.seek(0);
+          await this.audioPlayer.play();
+          return;
+        } catch (e) {
+          console.warn('⚠️ Falha ao reiniciar do início do contínuo, aplicando fallback tradicional');
+        }
       }
     }
     
