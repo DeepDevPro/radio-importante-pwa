@@ -547,11 +547,29 @@ class RadioImportanteApp {
     
     // Etapa 6: Para iPhone PWA com arquivo contínuo, usar seek ao invés de recarregar
     if (this.audioPlayer.isInContinuousMode() && this.audioPlayer.hasTrackCues()) {
-      // HIPÓTESE 1: Final da faixa/arquivo contínuo - usar lógica automática (sequencial até fim, depois shuffle)
+      const state = this.stateManager.getState();
+      const catalog = this.stateManager.getCatalog();
+      const isLast = catalog && (state.currentTrackIndex >= (catalog.tracks.length - 1));
+
+      // Se era a última faixa do ciclo, iniciar novo ciclo com shuffle imediato
+      if (isLast) {
+        const nextIndex = this.stateManager.startShuffledCycle();
+        if (this.audioPlayer.seekToTrackInContinuousByIndex(nextIndex)) {
+          const newTrack = this.stateManager.getCurrentTrack();
+          if (newTrack) {
+            console.log(`🎲 Novo ciclo (shuffle): ${newTrack.title} (índice ${nextIndex})`);
+            this.controls.updateTrackInfo(newTrack.title, newTrack.artist);
+            this.mediaSession.updateMetadata(newTrack.title, newTrack.artist, '/img/Leo_R_161_small.webp');
+          }
+          try { await this.audioPlayer.play(); } catch (e) { console.warn('⚠️ Falha ao retomar play pós-shuffle'); }
+          return;
+        }
+      }
+
+      // Caso normal: avançar automaticamente (sequencial durante o ciclo)
       this.stateManager.nextTrackAuto();
       const currentIndex = this.stateManager.getState().currentTrackIndex;
       
-      // Seek para nova posição no arquivo contínuo (e retomar reprodução)
       if (this.audioPlayer.seekToTrackInContinuousByIndex(currentIndex)) {
         const newTrack = this.stateManager.getCurrentTrack();
         if (newTrack) {
@@ -559,45 +577,23 @@ class RadioImportanteApp {
           this.controls.updateTrackInfo(newTrack.title, newTrack.artist);
           this.mediaSession.updateMetadata(newTrack.title, newTrack.artist, '/img/Leo_R_161_small.webp');
         }
-        // Após fim do arquivo contínuo, precisamos retomar o play explicitamente
-        try {
-          await this.audioPlayer.play();
-        } catch (e) {
-          console.warn('⚠️ Não foi possível retomar automaticamente, tentando reiniciar do início');
-          // Fallback: buscar primeira faixa e tocar
-          if (this.audioPlayer.seekToTrackInContinuousByIndex(0)) {
-            await this.audioPlayer.play();
-          }
-        }
+        try { await this.audioPlayer.play(); } catch (e) { console.warn('⚠️ Falha ao retomar play'); }
         return;
       } else {
-        // Falha no seek dentro do contínuo: reiniciar do início do arquivo contínuo
-        try {
-          this.audioPlayer.seek(0);
-          await this.audioPlayer.play();
-          return;
-        } catch (e) {
-          console.warn('⚠️ Falha ao reiniciar do início do contínuo, aplicando fallback tradicional');
-        }
+        try { this.audioPlayer.seek(0); await this.audioPlayer.play(); return; } catch (e) { console.warn('⚠️ Falha ao reiniciar do início contínuo'); }
       }
     }
     
-    // Fallback: comportamento tradicional para outras plataformas
-    // HIPÓTESE 1: Final automático da faixa
+    // Fallback tradicional
     this.stateManager.nextTrackAuto();
     const newTrack = this.stateManager.getCurrentTrack();
     
     if (newTrack) {
       console.log(`🎵 Próxima faixa: ${newTrack.title} - ${newTrack.artist}`);
-      
-      // Atualizar UI e Media Session
       this.controls.updateTrackInfo(newTrack.title, newTrack.artist);
       this.mediaSession.updateMetadata(newTrack.title, newTrack.artist, '/img/Leo_R_161_small.webp');
-      
-      // Carregar e tocar automaticamente a próxima faixa
       await this.loadAndPlayCurrentTrack();
     } else {
-      // Fim da playlist
       console.log('🏁 Fim da playlist');
       this.stateManager.updateState({ isPlaying: false });
     }

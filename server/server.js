@@ -3,12 +3,121 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import multer from 'multer';
 import { S3Client, GetObjectCommand, ListObjectsV2Command, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { spawn } from 'child_process';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 // Backend produção e staging separados - v2.2 - teste validação token GitHub Actions
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+// Path helpers (to locate scripts/generate-audio-remote.js reliably)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const projectRoot = path.resolve(__dirname, '..'); // server/.. → repo root
+const generateRemoteScript = path.resolve(projectRoot, 'scripts', 'generate-audio-remote.js');
+
+// ---------------- Continuous MP3 Rebuild Scheduler ----------------
+const rebuildState = {
+  running: false,
+  pending: false,
+  queuedCount: 0,
+  lastRunAt: null,
+  lastSuccessAt: null,
+  lastError: null,
+  lastExitCode: null,
+  lastReason: null,
+  debounceTimer: null,
+};
+
+function getSpacesEnvForChild() {
+  const bucket = process.env.SPACES_BUCKET || process.env.DO_SPACES_BUCKET;
+  const endpointHost = process.env.SPACES_ENDPOINT || (process.env.DO_SPACES_ENDPOINT ? `https://${process.env.DO_SPACES_ENDPOINT}` : undefined);
+  const region = process.env.SPACES_REGION || process.env.DO_SPACES_REGION;
+  const key = process.env.SPACES_KEY || process.env.DO_SPACES_KEY;
+  const secret = process.env.SPACES_SECRET || process.env.DO_SPACES_SECRET;
+  const publicBase = process.env.SPACES_PUBLIC_BASE || (process.env.DO_SPACES_BUCKET && process.env.DO_SPACES_ENDPOINT
+    ? `https://${process.env.DO_SPACES_BUCKET}.${process.env.DO_SPACES_ENDPOINT}`
+    : undefined);
+  return { bucket, endpointHost, region, key, secret, publicBase };
+}
+
+function triggerContinuousRebuild(reason = 'unspecified') {
+  if (rebuildState.running) {
+    console.log('⏳ Continuous rebuild already running, skip trigger');
+    return;
+  }
+  rebuildState.running = true;
+  rebuildState.pending = false;
+  rebuildState.lastRunAt = new Date().toISOString();
+  rebuildState.lastReason = reason;
+  const nodeBin = process.execPath || 'node';
+
+  // Build args and env for child
+  const args = [generateRemoteScript];
+  const catalogUrl = process.env.PUBLIC_BASE_URL
+    ? `${process.env.PUBLIC_BASE_URL.replace(/\/$/, '')}/api/catalog`
+    : (process.env.CATALOG_URL || '');
+  if (catalogUrl) {
+    args.push('--catalog-url', catalogUrl);
+  }
+
+  const { bucket, endpointHost, region, key, secret, publicBase } = getSpacesEnvForChild();
+  const childEnv = {
+    ...process.env,
+    // Normalize SPACES_* env expected by the script
+    SPACES_BUCKET: bucket || process.env.SPACES_BUCKET,
+    SPACES_ENDPOINT: endpointHost || process.env.SPACES_ENDPOINT,
+    SPACES_REGION: region || process.env.SPACES_REGION,
+    SPACES_KEY: key || process.env.SPACES_KEY,
+    SPACES_SECRET: secret || process.env.SPACES_SECRET,
+    SPACES_PUBLIC_BASE: publicBase || process.env.SPACES_PUBLIC_BASE,
+  };
+
+  console.log('🎛️ Spawning continuous rebuild process...', { args: args.join(' '), reason });
+  const child = spawn(nodeBin, args, { env: childEnv, stdio: ['ignore', 'pipe', 'pipe'] });
+
+  // stream child output to parent stdio (no unused buffers)
+  child.stdout.on('data', (d) => { process.stdout.write(d); });
+  let err = '';
+  child.stderr.on('data', (d) => { err += d.toString(); process.stderr.write(d); });
+
+  child.on('close', (code) => {
+    rebuildState.running = false;
+    rebuildState.lastExitCode = code;
+    if (code === 0) {
+      rebuildState.lastSuccessAt = new Date().toISOString();
+      rebuildState.lastError = null;
+      console.log('✅ Continuous rebuild completed successfully');
+    } else {
+      rebuildState.lastError = (err || 'Unknown error').slice(-1000);
+      console.error('❌ Continuous rebuild failed with code', code);
+    }
+  });
+
+  child.on('error', (e) => {
+    rebuildState.running = false;
+    rebuildState.lastExitCode = -1;
+    rebuildState.lastError = e?.message || String(e);
+    console.error('❌ Failed to spawn continuous rebuild:', e);
+  });
+}
+
+function scheduleContinuousRebuild(reason = 'unspecified', delayMs = Number(process.env.CONTINUOUS_REBUILD_DEBOUNCE_MS || 20000)) {
+  if (rebuildState.debounceTimer) clearTimeout(rebuildState.debounceTimer);
+  rebuildState.pending = true;
+  rebuildState.queuedCount += 1;
+  rebuildState.lastReason = reason;
+  rebuildState.debounceTimer = setTimeout(() => {
+    rebuildState.debounceTimer = null;
+    triggerContinuousRebuild(reason);
+    // reset queued counter after a run starts
+    rebuildState.queuedCount = 0;
+  }, delayMs);
+  console.log(`🗓️ Scheduled continuous rebuild in ${delayMs}ms (reason: ${reason})`);
+}
 
 // Middleware
 app.use(cors());
@@ -57,7 +166,14 @@ app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok', 
     environment: process.env.NODE_ENV || 'development',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    continuous: {
+      running: rebuildState.running,
+      pending: rebuildState.pending,
+      lastRunAt: rebuildState.lastRunAt,
+      lastSuccessAt: rebuildState.lastSuccessAt,
+      lastError: rebuildState.lastError,
+    }
   });
 });
 
@@ -379,6 +495,9 @@ app.put('/api/tracks/:id/metadata', async (req, res) => {
     manifest[id] = entry;
     await saveMetadataManifest(manifest);
 
+    // Schedule continuous rebuild (debounced)
+    scheduleContinuousRebuild('metadata_update');
+
     res.json({ success: true, id, metadata: entry });
   } catch (error) {
     console.error('Error updating metadata:', error);
@@ -402,6 +521,9 @@ app.delete('/api/delete/:id', async (req, res) => {
     const manifest = await loadMetadataManifest();
     if (manifest[id]) delete manifest[id];
     await saveMetadataManifest(manifest);
+
+    // Schedule continuous rebuild (debounced)
+    scheduleContinuousRebuild('delete_track');
 
     res.json({ success: true, id });
   } catch (error) {
@@ -619,6 +741,9 @@ app.post('/api/upload', upload.array('audioFiles'), async (req, res) => {
     // Update catalog with new tracks
     await updateCatalogWithNewTracks(uploadResults);
 
+    // Schedule continuous rebuild (debounced)
+    scheduleContinuousRebuild('upload');
+
     res.json({
       success: true,
       message: `Successfully uploaded ${uploadResults.length} file(s)`,
@@ -702,6 +827,40 @@ app.post('/api/logs/media-session', (req, res) => {
     console.error('Error logging frontend data:', error);
     res.status(500).json({ error: 'Failed to log data' });
   }
+});
+
+// Manual endpoints to control/status continuous rebuild
+app.post('/api/continuous/rebuild', (req, res) => {
+  const mode = (req.query.mode || req.body?.mode || '').toString();
+  const immediate = mode === 'now' || req.query.now === 'true';
+  const reason = (req.query.reason || req.body?.reason || 'manual').toString();
+  if (immediate) {
+    triggerContinuousRebuild(reason);
+  } else {
+    scheduleContinuousRebuild(reason);
+  }
+  res.json({
+    success: true,
+    scheduled: !immediate,
+    running: rebuildState.running,
+    pending: rebuildState.pending,
+    lastRunAt: rebuildState.lastRunAt,
+    lastSuccessAt: rebuildState.lastSuccessAt,
+  });
+});
+
+app.get('/api/continuous/status', (req, res) => {
+  res.json({
+    running: rebuildState.running,
+    pending: rebuildState.pending,
+    queuedCount: rebuildState.queuedCount,
+    lastRunAt: rebuildState.lastRunAt,
+    lastSuccessAt: rebuildState.lastSuccessAt,
+    lastError: rebuildState.lastError,
+    lastExitCode: rebuildState.lastExitCode,
+    lastReason: rebuildState.lastReason,
+    script: path.relative(projectRoot, generateRemoteScript),
+  });
 });
 
 // Start server

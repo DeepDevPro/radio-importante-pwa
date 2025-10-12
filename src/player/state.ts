@@ -489,6 +489,32 @@ export class StateManager {
     return true;
   }
 
+  // Iniciar novo ciclo com shuffle imediatamente após o fim da lista
+  public startShuffledCycle(): number {
+    if (!this.catalog || this.catalog.tracks.length === 0) return 0;
+
+    const totalTracks = this.catalog.tracks.length;
+    const currentIndex = this.state.currentTrackIndex;
+
+    // Ativar shuffle e reiniciar histórico contendo a faixa que encerrou o ciclo
+    this.updateState({ shuffleEnabled: true, shuffleHistory: [currentIndex] });
+
+    // Escolher próxima faixa aleatória evitando repetir a atual
+    const availableIndexes: number[] = [];
+    for (let i = 0; i < totalTracks; i++) {
+      if (i !== currentIndex) availableIndexes.push(i);
+    }
+    const nextIndex = availableIndexes.length > 0
+      ? availableIndexes[Math.floor(Math.random() * availableIndexes.length)]
+      : 0;
+
+    const newHistory = [...this.state.shuffleHistory, nextIndex];
+    this.updateState({ currentTrackIndex: nextIndex, shuffleHistory: newHistory });
+
+    console.log(`🔁 Novo ciclo iniciado com SHUFFLE: próxima faixa ${nextIndex} (histórico: ${newHistory.length}/${totalTracks})`);
+    return nextIndex;
+  }
+
   // Atualizar estado
   public updateState(newState: Partial<PlayerState>): void {
     const oldState = { ...this.state };
