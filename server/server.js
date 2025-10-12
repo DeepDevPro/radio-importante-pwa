@@ -232,6 +232,36 @@ async function saveMetadataManifest(manifest) {
 // NEW: Dynamic catalog from DigitalOcean Spaces (Option A)
 app.get('/api/catalog', async (req, res) => {
   try {
+    // First try to get catalog from updateCatalogWithNewTracks format
+    try {
+      const catalogCommand = new GetObjectCommand({
+        Bucket: process.env.DO_SPACES_BUCKET,
+        Key: 'catalog/metadata.json'
+      });
+      const catalogResponse = await s3Client.send(catalogCommand);
+      const catalogData = await catalogResponse.Body.transformToString();
+      const catalogJson = JSON.parse(catalogData);
+      
+      if (catalogJson.tracks && Array.isArray(catalogJson.tracks)) {
+        console.log(`📋 Using new catalog format with ${catalogJson.tracks.length} tracks`);
+        
+        const totalDuration = catalogJson.tracks.reduce((sum, t) => sum + (t.duration || 0), 0);
+        
+        res.set('Cache-Control', 'no-cache');
+        return res.json({
+          tracks: catalogJson.tracks,
+          metadata: {
+            totalTracks: catalogJson.tracks.length,
+            totalDurationSeconds: totalDuration,
+            lastUpdated: catalogJson.lastUpdated
+          }
+        });
+      }
+    } catch {
+      console.log('📋 New catalog format not found, falling back to dynamic listing');
+    }
+
+    // Fallback: Dynamic listing with metadata manifest (original implementation)
     const command = new ListObjectsV2Command({
       Bucket: process.env.DO_SPACES_BUCKET,
       Prefix: 'audio/',
