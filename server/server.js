@@ -6,6 +6,7 @@ import { S3Client, GetObjectCommand, ListObjectsV2Command, PutObjectCommand, Del
 import { spawn } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 // Backend produção e staging separados - v2.2 - teste validação token GitHub Actions
 dotenv.config();
@@ -17,7 +18,10 @@ const port = process.env.PORT || 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '..'); // server/.. → repo root
-const generateRemoteScript = path.resolve(projectRoot, 'scripts', 'generate-audio-remote.js');
+// Prefer a copy within server/scripts for platforms that deploy only the server folder
+const scriptCandidateLocal = path.resolve(__dirname, 'scripts', 'generate-audio-remote.js');
+const scriptCandidateRoot = path.resolve(projectRoot, 'scripts', 'generate-audio-remote.js');
+const generateRemoteScript = fs.existsSync(scriptCandidateLocal) ? scriptCandidateLocal : scriptCandidateRoot;
 
 // ---------------- Continuous MP3 Rebuild Scheduler ----------------
 const rebuildState = {
@@ -336,15 +340,6 @@ async function loadMetadataManifest() {
   }
 }
 
-async function saveMetadataManifest(manifest) {
-  await s3Client.send(new PutObjectCommand({
-    Bucket: process.env.DO_SPACES_BUCKET,
-    Key: MANIFEST_KEY,
-    Body: JSON.stringify(manifest, null, 2),
-    ContentType: 'application/json'
-  }));
-}
-
 // NEW: Dynamic catalog from DigitalOcean Spaces (Option A)
 app.get('/api/catalog', async (req, res) => {
   try {
@@ -485,20 +480,58 @@ app.put('/api/tracks/:id/metadata', async (req, res) => {
       return res.status(400).json({ error: 'No metadata provided' });
     }
 
-    const manifest = await loadMetadataManifest();
-    const entry = manifest[id] || {};
+    // Load current catalog (new format with tracks[] if present)
+    let catalogJson = {};
+    try {
+      const getCmd = new GetObjectCommand({ Bucket: process.env.DO_SPACES_BUCKET, Key: 'catalog/metadata.json' });
+      const resp = await s3Client.send(getCmd);
+      const text = await resp.Body.transformToString();
+      catalogJson = JSON.parse(text || '{}');
+    } catch {
+      catalogJson = {};
+    }
 
-    if (title != null) entry.title = String(title);
-    if (artist != null) entry.artist = String(artist);
-    if (duration != null && !Number.isNaN(Number(duration))) entry.duration = Number(duration);
+    let updated = false;
+    if (Array.isArray(catalogJson.tracks)) {
+      // Prefer updating within tracks[]
+      const idx = catalogJson.tracks.findIndex(t => t && (t.id === id || t.filename === id));
+      if (idx >= 0) {
+        const tr = { ...catalogJson.tracks[idx] };
+        if (title != null) tr.title = String(title);
+        if (artist != null) tr.artist = String(artist);
+        if (duration != null && !Number.isNaN(Number(duration))) tr.duration = Number(duration);
+        catalogJson.tracks[idx] = tr;
+        catalogJson.lastUpdated = new Date().toISOString();
+        updated = true;
+      }
+    }
 
-    manifest[id] = entry;
-    await saveMetadataManifest(manifest);
+    if (!updated) {
+      // Fallback legacy manifest-style map keyed by filename/id
+      // Load legacy map from the same file if it exists (will merge minimal info)
+      const legacy = typeof catalogJson === 'object' && catalogJson && !Array.isArray(catalogJson) ? catalogJson : {};
+      const entry = legacy[id] || {};
+      if (title != null) entry.title = String(title);
+      if (artist != null) entry.artist = String(artist);
+      if (duration != null && !Number.isNaN(Number(duration))) entry.duration = Number(duration);
+      legacy[id] = entry;
+      catalogJson = legacy;
+      updated = true;
+    }
+
+    // Save back
+    await s3Client.send(new PutObjectCommand({
+      Bucket: process.env.DO_SPACES_BUCKET,
+      Key: 'catalog/metadata.json',
+      Body: JSON.stringify(catalogJson, null, 2),
+      ContentType: 'application/json',
+      ACL: 'public-read'
+    }));
 
     // Schedule continuous rebuild (debounced)
     scheduleContinuousRebuild('metadata_update');
 
-    res.json({ success: true, id, metadata: entry });
+    res.json({ success: true, id, metadata: { title, artist, duration } });
   } catch (error) {
     console.error('Error updating metadata:', error);
     res.status(500).json({ error: 'Failed to update metadata', details: error.message });
@@ -511,21 +544,46 @@ app.delete('/api/delete/:id', async (req, res) => {
     const id = decodeURIComponent(req.params.id || '');
     if (!id) return res.status(400).json({ error: 'Missing track id' });
 
+    // Resolve filename via catalog (supports id or filename in :id)
+    let catalogJson = {};
+    try {
+      const getCmd = new GetObjectCommand({ Bucket: process.env.DO_SPACES_BUCKET, Key: 'catalog/metadata.json' });
+      const resp = await s3Client.send(getCmd);
+      const text = await resp.Body.transformToString();
+      catalogJson = JSON.parse(text || '{}');
+    } catch {
+      catalogJson = {};
+    }
+
+    let filename = id; // allow direct filename deletion
+    if (Array.isArray(catalogJson.tracks)) {
+      const found = catalogJson.tracks.find(t => t && (t.id === id || t.filename === id));
+      if (found?.filename) filename = found.filename;
+    }
+
     // Delete object in Spaces
     await s3Client.send(new DeleteObjectCommand({
       Bucket: process.env.DO_SPACES_BUCKET,
-      Key: `audio/${id}`
+      Key: `audio/${filename}`
     }));
 
-    // Update manifest
-    const manifest = await loadMetadataManifest();
-    if (manifest[id]) delete manifest[id];
-    await saveMetadataManifest(manifest);
+    // Update catalog if using new format
+    if (Array.isArray(catalogJson.tracks)) {
+      catalogJson.tracks = catalogJson.tracks.filter(t => !(t && (t.id === id || t.filename === id)));
+      catalogJson.lastUpdated = new Date().toISOString();
+      await s3Client.send(new PutObjectCommand({
+        Bucket: process.env.DO_SPACES_BUCKET,
+        Key: 'catalog/metadata.json',
+        Body: JSON.stringify(catalogJson, null, 2),
+        ContentType: 'application/json',
+        ACL: 'public-read'
+      }));
+    }
 
     // Schedule continuous rebuild (debounced)
     scheduleContinuousRebuild('delete_track');
 
-    res.json({ success: true, id });
+    res.json({ success: true, id, filename });
   } catch (error) {
     console.error('Error deleting track:', error);
     res.status(500).json({ error: 'Failed to delete track', details: error.message });

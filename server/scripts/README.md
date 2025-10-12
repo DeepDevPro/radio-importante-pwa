@@ -1,0 +1,1 @@
+This folder is used to host server-local copies of long-running worker scripts for deployments that only include the server directory (e.g., DigitalOcean App Platform). If your platform deploys the repo root, the server will use ../../scripts/generate-audio-remote.js.

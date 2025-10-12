@@ -264,63 +264,60 @@ async function saveEdit(trackId: string, field: 'title' | 'artist', value: strin
     const trackElement = document.getElementById(`track-${trackId}`);
     const container = trackElement?.querySelector(`.${field}-container`) || 
                      trackElement?.querySelector('.music-title-container');
-    
-    if (!container) return;
-    
-    const displayElement = container.querySelector('.display-mode') as any;
-    const editElement = container.querySelector('.edit-mode') as any;
-    
-    try {
-        // Validações
-        if (field === 'title' && !value.trim()) {
-            // showAlert('manage-status', 'Título não pode estar vazio', 'error');
-            window.alert('Título não pode estar vazio');
-            editElement.focus();
-            return;
-        }
+  
+  if (!container) return;
+  
+  const displayElement = container.querySelector('.display-mode') as any;
+  const editElement = container.querySelector('.edit-mode') as any;
+  
+  try {
+      // Validações
+      if (field === 'title' && !value.trim()) {
+          window.alert('Título não pode estar vazio');
+          editElement.focus();
+          return;
+      }
 
-        // Salvar no backend
-        if (currentBackend) {
-            const response = await fetch(`${currentBackend}/api/tracks/${trackId}/metadata`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    [field]: value
-                })
-            });
+      // Salvar no backend
+      if (currentBackend) {
+          // Usamos o próprio trackId como chave (filename/id)
+          const response = await fetch(`${currentBackend}/api/tracks/${encodeURIComponent(trackId)}/metadata`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ [field]: value })
+          });
 
-            if (!response.ok) {
-                throw new Error(`Erro ao salvar: ${response.statusText}`);
-            }
-        }
+          if (!response.ok) {
+              const txt = await response.text().catch(() => '');
+              throw new Error(`Erro ao salvar: ${response.status} ${txt}`);
+          }
+      }
 
-        // Atualizar interface
-        displayElement.textContent = value || (field === 'artist' ? 'Artista não definido' : 'Título não definido');
+      // Atualizar interface
+      displayElement.textContent = value || (field === 'artist' ? 'Artista não definido' : 'Título não definido');
 
-        // Remover marca de edição e alternar visibilidade
-        trackElement!.classList.remove('editing');
-        displayElement.style.display = 'inline';
-        editElement.style.display = 'none';
+      // Remover marca de edição e alternar visibilidade
+      trackElement!.classList.remove('editing');
+      displayElement.style.display = 'inline';
+      editElement.style.display = 'none';
 
-        // Feedback visual suave sem recarregar a página
-        displayElement.style.background = '#d4edda';
-        displayElement.style.color = 'white';
-        setTimeout(() => {
-            displayElement.style.background = '';
-            displayElement.style.color = '';
-        }, 1500);
+      // Feedback visual suave sem recarregar a página
+      displayElement.style.background = '#d4edda';
+      displayElement.style.color = 'white';
+      setTimeout(() => {
+          displayElement.style.background = '';
+          displayElement.style.color = '';
+      }, 800);
 
-        // Atualizar apenas os totais sem recarregar toda a lista
-        await updateTotalsOnly();
-        
-    } catch (error) {
-        console.error('Erro ao salvar:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-        window.alert(`❌ Erro ao salvar: ${errorMessage}`);
-        editElement.focus();
-    }
+      // Recarregar a lista para refletir title/artist atualizados vindos do backend
+      await loadMusicList();
+      
+  } catch (error) {
+      console.error('Erro ao salvar:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      window.alert(`❌ Erro ao salvar: ${errorMessage}`);
+      editElement.focus();
+  }
 }
 
 /**
