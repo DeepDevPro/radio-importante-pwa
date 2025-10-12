@@ -907,6 +907,26 @@ app.post('/api/continuous/rebuild', (req, res) => {
   });
 });
 
+// Also allow GET for convenience in testing environments
+app.get('/api/continuous/rebuild', (req, res) => {
+  const mode = (req.query.mode || '').toString();
+  const immediate = mode === 'now' || req.query.now === 'true';
+  const reason = (req.query.reason || 'manual').toString();
+  if (immediate) {
+    triggerContinuousRebuild(reason);
+  } else {
+    scheduleContinuousRebuild(reason);
+  }
+  res.json({
+    success: true,
+    scheduled: !immediate,
+    running: rebuildState.running,
+    pending: rebuildState.pending,
+    lastRunAt: rebuildState.lastRunAt,
+    lastSuccessAt: rebuildState.lastSuccessAt,
+  });
+});
+
 app.get('/api/continuous/status', (req, res) => {
   res.json({
     running: rebuildState.running,
