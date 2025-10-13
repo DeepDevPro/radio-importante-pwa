@@ -5,6 +5,20 @@ Este documento foi dividido para facilitar manutenção:
 - Parte 2: [PLANO_EXECUCAO-PARTE-2.md](./PLANO_EXECUCAO-PARTE-2.md) (histórico e bases)
 - Guia Técnico: [GUIA_TECNICO_DETALHADO.md](./GUIA_TECNICO_DETALHADO.md)
 - Deploy Unificado: [DEPLOY-GUIDE-UNIFIED.md](./DEPLOY-GUIDE-UNIFIED.md)
+- 🔄 **Rollback**: [ROLLBACK-GUIA-RAPIDO.md](./ROLLBACK-GUIA-RAPIDO.md) ⚡ **Acesso Rápido**
+
+---
+## 🔒 Versão Estável Atual
+
+**Tag**: `v2.2.10-stable` (13/10/2025)  
+**Commit**: f2867ec  
+**🎉 MARCO: Primeira versão entregue ao cliente**
+
+**Branches de Backup**: 
+- `backup-main-stable-13out2025`
+- `backup-staging-stable-13out2025`
+
+**📖 Instruções de Rollback**: [DEPLOY-GUIDE-UNIFIED.md - Seção Troubleshooting](./DEPLOY-GUIDE-UNIFIED.md#-troubleshooting)
 
 ---
 ## Matriz de Ambientes (Frontend e Backend)
