@@ -9,12 +9,12 @@ RUN apt-get update \
 # Diretório de trabalho
 WORKDIR /app
 
-# Copia manifestos e instala dependências de produção
-COPY package*.json ./
+# Copia manifestos do diretório server e instala dependências de produção
+COPY server/package*.json ./
 RUN npm ci --only=production
 
 # Copia o código do backend (pasta server)
-COPY . .
+COPY server/ .
 
 # Define ambiente de produção por padrão
 ENV NODE_ENV=production

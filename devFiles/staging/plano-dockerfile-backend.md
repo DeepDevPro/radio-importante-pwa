@@ -1,6 +1,15 @@
 # Plano de Criação: Dockerfile do Backend (ffmpeg) para Staging e Produção
 
-> Objetivo: Entregar um Dockerfile simples e padronizado para o backend (pasta `server/`) com ffmpeg/ffprobe instalado, garantindo que o gerador do MP3 contínuo funcione no runtime (DigitalOcean App Platform) sem dependências externas.
+> ObjetivoConfiguração no DigitalOcean App Platform (UI):
+- [x] Abrir App Staging: `rd-importante-backend-staging`
+- [x] Alterar App Spec para usar Dockerfile:
+  - dockerfile_path: server/Dockerfile
+  - source_dir: / (context completo)
+  - Removido environment_slug (conflito com dockerfile_path)
+- [x] ENV/Secrets confirmados:
+  - `NODE_ENV=staging`
+  - `DO_SPACES_KEY`, `DO_SPACES_SECRET`, `DO_SPACES_ENDPOINT=atl1.digitaloceanspaces.com`, `DO_SPACES_REGION=atl1`, `DO_SPACES_BUCKET=radio-importante-audio`
+- [x] App Spec modificado com sucesso - Deploy iniciará automaticamente um Dockerfile simples e padronizado para o backend (pasta `server/`) com ffmpeg/ffprobe instalado, garantindo que o gerador do MP3 contínuo funcione no runtime (DigitalOcean App Platform) sem dependências externas.
 > Benefícios: elimina erro “ffmpeg não encontrado”, padroniza build/run, reduz variação entre ambientes e facilita diagnósticos e rollback.
 
 ---
@@ -81,7 +90,8 @@ Dockerfile
 - [x] Criar arquivo `server/Dockerfile` com o conteúdo de referência acima
 - [x] Criar `server/.dockerignore` com entradas essenciais (node_modules, logs, temp)
 - [x] Garantir que o backend já escuta `process.env.PORT` (rota `/health` ativa)
-- [x] Commitar em `staging` (sem deploy automático por nós; Sonnet 4 fará)
+- [x] Commitar em `staging` (commit 92f7c23 - feat(backend): adicionar Dockerfile com ffmpeg)
+- [x] Push para staging disparou deploy automático do backend conforme workflow
 
 Configuração no DigitalOcean App Platform (UI):
 - [ ] Abrir App Staging: `rd-importante-backend-staging`
