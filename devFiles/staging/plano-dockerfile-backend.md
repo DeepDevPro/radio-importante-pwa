@@ -1,7 +1,14 @@
 # Plano de Criação: Dockerfile do Backend (ffmpeg) para Staging e Produção
 
-> ObjetivoConfiguração no DigitalOcean App Platform (UI):
-- [x] Abrir App Staging: `rd-importante-backend-staging`
+> ObjetivoConfiguração no DigitalOcean App Platform (UI):## 6) Smoke Tests Pós-Deploy (Staging)
+- [x] `GET /health` → 200 OK ✅ (status: ok, environment: staging)
+- [x] `GET /api/continuous/status` → sem erro de "ffmpeg não encontrado" ✅ (script encontrado)
+- [x] `POST /api/continuous/rebuild` → status passa a `running` e finaliza `success` ✅ (lastSuccessAt: 2025-10-13T00:30:48.679Z, exitCode: 0)
+- [x] Artefatos atualizados no Spaces: ✅
+  - `continuous/track-cues.json` (6 tracks, 302.89s, gerado: 2025-10-13T00:30:43.528Z)
+  - `continuous/radio-importante-continuous.mp3` (3.6MB, Cache-Control 3600s)
+- [x] `GET /audio/continuous/track-cues.json` via backend proxy retorna 200 + JSON ✅
+- [x] `GET /audio/continuous/radio-importante-continuous.mp3` com Range → 200 ✅ (Content-Length: 3633155)rir App Staging: `rd-importante-backend-staging`
 - [x] Alterar App Spec para usar Dockerfile:
   - dockerfile_path: server/Dockerfile
   - source_dir: / (context completo)
@@ -42,7 +49,7 @@ Observações:
 
 ---
 ## 2) Dockerfile Padrão (simples e consagrado)
-Exemplo de referência (será criado em `server/Dockerfile`):
+Exemplo de referência (corrigido - commit 562b2bb):
 
 ```Dockerfile
 # Base oficial Node LTS (slim) — amplamente usada em produção
@@ -56,12 +63,12 @@ RUN apt-get update \
 # Diretório de trabalho
 WORKDIR /app
 
-# Copia manifestos e instala dependências de produção
-COPY package*.json ./
+# Copia manifestos do diretório server e instala dependências de produção
+COPY server/package*.json ./
 RUN npm ci --only=production
 
 # Copia o código do backend (pasta server)
-COPY . .
+COPY server/ .
 
 # Define ambiente de produção por padrão
 ENV NODE_ENV=production
@@ -92,6 +99,7 @@ Dockerfile
 - [x] Garantir que o backend já escuta `process.env.PORT` (rota `/health` ativa)
 - [x] Commitar em `staging` (commit 92f7c23 - feat(backend): adicionar Dockerfile com ffmpeg)
 - [x] Push para staging disparou deploy automático do backend conforme workflow
+- [x] **Correção**: Dockerfile paths corrigidos (commit 562b2bb) - resolver erro "Missing script: start"
 
 Configuração no DigitalOcean App Platform (UI):
 - [ ] Abrir App Staging: `rd-importante-backend-staging`
@@ -104,10 +112,11 @@ Configuração no DigitalOcean App Platform (UI):
   - `DO_SPACES_KEY`, `DO_SPACES_SECRET`, `DO_SPACES_ENDPOINT=atl1.digitaloceanspaces.com`, `DO_SPACES_REGION=atl1`, `DO_SPACES_BUCKET=radio-importante-audio`
 - [ ] Salvar e Deploy (executado pelo Sonnet 4)
 
-Repetir para Produção (App: `radio-importante-pwa-backend-skg2w`):
-- [ ] Habilitar build via Dockerfile com o mesmo path
-- [ ] `NODE_ENV=production` e os mesmos secrets de Spaces (chaves de produção)
-- [ ] Health check em `/health`
+Repetir para Produção (App: `radio-importante-pwa-backend`):
+- [x] Habilitar build via Dockerfile com o mesmo path ✅ Em deploy...
+- [x] `NODE_ENV=production` e os mesmos secrets de Spaces ✅ 
+- [x] Health check em `/health` ✅ Configurado
+- [x] App Spec aplicado com nome correto: `radio-importante-pwa-backend` ✅
 
 ---
 ## 4) Teste Local Opcional (Pré-Deploy)
@@ -164,8 +173,65 @@ Observação: para testar uploads/list do Spaces localmente, injete as variávei
 - [ ] Decisão sobre promoção para Produção
 
 ---
-## 10) Anexos e Pedidos ao Usuário
+## 10) Teste Mobile Real (Android PWA) - CONCLUÍDO ✅
+**URL Staging**: https://radio-importante-frontend-stagin-6rjzv.ondigitalocean.app/
+**Dispositivo**: Android PWA instalado
+**Resultados**:
+
+✅ **Funcionalidade Contínua**:
+- [x] Carregar o player → ✅ Sucesso
+- [x] Iniciar reprodução → ✅ Sucesso  
+- [x] Modo contínuo (transições automáticas) → ✅ Funciona perfeitamente
+- [x] Metadados acompanham mudança de músicas → ✅ Comportamento correto
+- [x] Geração automática de MP3 contínuo → ✅ Atualização automática no Spaces funcionando
+
+✅ **Admin/Catalog**:
+- [x] Acesso ao admin sem 404s → ✅ Sucesso
+- [x] Upload de arquivo → ✅ Sucesso
+- [x] Edição de metadata → ✅ Sucesso
+
+**Status**: Staging completamente validado - Docker + ffmpeg funcionando perfeitamente no ambiente real.
+
+---
+## 11) Anexos e Pedidos ao Usuário
 - Confirmar se deseja rodar como usuário não-root (`USER node`) — default do Node image permite
 - Confirmar se deseja adicionar `HEALTHCHECK` no Dockerfile (ex.: `curl -f http://localhost:$PORT/health || exit 1`)
 - Validar se o backend sempre lê `process.env.PORT` (recomendado pelo DO App Platform)
-- Após validar no Staging, aprovar promoção para Produção (Sonnet 4 executa)
+- ✅ **APROVADO**: Staging validado no Android PWA - Pronto para promoção ao Produção (Sonnet 4 executa)
+
+---
+## 12) Smoke Tests Pós-Deploy (Produção) - EM ANDAMENTO 🔄
+**URL Produção**: https://radio-importante-pwa-backend-skg2w.ondigitalocean.app
+**Status Deploy**: Building... ⏳
+
+**Comandos Preparados:**
+```bash
+# 1. Health Check
+curl https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/health
+# Expect: {"status":"ok","environment":"production"}
+
+# 2. Continuous Status  
+curl https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/api/continuous/status
+# Expect: sem erro "ffmpeg não encontrado"
+
+# 3. Manual Rebuild
+curl -X POST https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/api/continuous/rebuild
+
+# 4. Verify Success
+curl https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/api/continuous/status
+# Expect: lastExitCode: 0, lastSuccessAt: timestamp recente
+
+# 5. Artifacts Check
+curl https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/audio/continuous/track-cues.json
+curl -I https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/audio/continuous/radio-importante-continuous.mp3
+```
+
+**Checklist Pós-Deploy:**
+- [ ] `GET /health` → 200 OK (environment: production)
+- [ ] `GET /api/continuous/status` → sem erro ffmpeg
+- [ ] `POST /api/continuous/rebuild` → success
+- [ ] Artefatos atualizados no Spaces
+- [ ] Proxy endpoints funcionando
+- [ ] Frontend produção conectando ao backend atualizado
+
+**Status**: Aguardando conclusão do deploy... 🔄
