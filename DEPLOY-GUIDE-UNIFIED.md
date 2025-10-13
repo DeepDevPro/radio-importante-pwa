@@ -1,5 +1,7 @@
 # 🚀 GUIA DE DEPLOY COM BACKENDS SEPARADOS - Radio Importante PWA
 
+[⟵ Voltar ao Índice](./PLANO_EXECUCAO.md) • [Parte 1](./PLANO_EXECUCAO-PARTE-1.md) • [Parte 2](./PLANO_EXECUCAO-PARTE-2.md) • [Guia Técnico](./GUIA_TECNICO_DETALHADO.md)
+
 ## 📋 Procedimento Padrão para Deploy
 
 ### 🚀 Workflow de Melhorias Incrementais (Recomendado)

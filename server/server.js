@@ -143,7 +143,7 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: 50 * 1024 * 1024, // 50MB limit per file
-    files: 10 // Max 10 files per upload
+    files: 20 // Max 20 files per upload (aumentado de 10)
   },
   fileFilter: (req, file, cb) => {
     // Accept only audio files
@@ -759,6 +759,18 @@ app.post('/api/upload', upload.array('audioFiles'), async (req, res) => {
 
       console.log(`📁 Processing file ${i + 1}: ${file.originalname} → ${safeFilename}`);
 
+      // Build safe metadata (S3/Spaces metadata must be ASCII)
+      const isAscii = /^[\x20-\x7E]+$/.test(file.originalname);
+      const metadata = {
+        'upload-timestamp': String(timestamp),
+        'duration': String(Number.isFinite(duration) ? duration : 0),
+        'original-name-b64': Buffer.from(file.originalname, 'utf8').toString('base64'),
+      };
+      if (isAscii) {
+        metadata['original-name'] = file.originalname;
+      }
+      const contentDisposition = `inline; filename="${safeFilename}"; filename*=UTF-8''${encodeURIComponent(file.originalname)}`;
+
       // Upload to Spaces
       const uploadCommand = new PutObjectCommand({
         Bucket: process.env.DO_SPACES_BUCKET,
@@ -766,11 +778,8 @@ app.post('/api/upload', upload.array('audioFiles'), async (req, res) => {
         Body: file.buffer,
         ContentType: file.mimetype,
         ACL: 'public-read',
-        Metadata: {
-          'original-name': file.originalname,
-          'upload-timestamp': timestamp.toString(),
-          'duration': duration.toString()
-        }
+        Metadata: metadata,
+        ContentDisposition: contentDisposition,
       });
 
       await s3Client.send(uploadCommand);
