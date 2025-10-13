@@ -71,14 +71,14 @@ git push origin main
 
 ### Backend Staging
 - **Trigger**: Push na branch `staging` com alterações em `server/**`
-- **Destino**: DigitalOcean App (stingray-app-backend-staging-4wpcx)
-- **URL**: https://stingray-app-backend-staging-4wpcx.ondigitalocean.app
+- **Destino**: DigitalOcean App (rd-importante-backend-staging)
+- **URL**: https://rd-importante-backend-staging-cudbw.ondigitalocean.app
 - **Comportamento**: Frontend staging consome este backend exclusivamente
 - **Arquivo**: `.github/workflows/deploy-backend-staging.yml` (ativo)
 
 ### Backend Produção
 - **Trigger**: Push na branch `main` com alterações em `server/**`
-- **Destino**: DigitalOcean App (radio-importante-pwa-backend-skg2w)
+- **Destino**: DigitalOcean App (radio-importante-pwa-backend)
 - **URL**: https://radio-importante-pwa-backend-skg2w.ondigitalocean.app
 - **Comportamento**: Frontend produção consome este backend exclusivamente
 - **Arquivo**: `.github/workflows/deploy-backend-production.yml` (ativo)
@@ -117,19 +117,19 @@ git push origin main
 ### 2. Testar Endpoints
 ```bash
 # Backend Staging Health Check
-curl https://stingray-app-backend-staging-4wpcx.ondigitalocean.app/health
+curl https://rd-importante-backend-staging-cudbw.ondigitalocean.app/health
 
 # Backend Produção Health Check  
 curl https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/health
 
 # HLS Status Staging
-curl https://stingray-app-backend-staging-4wpcx.ondigitalocean.app/api/hls/latest/diagnostics
+curl https://rd-importante-backend-staging-cudbw.ondigitalocean.app/api/hls/latest/diagnostics
 
 # HLS Status Produção
 curl https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/api/hls/latest/diagnostics
 
 # Verificar CORS para frontend staging
-curl -H "Origin: https://radio-importante-frontend-stagin-6rjzv.ondigitalocean.app" https://stingray-app-backend-staging-4wpcx.ondigitalocean.app/health
+curl -H "Origin: https://radio-importante-frontend-stagin-6rjzv.ondigitalocean.app" https://rd-importante-backend-staging-cudbw.ondigitalocean.app/health
 
 # Verificar CORS para frontend produção
 curl -H "Origin: https://radio.importantestudio.com" https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/health
@@ -256,7 +256,7 @@ git diff staging main --name-only
 ```bash
 # Health checks básicos
 curl -I https://radio-importante-frontend-stagin-6rjzv.ondigitalocean.app
-curl https://stingray-app-backend-staging-4wpcx.ondigitalocean.app/health
+curl https://rd-importante-backend-staging-cudbw.ondigitalocean.app/health
 curl https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/health
 
 # Verificar headers específicos (Range, CORS, etc)
@@ -275,4 +275,3 @@ curl -H "Origin: https://radio.importantestudio.com" -I [URL-COM-CORS]
 ---
 **Última atualização**: 28/12/2024
 **Versão**: v2.2.9 (Shuffle button removal + automatic behavior preservation)
-````
