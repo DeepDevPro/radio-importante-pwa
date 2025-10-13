@@ -1,14 +1,17 @@
 # 🔧 Guia Técnico - Radio Importante PWA
 
+[⟵ Voltar ao Índice](./PLANO_EXECUCAO.md) • [Parte 1](./PLANO_EXECUCAO-PARTE-1.md) • [Parte 2](./PLANO_EXECUCAO-PARTE-2.md) • [Deploy](./DEPLOY-GUIDE-UNIFIED.md)
+
 > Complemento: `PLANO_EXECUCAO.md`  
 > Foco: Referência técnica consolidada (HLS + Operação)  
-> Última Atualização: 08/10/2025 (MVP / Scheduler iOS Background 300s)  
+> Última Atualização: 13/10/2025 (Docker+ffmpeg + MP3 Contínuo em Produção)  
 > Público: Desenvolvedor júnior / manutenção
 
 ---
 ## 1. Changelog Conciso
 | Data | Fase | Resumo | Detalhes |
 |------|------|--------|----------|
+| 13/10/2025 | Backend Docker | Dockerfile (Node 18 bookworm-slim + ffmpeg) validado em Staging e Produção; MP3 contínuo operacional; smoke tests OK | Seções 2B, 4B, 9 atualizadas |
 | 08/10/2025 | MVP Scheduler Phase0 | iOS PWA background ≥300s estável (Boundary Scheduler + instrumentação) | Apêndice F |
 | 06/10/2025 | R6 Hardening | Gate Final aprovado (0 falhas smoke últimas 10, p95 diag 44ms, rollback & janitor ok) | Ver seções 3–7 |
 | 02/10/2025 | F1 Sync+Metadados | Enriquecimento metadata via streaming + `music-metadata` ESM | Apêndice A |
@@ -38,6 +41,33 @@ Fluxo Simplificado (latest):
 6. Janitor remove diretórios temporários concluídos.  
 
 ---
+## 2B. MP3 Contínuo (Baseline 13/10/2025)
+Pipeline de geração e publicação de um arquivo MP3 contínuo + cues JSON, derivados do catálogo no DigitalOcean Spaces.
+
+Componentes-Chave:
+- Gerador: `scripts/generate-audio-remote.js` (CLI) e `server/scripts/generate-audio-remote.js` (container)  
+  - Consolida faixas do bucket `radio-importante-audio/audio/`
+  - Gera `continuous/track-cues.json` e `continuous/radio-importante-continuous.mp3`
+- Runtime: Docker (Node 18 bookworm-slim) com `ffmpeg`/`ffprobe` instalado via apt
+- Storage/CDN: DigitalOcean Spaces (S3-compatible)
+- Proxy Backend: Express serve/proxy artefatos via `/audio/continuous/*` (Range habilitado)
+
+Endpoints Backend (Produção/Staging):
+- `GET /api/continuous/status` → Estado do gerador (running, pending, lastExitCode, lastSuccessAt)
+- `POST /api/continuous/rebuild` → Agenda/aciona geração (debounce + lock)
+- `GET /audio/continuous/track-cues.json` → Cues JSON (Cache-Control ~60s)
+- `GET /audio/continuous/radio-importante-continuous.mp3` → MP3 contínuo (Cache-Control ~3600s, Accept-Ranges)
+
+Artefatos (Spaces):
+- `continuous/track-cues.json`  
+- `continuous/radio-importante-continuous.mp3`
+
+Notas Operacionais:
+- Geração típica: ~9–12s para ~6–8 faixas; exitCode 0 esperado
+- Cabeçalhos: MP3 com `Cache-Control: public, max-age=3600` e `Accept-Ranges: bytes`
+- Cues: contém `mode`, `trackCount`, `totalDuration`, `generatedAt`, e offsets por faixa
+
+---
 ## 3. Endpoints Principais HLS
 | Endpoint | Método | Função |
 |----------|--------|--------|
@@ -53,6 +83,14 @@ Fluxo Simplificado (latest):
 | `/api/hls/debug-cache` | DELETE | Limpa cache debug |
 
 Status Classificação Diagnostics: `ok | missing | partial | stalled (placeholder)`.
+
+### 3B. Endpoints Contínuo (MP3)
+| Endpoint | Método | Função |
+|----------|--------|--------|
+| `/api/continuous/status` | GET | Status do gerador (estado, últimas execuções) |
+| `/api/continuous/rebuild` | POST | Agenda/aciona geração (com debounce/lock) |
+| `/audio/continuous/track-cues.json` | GET | Cues JSON publicado no Spaces (proxy) |
+| `/audio/continuous/radio-importante-continuous.mp3` | GET/HEAD | MP3 contínuo publicado (proxy + Range) |
 
 ---
 ## 4. Operação & Runbooks
@@ -90,6 +128,29 @@ curl -X POST /api/hls/generate-hls -H 'Content-Type: application/json' \
 curl -X DELETE /api/hls/debug-cache
 ```
 
+### 4B. Smoke Test Manual (MP3 Contínuo)
+```bash
+# Health/ambiente
+curl -s https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/health
+
+# Status do gerador (ffmpeg disponível se não houver erro)
+curl -s https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/api/continuous/status
+
+# Rebuild manual
+curl -s -X POST https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/api/continuous/rebuild
+sleep 12
+curl -s https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/api/continuous/status
+
+# Artefatos
+curl -s https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/audio/continuous/track-cues.json | jq '.trackCount,.totalDuration'
+curl -I https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/audio/continuous/radio-importante-continuous.mp3
+```
+
+Critérios de Sucesso (MP3):
+- `status.running=false` e `lastExitCode=0` após rebuild  
+- `track-cues.json` válido, `trackCount>=1`, `generatedAt` recente  
+- MP3 com `200/206`, `Content-Type: audio/mpeg`, `Accept-Ranges: bytes`, `Cache-Control ~3600s`
+
 ---
 ## 5. Métricas & Baselines (R6)
 | Métrica | Valor | Observação |
@@ -107,6 +168,14 @@ Estrutura JSON (exemplo resumido):
 { "mode":"latest", "status":"ok", "playlist": {"declaredCount":16}, "segments": {"headOkCount":3}, "durationMs":41 }
 ```
 
+### 5B. Métricas (MP3 Contínuo)
+| Métrica | Valor | Observação |
+|---------|-------|------------|
+| Geração 6–8 faixas | ~9–12s | Spaces IO + ffmpeg concat |
+| Tamanho MP3 | ~3.6–4.4 MB | Catálogo atual (8 tracks → ~4.3MB) |
+| Cues totalDuration | ~302–362s | Conforme catálogo no teste |
+| Cache MP3 | 3600s | Controlado no proxy/Spaces |
+
 ---
 ## 6. Troubleshooting Consolidado
 | Sintoma | Causa Provável | Ação |
@@ -118,6 +187,11 @@ Estrutura JSON (exemplo resumido):
 | Força simulate inesperado | ffmpeg spawn falhou | Checar `/api/hls/capabilities` |
 | Lixo em /tmp | Janitor não executou | Ver `/api/hls/janitor/status` |
 | Partial diagnostics | HEAD falhou em segmento | Verificar segment no Spaces (existência / ACL) |
+| `ffmpeg not found` | Runtime sem ffmpeg | Usar imagem Docker `node:18-bookworm-slim` + `apt-get install ffmpeg` (ver Dockerfile) |
+| `status.pending` não finaliza | Lock/queue em execução | Aguardar; consultar logs do gerador; evitar parallel triggers |
+| MP3 sem Range/206 | Cabeçalhos ausentes no proxy | Verificar rota proxy e `Accept-Ranges: bytes` |
+| `track-cues.json` vazio | Catálogo sem faixas válidas | Verificar listing do Spaces e filtros do gerador |
+| Cache desatualizado | TTL 3600s | Forçar rebuild e validar `Last-Modified` |
 
 ---
 ## 7. Decisões & Lições (R6)
@@ -141,20 +215,20 @@ Lições:
 4. Publish atômico (swap diretórios) caso detecte race/inconsistência.  
 5. Incremental segments (gerar só novos) se performance total > alvo futuro.  
 6. Alertas proativos (cron + webhook) quando `status != ok`.  
-7. (Opcional) Guard de instrumentação para produção (silenciar logs ruidosos se houver).  
+7. Scheduler de rebuild contínuo baseado em eventos (upload/metadata) com debounce/lock.  
 
 ---
-## 9. Referências Rápidas de Arquivos
+## 9. Referências Rápidas de Arquivos (Atualizado)
 | Área | Arquivo / Script | Propósito |
 |------|------------------|-----------|
-| Geração | `backend/routes/hlsGenerate.routes.js` | Orquestra geração + diagnostics + rolling |
-| Cache Debug | `backend/hls/debugDataCache.js` | TTL snapshots |
-| Rotas Debug | `backend/routes/hlsDebug.routes.js` | Endpoints de status/cache/hypothesis |
-| Smoke | `scripts/hls-smoke.cjs` | Verificação 6 estágios |
-| Automação 24h | `scripts/r6-7-24h-automation.sh` | Execuções periódicas + agregação |
-| Gate Final | `scripts/r6-10-gate-final.cjs` | Critérios agregados R6 |
-| iOS Playback | `scripts/ios-playback-test.cjs` | Métricas lockscreen/background |
-| Checklist | `devFiles/CHECKLIST-HLS-ROTATIVO.md` | Operacionalização R6 |
+| Geração HLS | `backend/routes/hlsGenerate.routes.js` | Orquestra geração + diagnostics + rolling |
+| Cache Debug HLS | `backend/hls/debugDataCache.js` | TTL snapshots |
+| Rotas Debug HLS | `backend/routes/hlsDebug.routes.js` | Endpoints de status/cache/hypothesis |
+| Smoke HLS | `scripts/hls-smoke.cjs` | Verificação 6 estágios |
+| Gerador MP3 | `scripts/generate-audio-remote.js` | Geração de cues+MP3 a partir do Spaces |
+| Gerador MP3 (container) | `server/scripts/generate-audio-remote.js` | Entry no container/DO Apps |
+| Backend Dockerfile | `server/Dockerfile` | Node 18 + ffmpeg (bookworm-slim), `npm ci --only=production` |
+| Deploy Backends | `.github/workflows/deploy-backend-*.yml` | Staging (staging) / Produção (main) |
 
 ---
 ## 10. Apêndices
