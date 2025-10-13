@@ -77,6 +77,7 @@ git push origin main
 - **URL**: https://rd-importante-backend-staging-cudbw.ondigitalocean.app
 - **Comportamento**: Frontend staging consome este backend exclusivamente
 - **Arquivo**: `.github/workflows/deploy-backend-staging.yml` (ativo)
+- **GitHub Action**: `digitalocean/app_action/deploy@v2`
 
 ### Backend Produção
 - **Trigger**: Push na branch `main` com alterações em `server/**`
@@ -84,6 +85,7 @@ git push origin main
 - **URL**: https://radio-importante-pwa-backend-skg2w.ondigitalocean.app
 - **Comportamento**: Frontend produção consome este backend exclusivamente
 - **Arquivo**: `.github/workflows/deploy-backend-production.yml` (ativo)
+- **GitHub Action**: `digitalocean/app_action/deploy@v2`
 
 ### Frontend Staging
 - **Trigger**: Push na branch `staging` com alterações em `src/**`
@@ -268,6 +270,12 @@ curl -H "Origin: https://radio.importantestudio.com" -I [URL-COM-CORS]
 
 ## 📝 Histórico de Deploys Recentes
 
+### 13/10/2025 - GitHub Actions Fix
+- **Issue**: GitHub Actions falhando com erro "tar: invalid magic" no `digitalocean/app_action@v1.1.5`
+- **Root Cause**: Usando versão v1.1.5 (antiga, não mantida) - v1 branch não recebe mais updates
+- **Fix**: Atualizado para `digitalocean/app_action/deploy@v2` (versão atual v2.0.10)
+- **Impact**: Workflows voltaram a funcionar corretamente, sem erros cosmético
+
 ### 28/12/2024 - v2.2.9
 - **Shuffle Button Removal**: Removido botão shuffle da UI mantendo comportamento automático
 - **Automatic Shuffle Rules**: Next button, new session e all tracks played mantém lógica de shuffle
@@ -275,5 +283,5 @@ curl -H "Origin: https://radio.importantestudio.com" -I [URL-COM-CORS]
 - **Deploy**: Staging atualizado com sucesso
 
 ---
-**Última atualização**: 28/12/2024
-**Versão**: v2.2.9 (Shuffle button removal + automatic behavior preservation)
+**Última atualização**: 13/10/2025
+**Versão**: v2.2.9 + GitHub Actions v2 migration

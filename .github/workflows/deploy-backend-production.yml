@@ -39,7 +39,7 @@ jobs:
       - name: Deploy Backend to Digital Ocean Production
         id: deploy
         continue-on-error: true
-        uses: digitalocean/app_action@v1.1.5
+        uses: digitalocean/app_action/deploy@v2
         with:
           app_name: radio-importante-pwa-backend
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
