@@ -24,14 +24,14 @@ const environment = detectEnvironment();
 
 // URLs da API por ambiente - ENV com fallback
 export function getApiBaseUrl(): string {
-  const envUrl = (import.meta as any).env.VITE_API_BASE_URL;
+  const envUrl = (import.meta as { env?: { VITE_API_BASE_URL?: string } }).env?.VITE_API_BASE_URL;
   if (envUrl) {
     return envUrl;
   }
   
   // Fallback para compatibilidade
   const BACKEND_URLS = {
-    staging: 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app',
+    staging: 'https://rd-importante-backend-staging-cudbw.ondigitalocean.app',
     production: 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app'
   };
   return BACKEND_URLS[environment];

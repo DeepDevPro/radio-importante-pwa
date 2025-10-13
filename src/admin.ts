@@ -37,12 +37,27 @@ interface Track {
 
 // Configuração do backend
 const BACKEND_CONFIG = {
+    // Preferir staging quando hostname contiver 'staging' ou 'stagin'
+    staging: 'https://rd-importante-backend-staging-cudbw.ondigitalocean.app',
     production: 'https://radio-importante-pwa-backend-skg2w.ondigitalocean.app'
 };
 
 // Estado global do admin
 let currentBackend: string | null = null;
 let isUploading = false;
+
+// Helper: detectar ambiente da página atual
+function detectEnvironment(): 'staging' | 'production' {
+    const host = window.location.hostname || '';
+    if (host.includes('staging') || host.includes('stagin')) return 'staging';
+    return 'production';
+}
+
+// Helper: obter URL do backend preferido para este ambiente
+function getPreferredBackend(): string {
+    const env = detectEnvironment();
+    return env === 'staging' ? BACKEND_CONFIG.staging : BACKEND_CONFIG.production;
+}
 
 /**
  * Formatar duração em segundos para formato legível
@@ -88,12 +103,14 @@ async function updateTotalsOnly(): Promise<void> {
     }
 
     try {
-        const response = await fetch(`${currentBackend}/api/catalog`);
+        // Preferir backend dinâmico (Opção A)
+        let response = await fetch(`${currentBackend}/api/catalog`, { cache: 'no-store' });
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+            console.warn(`⚠️ /api/catalog retornou ${response.status}. Usando fallback /data/catalog.json`);
+            response = await fetch(`/data/catalog.json?t=${Date.now()}`);
         }
-        
-        const catalog = await response.json(); 
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const catalog = await response.json();
         const tracks = catalog.tracks || [];
         
         // Atualizar apenas o elemento de totais
@@ -136,6 +153,47 @@ function calculateAudioDuration(file: File): Promise<number> {
 }
 
 /**
+ * Atualizar estado do botão de upload baseado no progresso das durações
+ */
+function updateUploadButtonState(): void {
+    const uploadBtn = document.getElementById('uploadBtn') as HTMLButtonElement;
+    if (!uploadBtn) return;
+    
+    const fileInput = document.getElementById('file-input') as HTMLInputElement;
+    if (!fileInput || !fileInput.files) {
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = '📁 Selecione arquivos para enviar';
+        return;
+    }
+    
+    const files = Array.from(fileInput.files);
+    const totalFiles = files.length;
+    
+    if (totalFiles === 0) {
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = '📁 Selecione arquivos para enviar';
+        return;
+    }
+    
+    // Contar quantos arquivos têm duração calculada
+    const filesWithDuration = files.filter(file => 
+        (file as any).calculatedDuration !== undefined
+    ).length;
+    
+    if (filesWithDuration === totalFiles) {
+        // Todas as durações foram calculadas
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = `🚀 Enviar ${totalFiles} arquivo${totalFiles > 1 ? 's' : ''}`;
+        uploadBtn.style.backgroundColor = '#28a745';
+    } else {
+        // Ainda calculando durações
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = `⏳ Calculando durações... (${filesWithDuration}/${totalFiles})`;
+        uploadBtn.style.backgroundColor = '#6c757d';
+    }
+}
+
+/**
  * Calcular duração para um arquivo específico no preview
  */
 function calculateDurationForFile(file: File, index: number): void {
@@ -149,10 +207,17 @@ function calculateDurationForFile(file: File, index: number): void {
                     durationElement.style.color = '#28a745';
                     // Armazenar duração no arquivo para usar no upload
                     (file as any).calculatedDuration = Math.round(duration);
+                    console.log(`✅ Duration calculated for ${file.name}: ${Math.round(duration)}s`);
                 } else {
                     durationElement.textContent = '⚠️ Duração desconhecida';
                     durationElement.style.color = '#dc3545';
+                    // Mesmo com duração desconhecida, definir um valor padrão
+                    (file as any).calculatedDuration = 0;
+                    console.warn(`⚠️ Duration unknown for ${file.name}, using 0`);
                 }
+                
+                // Verificar se todas as durações foram calculadas
+                updateUploadButtonState();
             }
         })
         .catch((error: Error) => {
@@ -160,6 +225,9 @@ function calculateDurationForFile(file: File, index: number): void {
             if (durationElement) {
                 durationElement.textContent = '❌ Erro ao ler arquivo';
                 durationElement.style.color = '#dc3545';
+                // Em caso de erro, definir duração 0 para não bloquear upload
+                (file as any).calculatedDuration = 0;
+                updateUploadButtonState();
             }
         });
 }
@@ -196,63 +264,60 @@ async function saveEdit(trackId: string, field: 'title' | 'artist', value: strin
     const trackElement = document.getElementById(`track-${trackId}`);
     const container = trackElement?.querySelector(`.${field}-container`) || 
                      trackElement?.querySelector('.music-title-container');
-    
-    if (!container) return;
-    
-    const displayElement = container.querySelector('.display-mode') as any;
-    const editElement = container.querySelector('.edit-mode') as any;
-    
-    try {
-        // Validações
-        if (field === 'title' && !value.trim()) {
-            // showAlert('manage-status', 'Título não pode estar vazio', 'error');
-            window.alert('Título não pode estar vazio');
-            editElement.focus();
-            return;
-        }
+  
+  if (!container) return;
+  
+  const displayElement = container.querySelector('.display-mode') as any;
+  const editElement = container.querySelector('.edit-mode') as any;
+  
+  try {
+      // Validações
+      if (field === 'title' && !value.trim()) {
+          window.alert('Título não pode estar vazio');
+          editElement.focus();
+          return;
+      }
 
-        // Salvar no backend
-        if (currentBackend) {
-            const response = await fetch(`${currentBackend}/api/tracks/${trackId}/metadata`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    [field]: value
-                })
-            });
+      // Salvar no backend
+      if (currentBackend) {
+          // Usamos o próprio trackId como chave (filename/id)
+          const response = await fetch(`${currentBackend}/api/tracks/${encodeURIComponent(trackId)}/metadata`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ [field]: value })
+          });
 
-            if (!response.ok) {
-                throw new Error(`Erro ao salvar: ${response.statusText}`);
-            }
-        }
+          if (!response.ok) {
+              const txt = await response.text().catch(() => '');
+              throw new Error(`Erro ao salvar: ${response.status} ${txt}`);
+          }
+      }
 
-        // Atualizar interface
-        displayElement.textContent = value || (field === 'artist' ? 'Artista não definido' : 'Título não definido');
+      // Atualizar interface
+      displayElement.textContent = value || (field === 'artist' ? 'Artista não definido' : 'Título não definido');
 
-        // Remover marca de edição e alternar visibilidade
-        trackElement!.classList.remove('editing');
-        displayElement.style.display = 'inline';
-        editElement.style.display = 'none';
+      // Remover marca de edição e alternar visibilidade
+      trackElement!.classList.remove('editing');
+      displayElement.style.display = 'inline';
+      editElement.style.display = 'none';
 
-        // Feedback visual suave sem recarregar a página
-        displayElement.style.background = '#d4edda';
-        displayElement.style.color = 'white';
-        setTimeout(() => {
-            displayElement.style.background = '';
-            displayElement.style.color = '';
-        }, 1500);
+      // Feedback visual suave sem recarregar a página
+      displayElement.style.background = '#d4edda';
+      displayElement.style.color = 'white';
+      setTimeout(() => {
+          displayElement.style.background = '';
+          displayElement.style.color = '';
+      }, 800);
 
-        // Atualizar apenas os totais sem recarregar toda a lista
-        await updateTotalsOnly();
-        
-    } catch (error) {
-        console.error('Erro ao salvar:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-        window.alert(`❌ Erro ao salvar: ${errorMessage}`);
-        editElement.focus();
-    }
+      // Recarregar a lista para refletir title/artist atualizados vindos do backend
+      await loadMusicList();
+      
+  } catch (error) {
+      console.error('Erro ao salvar:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      window.alert(`❌ Erro ao salvar: ${errorMessage}`);
+      editElement.focus();
+  }
 }
 
 /**
@@ -323,23 +388,40 @@ async function checkBackendStatus() {
     try {
         statusDiv.innerHTML = '🔍 Testando conexões...';
         
-        // Usar apenas backend de produção
-        const productionStatus = await testBackend(BACKEND_CONFIG.production, 'Produção (DigitalOcean)');
+        // Preferir backend do ambiente atual (staging em staging, produção em produção)
+        const preferred = getPreferredBackend();
+        const preferredName = detectEnvironment() === 'staging' ? 'Staging (DigitalOcean)' : 'Produção (DigitalOcean)';
+        const preferredStatus = await testBackend(preferred, preferredName);
         
-        if (productionStatus.success) {
-            currentBackend = BACKEND_CONFIG.production;
+        if (preferredStatus.success) {
+            currentBackend = preferred;
             statusDiv.innerHTML = `
-                ✅ <strong>Backend Ativo:</strong> ${productionStatus.name}<br>
-                🌐 <strong>URL:</strong> ${BACKEND_CONFIG.production}<br>
-                ⏱️ <strong>Response Time:</strong> ${productionStatus.responseTime}ms<br>
-                💚 <strong>Status:</strong> ${productionStatus.data?.status || 'Healthy'}
+                ✅ <strong>Backend Ativo:</strong> ${preferredStatus.name}<br>
+                🌐 <strong>URL:</strong> ${preferred}<br>
+                ⏱️ <strong>Response Time:</strong> ${preferredStatus.responseTime}ms<br>
+                💚 <strong>Status:</strong> ${preferredStatus.data?.status || 'Healthy'}
             `;
         } else {
-            currentBackend = null;
-            statusDiv.innerHTML = `
-                ❌ <strong>Backend não disponível!</strong><br>
-                🚫 Produção: ${productionStatus.error}
-            `;
+            // Fallback: tentar o outro backend
+            const fallback = preferred === BACKEND_CONFIG.staging ? BACKEND_CONFIG.production : BACKEND_CONFIG.staging;
+            const fallbackName = preferred === BACKEND_CONFIG.staging ? 'Produção (fallback)' : 'Staging (fallback)';
+            const fbStatus = await testBackend(fallback, fallbackName);
+
+            if (fbStatus.success) {
+                currentBackend = fallback;
+                statusDiv.innerHTML = `
+                    ⚠️ <strong>Backend preferido indisponível.</strong> Usando fallback.<br>
+                    🌐 <strong>URL:</strong> ${fallback}<br>
+                    ⏱️ <strong>Response Time:</strong> ${fbStatus.responseTime}ms<br>
+                    💚 <strong>Status:</strong> ${fbStatus.data?.status || 'Healthy'}
+                `;
+            } else {
+                currentBackend = null;
+                statusDiv.innerHTML = `
+                    ❌ <strong>Nenhum backend disponível!</strong><br>
+                    🚫 Preferido: ${preferredStatus.error} | Fallback: ${fbStatus.error}
+                `;
+            }
         }
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
@@ -460,6 +542,9 @@ function handleFileSelection() {
         files.forEach((file: File, index: number) => {
             calculateDurationForFile(file, index);
         });
+        
+        // Inicializar estado do botão de upload
+        updateUploadButtonState();
     }
 }
 
@@ -472,6 +557,15 @@ async function uploadFiles() {
     const uploadBtn = document.getElementById('upload-btn') as any;
     if (!fileInput?.files || fileInput.files.length === 0) { window.alert('Selecione arquivos primeiro!'); return; }
     if (isUploading) { window.alert('Upload já em andamento!'); return; }
+    
+    // Verificar se todas as durações foram calculadas
+    const files = Array.from(fileInput.files) as any[];
+    const filesWithoutDuration = files.filter((file: any) => !file.calculatedDuration);
+    if (filesWithoutDuration.length > 0) {
+        window.alert(`❌ Aguarde o cálculo de duração terminar para ${filesWithoutDuration.length} arquivo(s) antes de fazer upload.`);
+        return;
+    }
+    
     isUploading = true; if (uploadBtn) uploadBtn.disabled = true;
     try {
         if (uploadStatus) uploadStatus.innerHTML = '📤 Iniciando upload...';
@@ -482,7 +576,12 @@ async function uploadFiles() {
             formData.append('audioFiles', file);
             // Enviar duração calculada junto com o arquivo
             if (file.calculatedDuration) {
+                console.log(`🔍 DEBUG Frontend - File ${index + 1}: ${file.name}`);
+                console.log(`  - calculatedDuration: ${file.calculatedDuration}`);
+                console.log(`  - duration key: duration_${index}`);
                 formData.append(`duration_${index}`, file.calculatedDuration.toString());
+            } else {
+                console.warn(`⚠️ File ${index + 1} (${file.name}) has no calculatedDuration!`);
             }
         });
         let progress = 0;
@@ -526,31 +625,69 @@ function clearFiles() {
  */
 async function loadMusicList() {
     if (!currentBackend) {
-        console.error('❌ Backend não disponível para carregar lista de músicas');
+        // Mesmo sem backend, tentar carregar lista estática local para exibir algo
+        try {
+            const musicListFallback = document.getElementById('music-list');
+            if (musicListFallback) musicListFallback.innerHTML = '🔄 Carregando músicas (modo somente leitura)...';
+            const resp = await fetch(`/data/catalog.json?t=${Date.now()}`);
+            if (resp.ok) {
+                const catalog = await resp.json();
+                const tracks = catalog.tracks || [];
+                const totalDuration = tracks.reduce((sum: number, t: Track) => sum + (t.duration || 0), 0);
+                updateTotals(tracks.length, totalDuration);
+                if (musicListFallback) {
+                    musicListFallback.innerHTML = tracks.map((track: Track, index: number) => `
+                        <div class="music-item" id="track-${track.id}" style="border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin: 10px 0; background: #f9f9f9; transition: all 0.2s ease;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                                <div style="background: #667eea; color: white; padding: 8px 12px; border-radius: 50%; font-weight: bold; min-width: 35px; text-align: center;">
+                                    ${index + 1}
+                                </div>
+                                <div style="flex: 1; min-width: 250px;">
+                                    <div class="music-title-container">
+                                        <div class="music-title display-mode" style="font-weight: bold; font-size: 18px; padding: 4px 8px;">
+                                            ${track.title || track.name || 'Título não definido'}
+                                        </div>
+                                    </div>
+                                    <div class="music-meta">
+                                        <span>${track.artist || 'Artista não definido'}</span>
+                                        • <span class="duration-display">${formatDuration(track.duration || 0)}</span>
+                                        • ${track.filename || 'Arquivo não identificado'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+                return;
+            }
+        } catch (e) {
+            console.error('Fallback de lista estática falhou:', e);
+        }
         return;
     }
 
     const musicList = document.getElementById('music-list');
     const musicTotals = document.getElementById('music-totals');
-    
     if (!musicList) return;
 
     try {
         musicList.innerHTML = '🔄 Carregando músicas...';
-        
-        const response = await fetch(`${currentBackend}/api/catalog`);
+
+        // Preferir backend dinâmico (Opção A)
+        let response = await fetch(`${currentBackend}/api/catalog`, { cache: 'no-store' });
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+            console.warn(`⚠️ /api/catalog retornou ${response.status}. Usando fallback /data/catalog.json`);
+            response = await fetch(`/data/catalog.json?t=${Date.now()}`);
         }
-        
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
         const catalog = await response.json();
         const tracks = catalog.tracks || [];
         
         if (musicTotals) {
-            musicTotals.innerHTML = `
-                📊 <strong>Total:</strong> ${tracks.length} música(s) • 
-                ⏱️ <strong>Duração:</strong> ${Math.round(catalog.metadata?.totalDuration || 0)}s
-            `;
+            const totalTracks = tracks.length;
+            const totalDuration = tracks.reduce((sum: number, track: Track) => sum + (track.duration || 0), 0);
+            updateTotals(totalTracks, totalDuration);
         }
         
         if (tracks.length === 0) {
@@ -562,11 +699,6 @@ async function loadMusicList() {
             `;
             return;
         }
-        
-        // Calcular totais
-        const totalTracks = tracks.length;
-        const totalDuration = tracks.reduce((sum: number, track: Track) => sum + (track.duration || 0), 0);
-        updateTotals(totalTracks, totalDuration);
         
         musicList.innerHTML = tracks.map((track: Track, index: number) => `
             <div class="music-item" id="track-${track.id}" style="border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin: 10px 0; background: #f9f9f9; transition: all 0.2s ease;">

@@ -273,6 +273,7 @@ class RadioImportanteApp {
       onCanPlay: () => this.handleCanPlay(),
       onError: (error) => this.handleAudioError(error),
       onStalled: () => this.handleStalled(),
+      onTrackChange: (trackCue) => this.handleTrackChange(trackCue),
     });
 
     // Configurar Media Session
@@ -389,16 +390,34 @@ class RadioImportanteApp {
   }
 
   private async handleNext(): Promise<void> {
-    console.log('⏭️ Avançando para próxima faixa');
+    console.log('⏭️ Avançando para próxima faixa (acionado pelo usuário)');
     
     const wasPlaying = this.stateManager.getState().isPlaying;
     
+    // Etapa 6: Para iPhone PWA com arquivo contínuo, usar seek ao invés de recarregar
+    if (this.audioPlayer.isInContinuousMode() && this.audioPlayer.hasTrackCues()) {
+      // HIPÓTESE 2: Usuário apertou Next - sempre usar shuffle
+      this.stateManager.nextTrackManual();
+      const currentIndex = this.stateManager.getState().currentTrackIndex;
+      
+      // Seek para nova posição no arquivo contínuo
+      if (this.audioPlayer.seekToTrackInContinuousByIndex?.(currentIndex)) {
+        const newTrack = this.stateManager.getCurrentTrack();
+        if (newTrack) {
+          console.log(`🎯 Continuous: Seek manual para faixa ${newTrack.title} (índice ${currentIndex})`);
+          // Metadados/UI serão atualizados via onTrackChange
+        }
+        return;
+      }
+    }
+    
+    // Fallback: comportamento tradicional para outras plataformas
     // Parar o áudio atual se estiver tocando
     if (this.audioPlayer.isPlaying()) {
       this.audioPlayer.stop();
     }
     
-    this.stateManager.nextTrack();
+    this.stateManager.nextTrackManual();
     const newTrack = this.stateManager.getCurrentTrack();
     
     if (newTrack) {
@@ -407,10 +426,8 @@ class RadioImportanteApp {
       this.controls.updateTrackInfo(newTrack.title, newTrack.artist);
       this.mediaSession.updateMetadata(newTrack.title, newTrack.artist, '/img/Leo_R_161_small.webp');
       
-      // Se estava tocando, carregar e tocar automaticamente a nova faixa
-      if (wasPlaying) {
-        await this.loadAndPlayCurrentTrack();
-      }
+      // Sempre carregar e tocar a nova faixa ao apertar Next
+      await this.loadAndPlayCurrentTrack();
     }
   }
 
@@ -473,7 +490,27 @@ class RadioImportanteApp {
   }
 
   private async handlePrevious(): Promise<void> {
-    this.stateManager.previousTrack();
+    console.log('⏮️ Voltando para faixa anterior');
+    
+    // Etapa 6: Para iPhone PWA com arquivo contínuo, usar seek ao invés de recarregar
+    if (this.audioPlayer.isInContinuousMode() && this.audioPlayer.hasTrackCues()) {
+      // Usar lógica inteligente para previous
+      this.stateManager.previousTrackSmart();
+      const currentIndex = this.stateManager.getState().currentTrackIndex;
+      
+      // Seek para nova posição no arquivo contínuo
+      if (this.audioPlayer.seekToTrackInContinuousByIndex(currentIndex)) {
+        const newTrack = this.stateManager.getCurrentTrack();
+        if (newTrack) {
+          console.log(`🎯 iPhone PWA: Seek manual para faixa anterior ${newTrack.title} (índice ${currentIndex})`);
+          // Os metadados serão atualizados automaticamente via onTrackChange do seekToTrackInContinuous
+        }
+        return;
+      }
+    }
+    
+    // Fallback: comportamento tradicional para outras plataformas
+    this.stateManager.previousTrackSmart();
     const newTrack = this.stateManager.getCurrentTrack();
     
     if (newTrack) {
@@ -497,24 +534,66 @@ class RadioImportanteApp {
     this.mediaSession.setPlaybackState('paused');
   }
 
+  private handleTrackChange(trackCue: import('./player/trackCuesLoader').TrackCue): void {
+    console.log(`🎵 Atualizando metadados: ${trackCue.title} - ${trackCue.artist}`);
+    
+    // Atualizar UI e Media Session com nova faixa
+    this.controls.updateTrackInfo(trackCue.title, trackCue.artist);
+    this.mediaSession.updateMetadata(trackCue.title, trackCue.artist, '/img/Leo_R_161_small.webp');
+  }
+
   private async handleAudioEnded(): Promise<void> {
     console.log('🔚 Música terminou, avançando para próxima automaticamente');
     
-    // Avançar para próxima faixa
-    this.stateManager.nextTrack();
+    // Etapa 6: Para iPhone PWA com arquivo contínuo, usar seek ao invés de recarregar
+    if (this.audioPlayer.isInContinuousMode() && this.audioPlayer.hasTrackCues()) {
+      const state = this.stateManager.getState();
+      const catalog = this.stateManager.getCatalog();
+      const isLast = catalog && (state.currentTrackIndex >= (catalog.tracks.length - 1));
+
+      // Se era a última faixa do ciclo, iniciar novo ciclo com shuffle imediato
+      if (isLast) {
+        const nextIndex = this.stateManager.startShuffledCycle();
+        if (this.audioPlayer.seekToTrackInContinuousByIndex(nextIndex)) {
+          const newTrack = this.stateManager.getCurrentTrack();
+          if (newTrack) {
+            console.log(`🎲 Novo ciclo (shuffle): ${newTrack.title} (índice ${nextIndex})`);
+            this.controls.updateTrackInfo(newTrack.title, newTrack.artist);
+            this.mediaSession.updateMetadata(newTrack.title, newTrack.artist, '/img/Leo_R_161_small.webp');
+          }
+          try { await this.audioPlayer.play(); } catch (e) { console.warn('⚠️ Falha ao retomar play pós-shuffle'); }
+          return;
+        }
+      }
+
+      // Caso normal: avançar automaticamente (sequencial durante o ciclo)
+      this.stateManager.nextTrackAuto();
+      const currentIndex = this.stateManager.getState().currentTrackIndex;
+      
+      if (this.audioPlayer.seekToTrackInContinuousByIndex(currentIndex)) {
+        const newTrack = this.stateManager.getCurrentTrack();
+        if (newTrack) {
+          console.log(`🎯 iPhone/Android PWA (contínuo): Auto-seek para próxima faixa ${newTrack.title} (índice ${currentIndex})`);
+          this.controls.updateTrackInfo(newTrack.title, newTrack.artist);
+          this.mediaSession.updateMetadata(newTrack.title, newTrack.artist, '/img/Leo_R_161_small.webp');
+        }
+        try { await this.audioPlayer.play(); } catch (e) { console.warn('⚠️ Falha ao retomar play'); }
+        return;
+      } else {
+        try { this.audioPlayer.seek(0); await this.audioPlayer.play(); return; } catch (e) { console.warn('⚠️ Falha ao reiniciar do início contínuo'); }
+      }
+    }
+    
+    // Fallback tradicional
+    this.stateManager.nextTrackAuto();
     const newTrack = this.stateManager.getCurrentTrack();
     
     if (newTrack) {
       console.log(`🎵 Próxima faixa: ${newTrack.title} - ${newTrack.artist}`);
-      
-      // Atualizar UI e Media Session
       this.controls.updateTrackInfo(newTrack.title, newTrack.artist);
       this.mediaSession.updateMetadata(newTrack.title, newTrack.artist, '/img/Leo_R_161_small.webp');
-      
-      // Carregar e tocar automaticamente a próxima faixa
       await this.loadAndPlayCurrentTrack();
     } else {
-      // Fim da playlist
       console.log('🏁 Fim da playlist');
       this.stateManager.updateState({ isPlaying: false });
     }

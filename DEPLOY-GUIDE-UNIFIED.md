@@ -123,10 +123,10 @@ curl https://rd-importante-backend-staging-cudbw.ondigitalocean.app/health
 curl https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/health
 
 # HLS Status Staging
-curl https://rd-importante-backend-staging.ondigitalocean.app/api/hls/latest/diagnostics
+curl https://rd-importante-backend-staging-cudbw.ondigitalocean.app/api/hls/latest/diagnostics
 
 # HLS Status Produção
-curl https://radio-importante-pwa-backend.ondigitalocean.app/api/hls/latest/diagnostics
+curl https://radio-importante-pwa-backend-skg2w.ondigitalocean.app/api/hls/latest/diagnostics
 
 # Verificar CORS para frontend staging
 curl -H "Origin: https://radio-importante-frontend-stagin-6rjzv.ondigitalocean.app" https://rd-importante-backend-staging-cudbw.ondigitalocean.app/health
@@ -264,7 +264,14 @@ curl -H "Range: bytes=0-1023" -I [URL-DO-ARQUIVO]
 curl -H "Origin: https://radio.importantestudio.com" -I [URL-COM-CORS]
 ```
 
+## 📝 Histórico de Deploys Recentes
+
+### 28/12/2024 - v2.2.9
+- **Shuffle Button Removal**: Removido botão shuffle da UI mantendo comportamento automático
+- **Automatic Shuffle Rules**: Next button, new session e all tracks played mantém lógica de shuffle
+- **UI Cleanup**: Interface mais limpa sem controle manual de shuffle
+- **Deploy**: Staging atualizado com sucesso
+
 ---
-**Última atualização**: 10/10/2025
-**Versão**: v2.3 (Correção dos nomes corretos dos apps DigitalOcean após troubleshooting)
-````
+**Última atualização**: 28/12/2024
+**Versão**: v2.2.9 (Shuffle button removal + automatic behavior preservation)

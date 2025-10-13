@@ -1,0 +1,12 @@
+name: DISABLED - Backend Staging (fixed)
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Disabled duplicate. Use deploy-backend-staging.yml only."

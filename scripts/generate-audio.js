@@ -24,10 +24,11 @@ const CONFIG = {
   // Configurações para arquivo único
   singleFile: {
     outputDir: path.join(__dirname, '../public/audio'),
-    outputFile: 'radio-importante-continuous.aac',
-    trackCuesDir: path.join(__dirname, '../public/audio/hls'),
+    outputFile: 'radio-importante-continuous.mp3',
+    trackCuesDir: path.join(__dirname, '../temp-continuous'),
     trackCuesFile: 'track-cues.json',
-    bitrate: '128k'
+    bitrate: '96k',
+    format: 'mp3'
   },
   
   // Configurações para chunks
@@ -347,16 +348,21 @@ function generateFileList(tracks, suffix) {
 }
 
 async function generateAAC(fileListPath, outputPath, bitrate) {
+  const isMP3 = outputPath.endsWith('.mp3');
+  
   const ffmpegCmd = [
     'ffmpeg',
     '-f concat',
     '-safe 0',
     `-i "${fileListPath}"`,
-    '-c:a aac',
-    `-b:a ${bitrate}`,
+    isMP3 ? '-c:a mp3' : '-c:a aac',
+    isMP3 ? `-ab ${bitrate}` : `-b:a ${bitrate}`,
+    isMP3 ? '-ar 44100' : '',
+    isMP3 ? '-ac 2' : '',
+    isMP3 ? '-joint_stereo 1' : '',
     '-y',
     `"${outputPath}"`
-  ].join(' ');
+  ].filter(arg => arg !== '').join(' ');
   
   try {
     execSync(ffmpegCmd, { 

@@ -31,6 +31,9 @@ export interface PlayerState {
   duration: number;
   volume: number;
   error: string | null;
+  // Etapa 6: Shuffle e precisão de seek
+  shuffleEnabled: boolean;
+  shuffleHistory: number[]; // histórico de índices tocados no shuffle
 }
 
 export class StateManager {
@@ -47,6 +50,8 @@ export class StateManager {
       duration: 0,
       volume: 1,
       error: null,
+      shuffleEnabled: false,
+      shuffleHistory: [],
     };
 
     // Escutar atualizações do admin via BroadcastChannel
@@ -56,14 +61,14 @@ export class StateManager {
   private setupCatalogUpdateListeners(): void {
     try {
       // BroadcastChannel para comunicação entre admin e player
-      if (typeof BroadcastChannel !== 'undefined') {
-        const channel = new BroadcastChannel('radio-importante-updates');
-        channel.addEventListener('message', (event) => {
+      if (typeof window !== 'undefined' && window.BroadcastChannel) {
+        const channel = new window.BroadcastChannel('radio-importante-updates');
+        channel.onmessage = (event) => {
           if (event.data?.type === 'catalog-updated') {
             console.log('📡 Recebido sinal de atualização do catálogo do admin');
             this.reloadCatalog();
           }
-        });
+        };
       }
 
       // Backup: polling localStorage para detectar mudanças
@@ -358,6 +363,158 @@ export class StateManager {
     return true;
   }
 
+  // ==== Etapa 6: Shuffle Automático e Precisão de Seek ====
+  
+  // Ativar shuffle automaticamente (interno, sem interface)
+  private enableShuffleMode(): void {
+    if (!this.state.shuffleEnabled) {
+      this.updateState({ 
+        shuffleEnabled: true,
+        shuffleHistory: [this.state.currentTrackIndex]
+      });
+      console.log(`🔀 Shuffle ATIVADO automaticamente`);
+    }
+  }
+
+  // Algoritmo Fisher-Yates para escolher próxima faixa aleatória
+  private getRandomNextTrack(): number {
+    if (!this.catalog) return 0;
+    
+    const totalTracks = this.catalog.tracks.length;
+    if (totalTracks <= 1) return 0;
+    
+    // Se histórico está cheio (todas as faixas foram tocadas), resetar
+    if (this.state.shuffleHistory.length >= totalTracks) {
+      this.updateState({ shuffleHistory: [this.state.currentTrackIndex] });
+    }
+    
+    // Criar array de índices disponíveis (não tocados ainda)
+    const availableIndexes: number[] = [];
+    for (let i = 0; i < totalTracks; i++) {
+      if (!this.state.shuffleHistory.includes(i)) {
+        availableIndexes.push(i);
+      }
+    }
+    
+    // Se não há faixas disponíveis, retornar primeira
+    if (availableIndexes.length === 0) {
+      return 0;
+    }
+    
+    // Fisher-Yates shuffle simplificado: escolher um índice aleatório
+    const randomIndex = Math.floor(Math.random() * availableIndexes.length);
+    return availableIndexes[randomIndex];
+  }
+
+  // Navegar para próxima faixa - LÓGICA AUTOMÁTICA DE SHUFFLE
+  public nextTrackAuto(): boolean {
+    if (!this.catalog) {
+      return false;
+    }
+
+    const currentIndex = this.state.currentTrackIndex;
+    const isLastTrack = currentIndex >= this.catalog.tracks.length - 1;
+    let nextIndex: number;
+    
+    if (isLastTrack) {
+      // HIPÓTESE 1: Chegou na última faixa - ativar shuffle automaticamente
+      this.enableShuffleMode();
+      nextIndex = this.getRandomNextTrack();
+      
+      const newHistory = [...this.state.shuffleHistory, nextIndex];
+      this.updateState({ 
+        currentTrackIndex: nextIndex,
+        shuffleHistory: newHistory
+      });
+      console.log(`🔀 Auto-shuffle: fim da lista, próxima faixa ${nextIndex} (histórico: ${newHistory.length}/${this.catalog.tracks.length})`);
+    } else {
+      // Modo sequencial normal
+      nextIndex = currentIndex + 1;
+      this.updateState({ currentTrackIndex: nextIndex });
+      console.log(`▶️  Sequencial: próxima faixa ${nextIndex}`);
+    }
+    
+    return true;
+  }
+
+  // Navegar para próxima faixa - ACIONADA PELO USUÁRIO (sempre shuffle após primeira vez)
+  public nextTrackManual(): boolean {
+    if (!this.catalog) {
+      return false;
+    }
+
+    // HIPÓTESE 2: Usuário apertou Next - sempre usar shuffle após ativar
+    this.enableShuffleMode();
+    
+    const nextIndex = this.getRandomNextTrack();
+    const newHistory = [...this.state.shuffleHistory, nextIndex];
+    
+    this.updateState({ 
+      currentTrackIndex: nextIndex,
+      shuffleHistory: newHistory
+    });
+    
+    console.log(`🔀 Manual-shuffle: usuário apertou Next, próxima faixa ${nextIndex} (histórico: ${newHistory.length}/${this.catalog.tracks.length})`);
+    return true;
+  }
+
+  // Navegar para faixa anterior (considerando shuffle se ativo)
+  public previousTrackSmart(): boolean {
+    if (!this.catalog) {
+      return false;
+    }
+
+    let prevIndex: number;
+    
+    if (this.state.shuffleEnabled && this.state.shuffleHistory.length > 1) {
+      // No shuffle, voltar para a faixa anterior do histórico
+      const newHistory = [...this.state.shuffleHistory];
+      newHistory.pop(); // Remove a faixa atual
+      prevIndex = newHistory[newHistory.length - 1]; // Pega a anterior
+      this.updateState({ 
+        currentTrackIndex: prevIndex,
+        shuffleHistory: newHistory
+      });
+      console.log(`🔀 Shuffle: faixa anterior ${prevIndex} (histórico: ${newHistory.length}/${this.catalog.tracks.length})`);
+    } else {
+      // Comportamento sequencial normal
+      prevIndex = this.state.currentTrackIndex - 1;
+      if (prevIndex < 0) {
+        prevIndex = this.catalog.tracks.length - 1; // Loop para o final
+      }
+      this.updateState({ currentTrackIndex: prevIndex });
+      console.log(`▶️  Sequencial: faixa anterior ${prevIndex}`);
+    }
+    
+    return true;
+  }
+
+  // Iniciar novo ciclo com shuffle imediatamente após o fim da lista
+  public startShuffledCycle(): number {
+    if (!this.catalog || this.catalog.tracks.length === 0) return 0;
+
+    const totalTracks = this.catalog.tracks.length;
+    const currentIndex = this.state.currentTrackIndex;
+
+    // Ativar shuffle e reiniciar histórico contendo a faixa que encerrou o ciclo
+    this.updateState({ shuffleEnabled: true, shuffleHistory: [currentIndex] });
+
+    // Escolher próxima faixa aleatória evitando repetir a atual
+    const availableIndexes: number[] = [];
+    for (let i = 0; i < totalTracks; i++) {
+      if (i !== currentIndex) availableIndexes.push(i);
+    }
+    const nextIndex = availableIndexes.length > 0
+      ? availableIndexes[Math.floor(Math.random() * availableIndexes.length)]
+      : 0;
+
+    const newHistory = [...this.state.shuffleHistory, nextIndex];
+    this.updateState({ currentTrackIndex: nextIndex, shuffleHistory: newHistory });
+
+    console.log(`🔁 Novo ciclo iniciado com SHUFFLE: próxima faixa ${nextIndex} (histórico: ${newHistory.length}/${totalTracks})`);
+    return nextIndex;
+  }
+
   // Atualizar estado
   public updateState(newState: Partial<PlayerState>): void {
     const oldState = { ...this.state };
@@ -447,8 +604,17 @@ export class StateManager {
 
         console.log('✅ Estado restaurado do localStorage');
       }
+
+      // REGRA: Nova sessão sempre ativa shuffle automaticamente
+      this.enableShuffleMode();
+      console.log('🔀 Shuffle ativado automaticamente em nova sessão');
+      
     } catch (error) {
       console.warn('⚠️ Não foi possível carregar estado salvo:', error);
+      
+      // Mesmo com erro, ativar shuffle em nova sessão
+      this.enableShuffleMode();
+      console.log('🔀 Shuffle ativado automaticamente em nova sessão (fallback)');
     }
   }
 

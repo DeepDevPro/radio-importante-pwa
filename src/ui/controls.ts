@@ -16,6 +16,7 @@ export class Controls {
   private modalArtist!: HTMLElement;
   private modalSong!: HTMLElement;
   private state: ControlsState;
+  private lastProgressLog = 0; // throttle para logs de progresso
 
   // Callbacks para eventos
   public onPlay: (() => void) | null = null;
@@ -178,9 +179,25 @@ export class Controls {
   }
 
   public updateProgress(currentTime: number, duration: number): void {
-    // Este método pode ser usado para futuras funcionalidades de progresso
-    // Por enquanto, vamos apenas atualizar as informações de tempo se necessário
-    console.log(`Progress: ${this.formatTime(currentTime)} / ${this.formatTime(duration)}`);
+    // Reduzir ruído no console: logar somente se debug habilitado ou como heartbeat esporádico
+    const debug = (typeof window !== 'undefined') && (
+      window.location.search.includes('debug=on') || localStorage.getItem('ri_continuous_debug') === 'on'
+    );
+    const now = (typeof window !== 'undefined' && window.performance && typeof window.performance.now === 'function')
+      ? window.performance.now()
+      : Date.now();
+
+    // Throttle: 1s no modo debug, 15s no modo normal
+    const interval = debug ? 1000 : 15000;
+    if (now - this.lastProgressLog < interval) return;
+    this.lastProgressLog = now;
+
+    if (debug) {
+      console.log(`[progress] ${this.formatTime(currentTime)} / ${this.formatTime(duration)}`);
+    } else {
+      // Heartbeat compacto
+      console.log('▶️ playing…');
+    }
   }
 
   private updateUI(): void {

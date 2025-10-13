@@ -6,6 +6,13 @@ name: Deploy to Staging (Digital Ocean)
 on:
   push:
     branches: [ "staging" ]
+    paths:
+      - "src/**" # main app source
+      - "admin/**" # admin panel scripts
+      - "public/**" # public assets and configs
+      - "index.html"
+      - "admin.html"
+      - "vite.config.*"
   workflow_dispatch:
 
 concurrency:

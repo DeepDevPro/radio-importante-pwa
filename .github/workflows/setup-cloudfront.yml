@@ -1,0 +1,12 @@
+name: DISABLED - Setup CloudFront
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Disabled. No CloudFront in current architecture."
