@@ -163,6 +163,28 @@ git revert HEAD
 git push origin staging  # ou main
 ```
 
+### Rollback para Versão Estável (v2.2.10-stable)
+```bash
+# Opção 1: Usar a tag diretamente (recomendado)
+git checkout v2.2.10-stable
+# Criar branch temporária se necessário
+git checkout -b hotfix-from-stable
+git push origin hotfix-from-stable
+
+# Opção 2: Usar branch de backup de staging
+git checkout staging
+git reset --hard backup-staging-stable-13out2025
+git push origin staging --force
+
+# Opção 3: Usar branch de backup de main
+git checkout main
+git reset --hard backup-main-stable-13out2025
+git push origin main --force
+
+# IMPORTANTE: --force deve ser usado com cuidado
+# Comunicar time antes de fazer push forçado
+```
+
 ### Rollback de Experimentos/Projetos Grandes
 ```bash
 # 1. Criar branch de backup ANTES de começar experimento
@@ -270,6 +292,21 @@ curl -H "Origin: https://radio.importantestudio.com" -I [URL-COM-CORS]
 
 ## 📝 Histórico de Deploys Recentes
 
+### 13/10/2025 - v2.2.10-stable (Versão Estável Consolidada) ⭐
+- **Tag**: `v2.2.10-stable` (commit f2867ec)
+- **Branches de Backup**: 
+  - `backup-main-stable-13out2025`
+  - `backup-staging-stable-13out2025`
+- **Status**: ✅ Versão estável para ponto de restauração seguro
+- **Features Consolidadas**:
+  - Upload com caracteres não-ASCII funcionando (japonês testado)
+  - GitHub Actions workflows usando v2 (sem erros)
+  - MP3 contínuo operacional (Dockerfile + ffmpeg)
+  - iOS PWA background playback ≥300s estável
+  - HLS pipeline R6 validado (diagnostics p95: 44ms)
+  - Backends staging e produção sincronizados
+- **Rollback**: Use `git checkout v2.2.10-stable` ou branches de backup
+
 ### 13/10/2025 - GitHub Actions Fix
 - **Issue**: GitHub Actions falhando com erro "tar: invalid magic" no `digitalocean/app_action@v1.1.5`
 - **Root Cause**: Usando versão v1.1.5 (antiga, não mantida) - v1 branch não recebe mais updates
@@ -284,4 +321,5 @@ curl -H "Origin: https://radio.importantestudio.com" -I [URL-COM-CORS]
 
 ---
 **Última atualização**: 13/10/2025
-**Versão**: v2.2.9 + GitHub Actions v2 migration
+**Versão Estável Atual**: v2.2.10-stable ⭐
+**Backup Branches**: backup-main-stable-13out2025 | backup-staging-stable-13out2025
