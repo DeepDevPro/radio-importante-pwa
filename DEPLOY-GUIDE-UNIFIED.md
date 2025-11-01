@@ -294,15 +294,21 @@ curl -H "Origin: https://radio.importantestudio.com" -I [URL-COM-CORS]
 
 ### 01/11/2025 - Implementações Incrementais
 
-- **Commit f7d42af**: ✨ Feat - Imagem fullscreen em mobile (edge-to-edge)
+- **Commit 0fb003d**: 🐛 Fix - Corrigir margem esquerda e altura da imagem mobile
+  - Adiciona `margin-left: -15px` para compensar padding e alcançar edge-to-edge
+  - Remove `position: absolute` da imagem (causava problema de altura)
+  - Adiciona `display: block` e `min-height: 100%` para preencher até o fim
+  - **Correções aplicadas**: margem esquerda removida, imagem preenche altura completa
+  - Testes necessários: Validar em iPhone/Android (edge-to-edge correto)
+
+- **Commit f7d42af**: ✨ Feat - Imagem fullscreen em mobile (edge-to-edge) 
   - **Aplicado SOMENTE em mobile** (max-width: 480px)
-  - Remove padding do body em mobile
-  - Imagem ocupa 100vw (largura total da tela)
-  - Usa `flex: 1` para preencher altura disponível
-  - Remove margens e bordas arredondadas em mobile
-  - Calcula altura dinamicamente: `calc(100vh - 280px)`
+  - Layout em coluna: controles no topo (fundo claro), imagem embaixo
+  - Imagem ocupa largura total com `width: 100vw`
+  - Usa `flex: 1` para preencher espaço restante após controles
+  - Remove bordas arredondadas em mobile
   - **Desktop e iPad mantêm layout original**
-  - Testes necessários: iPhone, Android phones
+  - ⚠️ **ITERAÇÃO 1** - Necessitou correção (commit 0fb003d)
 
 - **Commit c76c923**: 🐛 Fix - Prevenir bounce/overscroll no Safari (iOS e macOS)
   - Adiciona `overscroll-behavior: none` em html e body
