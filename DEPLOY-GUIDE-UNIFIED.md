@@ -293,17 +293,29 @@ curl -H "Origin: https://radio.importantestudio.com" -I [URL-COM-CORS]
 ## 📝 Histórico de Deploys Recentes
 
 ### 01/11/2025 - Implementações Incrementais
+
+- **Commit f7d42af**: ✨ Feat - Imagem fullscreen em mobile (edge-to-edge)
+  - **Aplicado SOMENTE em mobile** (max-width: 480px)
+  - Remove padding do body em mobile
+  - Imagem ocupa 100vw (largura total da tela)
+  - Usa `flex: 1` para preencher altura disponível
+  - Remove margens e bordas arredondadas em mobile
+  - Calcula altura dinamicamente: `calc(100vh - 280px)`
+  - **Desktop e iPad mantêm layout original**
+  - Testes necessários: iPhone, Android phones
+
 - **Commit c76c923**: 🐛 Fix - Prevenir bounce/overscroll no Safari (iOS e macOS)
   - Adiciona `overscroll-behavior: none` em html e body
   - Define `position: fixed` no body com overflow controlado
   - Garante background color consistente (#EFEAE3) em html e body
   - Resolve problema de "fundo escuro" ao arrastar tela no Safari
-  - Testes necessários: Safari iOS (iPhone) + Safari macOS
+  - ✅ **VALIDADO EM STAGING**
   
 - **Commit 212ef23**: ✨ Feat - Fonte Helvetica no player
   - Altera font-family de system fonts para `'Helvetica Neue', Helvetica, Arial, sans-serif`
   - Aplicado em todos os HTMLs do player (index, staging, prod)
   - Melhora consistência visual conforme solicitação do cliente
+  - ✅ **VALIDADO EM STAGING**
 
 ### 01/11/2025 - Retorno ao Desenvolvimento
 - **Marco**: 🔄 **RETORNO APÓS 19 DIAS**
