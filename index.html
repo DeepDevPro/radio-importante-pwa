@@ -41,11 +41,25 @@
         box-sizing: border-box;
       }
       
+      /* Prevenir bounce/overscroll no Safari (iOS e macOS) */
+      html {
+        overscroll-behavior: none;
+        background-color: #EFEAE3;
+        height: 100%;
+        overflow: hidden;
+      }
+      
       body {
         font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
         background-color: #EFEAE3;
         color: #271F30;
-        min-height: 100vh;
+        height: 100vh;
+        width: 100%;
+        position: fixed;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: none;
         display: flex;
         flex-direction: column;
         align-items: center;
