@@ -502,8 +502,7 @@
         
         /* Container dos controles com fundo claro no topo */
         .player-container {
-          padding: 15px 15px 0 15px; /* Remove padding-bottom para imagem colar no fundo */
-          padding-top: 0; /* Remove padding-top para controlar posição via justify-content */
+          padding: 0; /* Remove todos os paddings */
           background: #EFEAE3;
           flex-shrink: 0;
           width: 100%;
@@ -511,16 +510,14 @@
           display: flex;
           flex-direction: column;
           justify-content: flex-end; /* Empurra conteúdo para o final (próximo da imagem) */
-          padding-bottom: 30px; /* 30px acima da imagem */
         }
         
-        /* Imagem edge-to-edge na parte de baixo com respiro no topo */
+        /* Imagem edge-to-edge na parte de baixo colada no fundo */
         .custom-image-container {
           width: 100vw;
           height: auto;
           flex: 1; /* Preenche espaço restante após controles */
-          margin: 0; /* Remove margin para controles ficarem mais próximos */
-          margin-left: -15px; /* Compensa padding do player-container */
+          margin: 0; /* Sem margins */
           left: 0;
           transform: none;
           border-radius: 0;
@@ -540,16 +537,16 @@
         
         /* Juntar elementos e trazer mais pra baixo */
         .artwork {
-          margin-top: 180px; /* Distanciar do topo (100px + 80px) */
-          margin-bottom: 0px; /* Colar no bloco de metadados (10px - 10px = 0px) */
+          margin-top: 130px; /* Distanciar do topo */
+          margin-bottom: 0px; /* Colar no bloco de metadados */
         }
         
         .track-info {
-          margin-bottom: 5px; /* Diminuir distância com controls (10px - 5px = 5px) */
+          margin-bottom: 5px; /* Diminuir distância com controls */
         }
         
         .controls {
-          margin-bottom: 10px; /* Manter */
+          margin-bottom: 30px; /* 30px acima da imagem */
         }
         
         .btn-play, .btn-next, .btn-info {
