@@ -75,16 +75,16 @@ export class Controls {
         <div class="custom-image-container">
           <img src="/img/Leo_R_161_small.webp" alt="Leo R 161" class="custom-image" />
         </div>
+      </div>
 
-        <!-- Info Modal -->
-        <div class="info-modal" id="infoModal" style="display: none;">
-          <div class="modal-content">
-            <div class="modal-body">
-              <p class="modal-description">Você está ouvindo a Rádio Importante. Todas músicas aqui são extraídas direto de vinis de época. Nosso objetivo é levar o mundo dos discos pra você. Uma curadoria com total liberdade de gêneros e época, a única regra é que seja provinda de um disco de vinyl.</p>
-              <div class="modal-track-info">
-                <p class="modal-artist" id="modalArtist">Artista</p>
-                <p class="modal-song" id="modalSong">Nome da Música</p>
-              </div>
+      <!-- Info Modal (fora do player-container para não afetar layout) -->
+      <div class="info-modal" id="infoModal" style="display: none;">
+        <div class="modal-content">
+          <div class="modal-body">
+            <p class="modal-description">Você está ouvindo a Rádio Importante. Todas músicas aqui são extraídas direto de vinis de época. Nosso objetivo é levar o mundo dos discos pra você. Uma curadoria com total liberdade de gêneros e época, a única regra é que seja provinda de um disco de vinyl.</p>
+            <div class="modal-track-info">
+              <p class="modal-artist" id="modalArtist">Artista</p>
+              <p class="modal-song" id="modalSong">Nome da Música</p>
             </div>
           </div>
         </div>
