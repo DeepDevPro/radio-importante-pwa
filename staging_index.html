@@ -483,8 +483,43 @@
 
       /* Responsive */
       @media (max-width: 480px) {
+        /* Remove padding do body em mobile para imagem fullscreen */
+        body {
+          padding: 0;
+          justify-content: flex-start;
+        }
+        
+        #app {
+          max-width: 100%;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+        }
+        
         .player-container {
-          padding: 20px;
+          padding: 15px;
+          flex-shrink: 0;
+        }
+        
+        /* Imagem fullscreen em mobile - ocupa toda largura e altura disponível */
+        .custom-image-container {
+          width: 100vw;
+          height: auto;
+          min-height: calc(100vh - 280px); /* Altura disponível após controles */
+          margin: 0;
+          left: 0;
+          transform: none;
+          border-radius: 0;
+          flex: 1;
+          display: flex;
+          align-items: stretch;
+        }
+        
+        .custom-image {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: center;
         }
         
         .btn-play, .btn-next, .btn-info {
@@ -500,18 +535,19 @@
         .track-metadata, .track-artist, .track-title {
           font-size: 9px; /* 11px - 20% = 8.8px arredondado */
         }
+        
+        /* Modal também fullscreen em mobile */
+        .modal-content {
+          width: 100vw;
+          height: 100vh;
+          border-radius: 0;
+        }
       }
       
-      /* Responsividade do container da imagem */
+      /* Responsividade do container da imagem para telas muito pequenas */
       @media (max-width: 400px) {
         .custom-image-container {
-          width: 320px;
-          height: 352px;
-        }
-        
-        .modal-content {
-          width: 320px;
-          height: 352px;
+          min-height: calc(100vh - 260px); /* Ajuste para telas menores */
         }
       }
     </style>
