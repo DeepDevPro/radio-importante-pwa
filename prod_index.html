@@ -483,43 +483,51 @@
 
       /* Responsive */
       @media (max-width: 480px) {
-        /* Remove padding do body em mobile para imagem fullscreen */
+        /* Layout em coluna para mobile - controles em cima, imagem embaixo */
         body {
           padding: 0;
           justify-content: flex-start;
+          align-items: stretch;
         }
         
         #app {
           max-width: 100%;
-          height: 100%;
+          width: 100%;
           display: flex;
           flex-direction: column;
+          min-height: 100vh;
         }
         
+        /* Container dos controles com fundo claro no topo */
         .player-container {
           padding: 15px;
+          background: #EFEAE3;
           flex-shrink: 0;
+          width: 100%;
         }
         
-        /* Imagem fullscreen em mobile - ocupa toda largura e altura disponível */
+        /* Imagem edge-to-edge apenas na parte de baixo */
         .custom-image-container {
           width: 100vw;
           height: auto;
-          min-height: calc(100vh - 280px); /* Altura disponível após controles */
+          flex: 1; /* Preenche espaço restante após controles */
           margin: 0;
+          margin-left: -15px; /* Compensa padding do player-container */
           left: 0;
           transform: none;
           border-radius: 0;
-          flex: 1;
-          display: flex;
-          align-items: stretch;
+          box-shadow: none;
+          position: relative;
+          overflow: hidden;
         }
         
         .custom-image {
           width: 100%;
+          min-height: 100%;
           height: 100%;
           object-fit: cover;
           object-position: center;
+          display: block;
         }
         
         .btn-play, .btn-next, .btn-info {
@@ -541,13 +549,6 @@
           width: 100vw;
           height: 100vh;
           border-radius: 0;
-        }
-      }
-      
-      /* Responsividade do container da imagem para telas muito pequenas */
-      @media (max-width: 400px) {
-        .custom-image-container {
-          min-height: calc(100vh - 260px); /* Ajuste para telas menores */
         }
       }
     </style>
