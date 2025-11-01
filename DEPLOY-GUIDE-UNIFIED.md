@@ -292,6 +292,19 @@ curl -H "Origin: https://radio.importantestudio.com" -I [URL-COM-CORS]
 
 ## 📝 Histórico de Deploys Recentes
 
+### 01/11/2025 - Implementações Incrementais
+- **Commit c76c923**: 🐛 Fix - Prevenir bounce/overscroll no Safari (iOS e macOS)
+  - Adiciona `overscroll-behavior: none` em html e body
+  - Define `position: fixed` no body com overflow controlado
+  - Garante background color consistente (#EFEAE3) em html e body
+  - Resolve problema de "fundo escuro" ao arrastar tela no Safari
+  - Testes necessários: Safari iOS (iPhone) + Safari macOS
+  
+- **Commit 212ef23**: ✨ Feat - Fonte Helvetica no player
+  - Altera font-family de system fonts para `'Helvetica Neue', Helvetica, Arial, sans-serif`
+  - Aplicado em todos os HTMLs do player (index, staging, prod)
+  - Melhora consistência visual conforme solicitação do cliente
+
 ### 01/11/2025 - Retorno ao Desenvolvimento
 - **Marco**: 🔄 **RETORNO APÓS 19 DIAS**
 - **Branches de Backup Criadas**: 
