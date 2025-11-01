@@ -133,11 +133,9 @@ export class Controls {
       window.open('/debug.html', '_blank');
     });
 
-    // Click outside modal to close
-    this.infoModal.addEventListener('click', (e) => {
-      if (e.target === this.infoModal) {
-        this.hideInfoModal();
-      }
+    // Click anywhere on modal to close (including content)
+    this.infoModal.addEventListener('click', () => {
+      this.hideInfoModal();
     });
   }
 
