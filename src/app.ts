@@ -86,12 +86,6 @@ function setupStagingIndicators(): void {
     banner.innerHTML = '🚧 AMBIENTE DE STAGING - NÃO É PRODUÇÃO 🚧';
     document.body.insertBefore(banner, document.body.firstChild);
     
-    // Criar indicador lateral
-    const indicator = document.createElement('div');
-    indicator.className = 'staging-indicator';
-    indicator.innerHTML = 'STAGING';
-    document.body.appendChild(indicator);
-    
     // Log console
     console.log('%c🚧 STAGING ENVIRONMENT 🚧', 'color: #ff6b35; font-size: 16px; font-weight: bold;');
   }
