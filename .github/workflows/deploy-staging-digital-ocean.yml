@@ -11,6 +11,7 @@ on:
       - "admin/**" # admin panel scripts
       - "public/**" # public assets and configs
       - "index.html"
+      - "staging_index.html" # staging HTML file
       - "admin.html"
       - "vite.config.*"
   workflow_dispatch:
