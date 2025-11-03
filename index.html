@@ -88,14 +88,6 @@
         transform: scale(1.02);
       }
       
-      /* Responsividade da logo */
-      @media (max-width: 480px) {
-        .radio-logo {
-          width: 374px; /* 288px + 30% = 374.4px arredondado */
-          margin: 15px auto 25px auto;
-        }
-      }
-      
       /* Player Container */
       .player-container {
         background: #EFEAE3;
@@ -128,13 +120,6 @@
       .radio-logo-main:hover {
         opacity: 1;
         transform: scale(1.05);
-      }
-      
-      /* Responsividade da logo no player */
-      @media (max-width: 480px) {
-        .radio-logo-main {
-          width: 275px;
-        }
       }
       
       .app-title {
@@ -330,14 +315,6 @@
         transform: scale(1.1);
       }
       
-      /* Responsividade dos ícones */
-      @media (max-width: 480px) {
-        .btn-play img, .btn img {
-          width: 22px;
-          height: 22px;
-        }
-      }
-      
       /* Progress Bar */
       .progress-container {
         margin-bottom: 20px;
@@ -484,6 +461,23 @@
 
       /* Responsive */
       @media (max-width: 480px) {
+        /* Logo de carregamento */
+        .radio-logo {
+          width: 374px; /* 288px + 30% = 374.4px arredondado */
+          margin: 15px auto 25px auto;
+        }
+        
+        /* Logo principal do player */
+        .radio-logo-main {
+          width: 285px;
+        }
+        
+        /* Ícones dos botões */
+        .btn-play img, .btn img {
+          width: 22px;
+          height: 22px;
+        }
+        
         /* Layout em coluna para mobile - controles em cima, imagem embaixo */
         body {
           padding: 0;
@@ -538,7 +532,7 @@
         /* Juntar elementos e trazer mais pra baixo */
         .artwork {
           margin-top: 130px; /* Distanciar do topo */
-          margin-bottom: 0px; /* Colar no bloco de metadados */
+          margin-bottom: 10px; /* Colar no bloco de metadados */
         }
         
         .track-info {
