@@ -39,9 +39,9 @@ export class Controls {
   private render(): void {
     this.container.innerHTML = `
       <div class="player-container">
-        <!-- Logo da Radio Importante -->
+        <!-- Logo The Ern -->
         <div class="artwork">
-          <img src="/icons/logo-theern-vertical.png" alt="Radio Importante" class="radio-logo-main" />
+          <img src="/icons/logo-theern-vertical.png" alt="The Ern" class="radio-logo-main" />
         </div>
 
         <!-- Header with Utility Buttons -->
@@ -73,7 +73,7 @@ export class Controls {
 
         <!-- Container da imagem customizada -->
         <div class="custom-image-container">
-          <img src="/img/leo-r031-2.webp" alt="Radio Importante" class="custom-image" />
+          <img src="/img/leo-r031-2.webp" alt="The Ern" class="custom-image" />
         </div>
       </div>
 
@@ -81,7 +81,7 @@ export class Controls {
       <div class="info-modal" id="infoModal" style="display: none;">
         <div class="modal-content">
           <div class="modal-body">
-            <p class="modal-description">Você está ouvindo a Rádio Importante. Todas músicas aqui são extraídas direto de vinis de época. Nosso objetivo é levar o mundo dos discos pra você. Uma curadoria com total liberdade de gêneros e época, a única regra é que seja provinda de um disco de vinyl.</p>
+            <p class="modal-description">Você está ouvindo The Ern. Todas músicas aqui são extraídas direto de vinis de época. Nosso objetivo é levar o mundo dos discos pra você. Uma curadoria com total liberdade de gêneros e época, a única regra é que seja provinda de um disco de vinyl.</p>
             <div class="modal-track-info">
               <p class="modal-artist" id="modalArtist">Artista</p>
               <p class="modal-song" id="modalSong">Nome da Música</p>

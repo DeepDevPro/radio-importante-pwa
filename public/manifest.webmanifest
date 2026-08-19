@@ -1,6 +1,6 @@
 {
-  "name": "Radio Importante",
-  "short_name": "Radio Importante",
+  "name": "The Ern",
+  "short_name": "The Ern",
   "description": "Um player de música web progressivo (PWA) com reprodução contínua",
   "start_url": "/",
   "display": "standalone",

@@ -50,9 +50,9 @@ export class MediaSessionManager {
 
     // Configurar metadados estáticos para evitar updates durante screen lock
     const staticMetadata = new MediaMetadata({
-      title: 'Radio Importante',
+      title: 'The Ern',
       artist: 'Streaming Contínuo',
-      album: 'PWA Music Player',
+      album: 'The Ern',
       artwork: [
         { src: '/icons/icon-192x192.svg', sizes: '192x192', type: 'image/svg+xml' },
         { src: '/icons/icon-512x512.svg', sizes: '512x512', type: 'image/svg+xml' }
@@ -126,7 +126,7 @@ export class MediaSessionManager {
       this.currentMetadata = new MediaMetadata({
         title,
         artist,
-        album: 'Radio Importante',
+        album: 'The Ern',
         artwork: artworkArray,
       });
 
