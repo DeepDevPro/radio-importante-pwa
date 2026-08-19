@@ -41,7 +41,7 @@ export class Controls {
       <div class="player-container">
         <!-- Logo da Radio Importante -->
         <div class="artwork">
-          <img src="/icons/logo-black.svg" alt="Radio Importante" class="radio-logo-main" />
+          <img src="/icons/logo-theern-vertical.png" alt="Radio Importante" class="radio-logo-main" />
         </div>
 
         <!-- Header with Utility Buttons -->
@@ -73,7 +73,7 @@ export class Controls {
 
         <!-- Container da imagem customizada -->
         <div class="custom-image-container">
-          <img src="/img/Leo_R_161_small.webp" alt="Leo R 161" class="custom-image" />
+          <img src="/img/leo-r031-2.webp" alt="Radio Importante" class="custom-image" />
         </div>
       </div>
 
