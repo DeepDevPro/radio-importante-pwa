@@ -173,7 +173,7 @@ class RadioImportanteApp {
   private showLoading(container: HTMLElement): void {
     container.innerHTML = `
       <div class="loading">
-        <h1>Radio Importante</h1>
+        <h1>The Ern</h1>
         <div class="spinner"></div>
         <p>Carregando playlist...</p>
       </div>

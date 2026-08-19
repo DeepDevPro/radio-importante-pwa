@@ -328,7 +328,7 @@ export default defineConfig({
                   totalTracks: tracks.length,
                   totalDuration: tracks.length * 300,
                   artwork: '/images/cover.jpg',
-                  radioName: 'Radio Importante'
+                  radioName: 'The Ern'
                 }
               };
               
