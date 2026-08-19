@@ -1,525 +1,547 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-    <!-- Deploy trigger: 2025-11-01 -->
-    
-    <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#271F30" />
-    <meta name="background-color" content="#EFEAE3" />
-    <meta name="description" content="Mergulhe no mundo dos discos de vinil. Uma curadoria com total liberdade de gêneros e épocas. A única regra aqui é que a música tenha vindo de um vinil." />
-    
-    <!-- PWA Meta Tags -->
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Radio Importante" />
-    
-    <!-- iOS Splash Screen -->
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    
-    <!-- Apple Touch Icons -->
-    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.svg" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192x192.svg" />
-    <link rel="apple-touch-icon" href="/icons/icon-192x192.svg" />
-    
-    <!-- Favicons -->
-    <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg" />
-    <link rel="icon" sizes="32x32" href="/icons/icon-32x32.svg" />
-    <link rel="icon" sizes="16x16" href="/icons/icon-72x72.svg" />
-    
-    <!-- Manifest -->
-    <link rel="manifest" href="/manifest.webmanifest" />
-    
-    <title>Radio Importante</title>
-    
-    <style>
-      /* Reset básico e estilos iniciais */
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <!-- Deploy trigger: 2025-11-01 -->
+
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#271F30" />
+  <meta name="background-color" content="#EFEAE3" />
+  <meta name="description"
+    content="Mergulhe no mundo dos discos de vinil. Uma curadoria com total liberdade de gêneros e épocas. A única regra aqui é que a música tenha vindo de um vinil." />
+
+  <!-- PWA Meta Tags -->
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Radio Importante" />
+
+  <!-- iOS Splash Screen -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+
+  <!-- Apple Touch Icons -->
+  <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.svg" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192x192.svg" />
+  <link rel="apple-touch-icon" href="/icons/icon-192x192.svg" />
+
+  <!-- Favicons -->
+  <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg" />
+  <link rel="icon" sizes="32x32" href="/icons/icon-32x32.svg" />
+  <link rel="icon" sizes="16x16" href="/icons/icon-72x72.svg" />
+
+  <!-- Manifest -->
+  <link rel="manifest" href="/manifest.webmanifest" />
+
+  <title>Radio Importante</title>
+
+  <style>
+    /* Reset básico e estilos iniciais */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    /* Prevenir bounce/overscroll no Safari (iOS e macOS) */
+    html {
+      overscroll-behavior: none;
+      background-color: #EFEAE3;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      background-color: #EFEAE3;
+      color: #271F30;
+      height: 100vh;
+      width: 100%;
+      position: fixed;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    #app {
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    /* Logo da Radio Importante */
+    .radio-logo {
+      width: 450px;
+      /* 346px + 30% = 449.8px arredondado */
+      height: auto;
+      margin: 20px auto 30px auto;
+      display: block;
+      filter: drop-shadow(0 4px 8px rgba(39, 31, 48, 0.1));
+      transition: transform 0.3s ease;
+    }
+
+    .radio-logo:hover {
+      transform: scale(1.02);
+    }
+
+    /* Player Container */
+    .player-container {
+      background: #EFEAE3;
+      border-radius: 20px;
+      padding: 30px;
+      backdrop-filter: blur(10px);
+      box-shadow: none;
+    }
+
+    /* Artwork */
+    .artwork {
+      margin-bottom: 30px;
+    }
+
+    .artwork-placeholder {
+      font-size: 80px;
+      margin-bottom: 15px;
+      opacity: 0.8;
+    }
+
+    /* Logo no player principal */
+    .radio-logo-main {
+      width: 137px;
+      /* 259px + 30% = 336.7px arredondado */
+      height: auto;
+      opacity: 0.9;
+      filter: drop-shadow(0 2px 4px rgba(39, 31, 48, 0.15));
+      transition: all 0.3s ease;
+    }
+
+    .radio-logo-main:hover {
+      opacity: 1;
+      transform: scale(1.05);
+    }
+
+    .app-title {
+      font-size: 24px;
+      font-weight: 600;
+      color: #271F30;
+      margin-bottom: 10px;
+    }
+
+    .title-section {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    .admin-btn {
+      background: transparent;
+      border: 1px solid rgba(39, 31, 48, 0.2);
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 14px;
+      opacity: 0.6;
+    }
+
+    .admin-btn:hover {
+      opacity: 1;
+      background: rgba(39, 31, 48, 0.1);
+      transform: scale(1.1);
+    }
+
+    /* Header with utility buttons */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .utility-buttons {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      display: flex;
+      gap: 8px;
+      z-index: 1000;
+    }
+
+    .utility-btn {
+      background: transparent;
+      border: 1px solid rgba(39, 31, 48, 0.2);
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 14px;
+      opacity: 0.6;
+    }
+
+    .utility-btn:hover {
+      opacity: 1;
+      background: rgba(39, 31, 48, 0.1);
+      transform: scale(1.1);
+    }
+
+    .debug-btn {
+      background: transparent;
+      color: #666;
+    }
+
+    .debug-btn:hover {
+      background: rgba(102, 102, 102, 0.1);
+      color: #444;
+    }
+
+    /* Hide debug and admin buttons in production - will be overridden by JS in staging */
+    .utility-btn.debug-btn,
+    .utility-btn.admin-btn {
+      display: none;
+    }
+
+    /* Track Info */
+    .track-info {
+      margin-bottom: 30px;
+      min-height: 30px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .track-metadata {
+      font-size: 10px;
+      /* 12px - 20% = 9.6px arredondado */
+      font-weight: 600;
+      opacity: 0.6;
+      line-height: 1.2;
+      text-align: center;
+    }
+
+    .track-title {
+      font-size: 10px;
+      /* 12px - 20% = 9.6px arredondado */
+      font-weight: 600;
+      opacity: 0.6;
+      line-height: 1.2;
+      margin-top: 0;
+    }
+
+    .track-artist {
+      font-size: 10px;
+      /* 12px - 20% = 9.6px arredondado */
+      font-weight: 600;
+      opacity: 0.6;
+      margin-bottom: 0;
+      line-height: 1.2;
+    }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .btn {
+      background: transparent;
+      color: #271F30;
+      border: 2px solid rgba(39, 31, 48, 0.0);
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      font-size: 24px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(5px);
+    }
+
+    .btn:hover:not(:disabled) {
+      background: rgba(39, 31, 48, 0.0);
+      border-color: rgba(39, 31, 48, 0.0);
+      transform: scale(1.15);
+    }
+
+    .btn:active:not(:disabled) {
+      transform: scale(0.95);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-play {
+      width: 60px;
+      height: 60px;
+      font-size: 24px;
+    }
+
+    .btn-next,
+    .btn-info {
+      width: 60px;
+      height: 60px;
+      font-size: 24px;
+    }
+
+    /* Ícones SVG nos botões */
+    .btn img {
+      width: 24px;
+      height: 24px;
+      filter: brightness(0) saturate(100%) invert(16%) sepia(12%) saturate(1084%) hue-rotate(212deg) brightness(97%) contrast(93%);
+      transition: all 0.2s ease;
+    }
+
+    .btn-play img {
+      width: 24px;
+      height: 24px;
+    }
+
+    .btn:hover:not(:disabled) img {
+      filter: brightness(0) saturate(100%) invert(0%) sepia(100%) saturate(7500%) hue-rotate(0deg) brightness(0%) contrast(100%);
+      transform: scale(1.1);
+    }
+
+    /* Progress Bar */
+    .progress-container {
+      margin-bottom: 20px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 4px;
+      background: rgba(39, 31, 48, 0.2);
+      border-radius: 2px;
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: #271F30;
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.1s ease;
+    }
+
+    .time-display {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      opacity: 0.7;
+    }
+
+    /* Info Modal */
+    .info-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(239, 234, 227, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      backdrop-filter: blur(5px);
+    }
+
+    .modal-content {
+      background: rgba(239, 234, 227, 0.95);
+      border-radius: 0;
+      width: 380px;
+      height: 418px;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      position: relative;
+    }
+
+    .modal-body {
+      padding: 30px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      height: 100%;
+    }
+
+    .modal-track-info {
+      text-align: center;
+    }
+
+    .modal-description {
+      font-size: 14px;
+      color: #271F30;
+      line-height: 1.6;
+      text-align: center;
+      margin: 0 0 30px 0;
+    }
+
+    .modal-artist {
+      font-size: 18px;
+      font-weight: 600;
+      color: #271F30;
+      margin: 0 0 8px 0;
+      text-align: center;
+    }
+
+    .modal-song {
+      font-size: 14px;
+      font-weight: 400;
+      color: #271F30;
+      opacity: 0.7;
+      margin: 0;
+      text-align: center;
+    }
+
+    /* Loading state */
+    .loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #271F30;
+      border-top: 3px solid transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
       }
-      
-      /* Prevenir bounce/overscroll no Safari (iOS e macOS) */
-      html {
-        overscroll-behavior: none;
-        background-color: #EFEAE3;
-        height: 100%;
-        overflow: hidden;
+
+      100% {
+        transform: rotate(360deg);
       }
-      
-      body {
-        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-        background-color: #EFEAE3;
-        color: #271F30;
-        height: 100vh;
-        width: 100%;
-        position: fixed;
-        overflow-y: auto;
-        overflow-x: hidden;
-        -webkit-overflow-scrolling: touch;
-        overscroll-behavior: none;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-      }
-      
-      #app {
-        width: 100%;
-        max-width: 400px;
-        text-align: center;
-      }
-      
-      /* Logo da Radio Importante */
+    }
+
+    /* Container da imagem customizada */
+    .custom-image-container {
+      width: 380px;
+      height: 418px;
+      margin: 20px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 0;
+      box-shadow: 0 4px 16px rgba(39, 31, 48, 0.1);
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+      position: relative;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .custom-image {
+      width: 100%;
+      height: 100%;
+      scale: 100% 110%;
+      object-fit: cover;
+      object-position: center center;
+      display: block;
+      transition: transform 0.3s ease;
+    }
+
+    .custom-image:hover {
+      transform: scale(1.02);
+    }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+
+      /* Logo de carregamento */
       .radio-logo {
-        width: 450px; /* 346px + 30% = 449.8px arredondado */
-        height: auto;
-        margin: 20px auto 30px auto;
-        display: block;
-        filter: drop-shadow(0 4px 8px rgba(39, 31, 48, 0.1));
-        transition: transform 0.3s ease;
+        width: 374px;
+        /* 288px + 30% = 374.4px arredondado */
+        margin: 15px auto 25px auto;
       }
-      
-      .radio-logo:hover {
-        transform: scale(1.02);
-      }
-      
-      /* Player Container */
-      .player-container {
-        background: #EFEAE3;
-        border-radius: 20px;
-        padding: 30px;
-        backdrop-filter: blur(10px);
-        box-shadow: none;
-      }
-      
-      /* Artwork */
-      .artwork {
-        margin-bottom: 30px;
-      }
-      
-      .artwork-placeholder {
-        font-size: 80px;
-        margin-bottom: 15px;
-        opacity: 0.8;
-      }
-      
-      /* Logo no player principal */
+
+      /* Logo principal do player */
       .radio-logo-main {
-        width: 337px; /* 259px + 30% = 336.7px arredondado */
-        height: auto;
-        opacity: 0.9;
-        filter: drop-shadow(0 2px 4px rgba(39, 31, 48, 0.15));
-        transition: all 0.3s ease;
-      }
-      
-      .radio-logo-main:hover {
-        opacity: 1;
-        transform: scale(1.05);
-      }
-      
-      .app-title {
-        font-size: 24px;
-        font-weight: 600;
-        color: #271F30;
-        margin-bottom: 10px;
+        width: 285px;
       }
 
-      .title-section {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 15px;
-      }
-
-      .admin-btn {
-        background: transparent;
-        border: 1px solid rgba(39, 31, 48, 0.2);
-        border-radius: 50%;
-        width: 32px;
-        height: 32px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        font-size: 14px;
-        opacity: 0.6;
-      }
-
-      .admin-btn:hover {
-        opacity: 1;
-        background: rgba(39, 31, 48, 0.1);
-        transform: scale(1.1);
-      }
-
-      /* Header with utility buttons */
-      .header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 20px;
-      }
-
-      .utility-buttons {
-        position: fixed;
-        top: 20px;
-        left: 20px;
-        display: flex;
-        gap: 8px;
-        z-index: 1000;
-      }
-
-      .utility-btn {
-        background: transparent;
-        border: 1px solid rgba(39, 31, 48, 0.2);
-        border-radius: 50%;
-        width: 32px;
-        height: 32px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        font-size: 14px;
-        opacity: 0.6;
-      }
-
-      .utility-btn:hover {
-        opacity: 1;
-        background: rgba(39, 31, 48, 0.1);
-        transform: scale(1.1);
-      }
-
-      .debug-btn {
-        background: transparent;
-        color: #666;
-      }
-
-      .debug-btn:hover {
-        background: rgba(102, 102, 102, 0.1);
-        color: #444;
-      }
-
-      /* Hide debug and admin buttons in production - will be overridden by JS in staging */
-      .utility-btn.debug-btn,
-      .utility-btn.admin-btn {
-        display: none;
-      }
-      
-      /* Track Info */
-      .track-info {
-        margin-bottom: 30px;
-        min-height: 30px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-      }
-      
-      .track-metadata {
-        font-size: 10px; /* 12px - 20% = 9.6px arredondado */
-        font-weight: 600;
-        opacity: 0.6;
-        line-height: 1.2;
-        text-align: center;
-      }
-      
-      .track-title {
-        font-size: 10px; /* 12px - 20% = 9.6px arredondado */
-        font-weight: 600;
-        opacity: 0.6;
-        line-height: 1.2;
-        margin-top: 0;
-      }
-      
-      .track-artist {
-        font-size: 10px; /* 12px - 20% = 9.6px arredondado */
-        font-weight: 600;
-        opacity: 0.6;
-        margin-bottom: 0;
-        line-height: 1.2;
-      }
-      
-      /* Controls */
-      .controls {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 20px;
-        margin-bottom: 30px;
-      }
-      
-      .btn {
-        background: transparent;
-        color: #271F30;
-        border: 2px solid rgba(39, 31, 48, 0.0);
-        border-radius: 50%;
-        width: 60px;
-        height: 60px;
-        font-size: 24px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        backdrop-filter: blur(5px);
-      }
-      
-      .btn:hover:not(:disabled) {
-        background: rgba(39, 31, 48, 0.0);
-        border-color: rgba(39, 31, 48, 0.0);
-        transform: scale(1.15);
-      }
-      
-      .btn:active:not(:disabled) {
-        transform: scale(0.95);
-      }
-      
-      .btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        transform: none;
-      }
-      
-      .btn-play {
-        width: 60px;
-        height: 60px;
-        font-size: 24px;
-      }
-      
-      .btn-next, .btn-info {
-        width: 60px;
-        height: 60px;
-        font-size: 24px;
-      }
-      
-      /* Ícones SVG nos botões */
+      /* Ícones dos botões */
+      .btn-play img,
       .btn img {
-        width: 24px;
-        height: 24px;
-        filter: brightness(0) saturate(100%) invert(16%) sepia(12%) saturate(1084%) hue-rotate(212deg) brightness(97%) contrast(93%);
-        transition: all 0.2s ease;
-      }
-      
-      .btn-play img {
-        width: 24px;
-        height: 24px;
-      }
-      
-      .btn:hover:not(:disabled) img {
-        filter: brightness(0) saturate(100%) invert(0%) sepia(100%) saturate(7500%) hue-rotate(0deg) brightness(0%) contrast(100%);
-        transform: scale(1.1);
-      }
-      
-      /* Progress Bar */
-      .progress-container {
-        margin-bottom: 20px;
-      }
-      
-      .progress-bar {
-        width: 100%;
-        height: 4px;
-        background: rgba(39, 31, 48, 0.2);
-        border-radius: 2px;
-        margin-bottom: 10px;
-        overflow: hidden;
-      }
-      
-      .progress-fill {
-        height: 100%;
-        background: #271F30;
-        border-radius: 2px;
-        width: 0%;
-        transition: width 0.1s ease;
-      }
-      
-      .time-display {
-        display: flex;
-        justify-content: space-between;
-        font-size: 12px;
-        opacity: 0.7;
-      }
-      
-      /* Info Modal */
-      .info-modal {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(239, 234, 227, 0.5);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 1000;
-        backdrop-filter: blur(5px);
-      }
-      
-      .modal-content {
-        background: rgba(239, 234, 227, 0.95);
-        border-radius: 0;
-        width: 380px;
-        height: 418px;
-        overflow: hidden;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-        position: relative;
-      }
-      
-      .modal-body {
-        padding: 30px;
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        height: 100%;
-      }
-      
-      .modal-track-info {
-        text-align: center;
-      }
-      
-      .modal-description {
-        font-size: 14px;
-        color: #271F30;
-        line-height: 1.6;
-        text-align: center;
-        margin: 0 0 30px 0;
-      }
-      
-      .modal-artist {
-        font-size: 18px;
-        font-weight: 600;
-        color: #271F30;
-        margin: 0 0 8px 0;
-        text-align: center;
-      }
-      
-      .modal-song {
-        font-size: 14px;
-        font-weight: 400;
-        color: #271F30;
-        opacity: 0.7;
-        margin: 0;
-        text-align: center;
-      }
-      
-      /* Loading state */
-      .loading {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 20px;
-      }
-      
-      .spinner {
-        width: 40px;
-        height: 40px;
-        border: 3px solid #271F30;
-        border-top: 3px solid transparent;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-      }
-      
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-      
-      /* Container da imagem customizada */
-      .custom-image-container {
-        width: 380px;
-        height: 418px;
-        margin: 20px auto;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 0;
-        box-shadow: 0 4px 16px rgba(39, 31, 48, 0.1);
-        overflow: hidden;
-        backdrop-filter: blur(10px);
-        position: relative;
-        left: 50%;
-        transform: translateX(-50%);
-      }
-      
-      .custom-image {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-        transition: transform 0.3s ease;
-      }
-      
-      .custom-image:hover {
-        transform: scale(1.02);
+        width: 22px;
+        height: 22px;
       }
 
-      /* Responsive */
-      @media (max-width: 480px) {
-        /* Logo de carregamento */
-        .radio-logo {
-          width: 374px; /* 288px + 30% = 374.4px arredondado */
-          margin: 15px auto 25px auto;
-        }
-        
-        /* Logo principal do player */
-        .radio-logo-main {
-          width: 285px;
-        }
-        
-        /* Ícones dos botões */
-        .btn-play img, .btn img {
-          width: 22px;
-          height: 22px;
-        }
-        
-        /* Layout em coluna para mobile - controles em cima, imagem embaixo */
-        body {
-          padding: 0;
-          justify-content: flex-start;
-          align-items: stretch;
-        }
-        
-        #app {
-          max-width: 100%;
-          width: 100%;
-          display: flex;
-          flex-direction: column;
-          height: 100vh;
-          min-height: 100vh;
-        }
-        
-        /* Container dos controles com fundo claro no topo */
-        .player-container {
-          padding: 0; /* Remove todos os paddings */
-          background: #EFEAE3;
-          flex-shrink: 0;
-          width: 100%;
-          height: 100%;
-          display: flex;
-          flex-direction: column;
-          justify-content: flex-end; /* Empurra conteúdo para o final (próximo da imagem) */
-        }
-        
-        /* Imagem edge-to-edge na parte de baixo colada no fundo */
-        .custom-image-container {
-          width: 100vw;
-          height: auto;
-          flex: 1; /* Preenche espaço restante após controles */
-          margin: 0; /* Sem margins */
-          left: 0;
-          transform: none;
-          border-radius: 0;
-          box-shadow: none;
-          position: relative;
-          overflow: hidden;
-        }
-        
+      /* Layout em coluna para mobile - controles em cima, imagem embaixo */
+      body {
+        padding: 0;
+        justify-content: flex-start;
+        align-items: stretch;
+      }
+
+      #app {
+        max-width: 100%;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        min-height: 100vh;
+      }
+
+      /* Container dos controles com fundo claro no topo */
+      .player-container {
+        padding: 0;
+        /* Remove todos os paddings */
+        background: #EFEAE3;
+        flex-shrink: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        /* Empurra conteúdo para o final (próximo da imagem) */
+      }
+
+      /* Imagem edge-to-edge na parte de baixo colada no fundo */
+      .custom-image-container {
+        width: 100vw;
+        height: auto;
+        flex: 1;
+        /* Preenche espaço restante após controles */
+        margin: 0;
+        /* Sem margins */
+        left: 0;
+        transform: none;
+        border-radius: 0;
+        box-shadow: none;
+        position: relative;
+        overflow: hidden;
+      }
+
       .custom-image {
         width: 100%;
         height: 100%;
@@ -528,131 +550,144 @@
         object-position: center top;
         display: block;
       }
-        
-        /* Juntar elementos e trazer mais pra baixo */
-        .artwork {
-          margin-top: 130px; /* Distanciar do topo */
-          margin-bottom: 0px; /* Colar no bloco de metadados */
-        }
-        
-        .track-info {
-          margin-bottom: 5px; /* Diminuir distância com controls */
-        }
-        
-        .controls {
-          gap: 17px; /* Espaçamento reduzido entre botões */
-          margin-bottom: 30px; /* 30px acima da imagem */
-        }
-        
-        .btn-play, .btn-next, .btn-info {
-          width: 55px;
-          height: 55px;
-          font-size: 22px;
-        }
-        
-        .app-title {
-          font-size: 20px;
-        }
-        
-        .track-metadata, .track-artist, .track-title {
-          font-size: 9px; /* 11px - 20% = 8.8px arredondado */
-        }
-        
-        /* Modal também fullscreen em mobile */
-        .modal-content {
-          width: 100vw;
-          height: 100vh;
-          border-radius: 0;
+
+      /* Juntar elementos e trazer mais pra baixo */
+      .artwork {
+        margin-top: 130px;
+        /* Distanciar do topo */
+        margin-bottom: 0px;
+        /* Colar no bloco de metadados */
+      }
+
+      .track-info {
+        margin-bottom: 5px;
+        /* Diminuir distância com controls */
+      }
+
+      .controls {
+        gap: 17px;
+        /* Espaçamento reduzido entre botões */
+        margin-bottom: 30px;
+        /* 30px acima da imagem */
+      }
+
+      .btn-play,
+      .btn-next,
+      .btn-info {
+        width: 55px;
+        height: 55px;
+        font-size: 22px;
+      }
+
+      .app-title {
+        font-size: 20px;
+      }
+
+      .track-metadata,
+      .track-artist,
+      .track-title {
+        font-size: 9px;
+        /* 11px - 20% = 8.8px arredondado */
+      }
+
+      /* Modal também fullscreen em mobile */
+      .modal-content {
+        width: 100vw;
+        height: 100vh;
+        border-radius: 0;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="app">
+    <!-- Logo da Radio Importante -->
+    <img src="/icons/logo-theern-vertical.png" alt="Radio Importante" class="radio-logo" />
+
+    <div class="loading">
+      <h1>Radio Importante</h1>
+      <div class="spinner"></div>
+      <p>Carregando...</p>
+    </div>
+  </div>
+
+  <!-- Botões de Debug e Admin apenas para staging -->
+  <div class="utility-buttons" id="utility-buttons" style="display: none;">
+    <button class="utility-btn debug-btn" onclick="window.open('/debug.html', '_blank')" title="Abrir página de debug">
+      🐛 Debug
+    </button>
+    <button class="utility-btn admin-btn" onclick="window.open('/admin.html', '_blank')"
+      title="Abrir painel administrativo">
+      ⚙️ Admin
+    </button>
+  </div>
+
+  <script type="module" src="/src/app.ts"></script>
+
+  <!-- Script para mostrar botões apenas em staging -->
+  <script>
+    // Garantir que o DOM esteja carregado
+    document.addEventListener('DOMContentLoaded', function () {
+      // Detectar se estamos em staging ou desenvolvimento local
+      const isStaging = window.location.hostname.includes('staging') ||
+        window.location.hostname.includes('stagin') ||
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1';
+
+      if (isStaging) {
+        const utilityButtons = document.getElementById('utility-buttons');
+        if (utilityButtons) {
+          utilityButtons.style.setProperty('display', 'flex', 'important');
+
+          // Mostrar os botões individuais também
+          const debugBtn = utilityButtons.querySelector('.debug-btn');
+          const adminBtn = utilityButtons.querySelector('.admin-btn');
+
+          if (debugBtn) debugBtn.style.setProperty('display', 'flex', 'important');
+          if (adminBtn) adminBtn.style.setProperty('display', 'flex', 'important');
+
+          console.log('🚧 Botões de Debug e Admin habilitados para staging/desenvolvimento');
         }
       }
-    </style>
-  </head>
-  <body>
 
-    <div id="app">
-      <!-- Logo da Radio Importante -->
-      <img src="/icons/logo-black.svg" alt="Radio Importante" class="radio-logo" />
-      
-      <div class="loading">
-        <h1>Radio Importante</h1>
-        <div class="spinner"></div>
-        <p>Carregando...</p>
-      </div>
-    </div>
-    
-    <!-- Botões de Debug e Admin apenas para staging -->
-    <div class="utility-buttons" id="utility-buttons" style="display: none;">
-      <button class="utility-btn debug-btn" onclick="window.open('/debug.html', '_blank')" title="Abrir página de debug">
-        🐛 Debug
-      </button>
-      <button class="utility-btn admin-btn" onclick="window.open('/admin.html', '_blank')" title="Abrir painel administrativo">
-        ⚙️ Admin
-      </button>
-    </div>
-    
-    <script type="module" src="/src/app.ts"></script>
-    
-    <!-- Script para mostrar botões apenas em staging -->
-    <script>
-      // Garantir que o DOM esteja carregado
-      document.addEventListener('DOMContentLoaded', function() {
-        // Detectar se estamos em staging ou desenvolvimento local
-        const isStaging = window.location.hostname.includes('staging') || 
-                         window.location.hostname.includes('stagin') ||
-                         window.location.hostname === 'localhost' ||
-                         window.location.hostname === '127.0.0.1';
-        
-        if (isStaging) {
-          const utilityButtons = document.getElementById('utility-buttons');
-          if (utilityButtons) {
-            utilityButtons.style.setProperty('display', 'flex', 'important');
-            
-            // Mostrar os botões individuais também
-            const debugBtn = utilityButtons.querySelector('.debug-btn');
-            const adminBtn = utilityButtons.querySelector('.admin-btn');
-            
-            if (debugBtn) debugBtn.style.setProperty('display', 'flex', 'important');
-            if (adminBtn) adminBtn.style.setProperty('display', 'flex', 'important');
-            
-            console.log('🚧 Botões de Debug e Admin habilitados para staging/desenvolvimento');
-          }
-        }
-        
-        // SOLUÇÃO ALTERNATIVA: Gesto secreto para iPhone PWA
-        // Tap 5 vezes na logo para abrir debug
-        let tapCount = 0;
-        let tapTimer = null;
-        
-        const logo = document.querySelector('.radio-logo');
-        if (logo) {
-          logo.addEventListener('click', function() {
-            tapCount++;
-            
-            if (tapTimer) clearTimeout(tapTimer);
-            
-            if (tapCount >= 5) {
-              // 5 taps - abrir debug
-              console.log('🐛 Gesto secreto detectado - abrindo debug');
-              window.open('/debug.html', '_blank');
+      // SOLUÇÃO ALTERNATIVA: Gesto secreto para iPhone PWA
+      // Tap 5 vezes na logo para abrir debug
+      let tapCount = 0;
+      let tapTimer = null;
+
+      const logo = document.querySelector('.radio-logo');
+      if (logo) {
+        logo.addEventListener('click', function () {
+          tapCount++;
+
+          if (tapTimer) clearTimeout(tapTimer);
+
+          if (tapCount >= 5) {
+            // 5 taps - abrir debug
+            console.log('🐛 Gesto secreto detectado - abrindo debug');
+            window.open('/debug.html', '_blank');
+            tapCount = 0;
+          } else if (tapCount >= 3) {
+            // 3 taps - abrir admin  
+            tapTimer = setTimeout(() => {
+              if (tapCount === 3) {
+                console.log('⚙️ Gesto secreto detectado - abrindo admin');
+                window.open('/admin.html', '_blank');
+              }
               tapCount = 0;
-            } else if (tapCount >= 3) {
-              // 3 taps - abrir admin  
-              tapTimer = setTimeout(() => {
-                if (tapCount === 3) {
-                  console.log('⚙️ Gesto secreto detectado - abrindo admin');
-                  window.open('/admin.html', '_blank');
-                }
-                tapCount = 0;
-              }, 500);
-            } else {
-              // Reset após 1 segundo se não completar sequência
-              tapTimer = setTimeout(() => {
-                tapCount = 0;
-              }, 1000);
-            }
-          });
-        }
-      });
-    </script>
-  </body>
+            }, 500);
+          } else {
+            // Reset após 1 segundo se não completar sequência
+            tapTimer = setTimeout(() => {
+              tapCount = 0;
+            }, 1000);
+          }
+        });
+      }
+    });
+  </script>
+</body>
+
 </html>
