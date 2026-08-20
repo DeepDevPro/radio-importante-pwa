@@ -117,34 +117,21 @@ class RadioImportanteApp {
   private async registerServiceWorker(): Promise<void> {
     if ('serviceWorker' in navigator) {
       try {
-        // Listener para recarregar a página automaticamente quando o novo Service Worker assumir o controle
-        let refreshing = false;
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (!refreshing) {
-            refreshing = true;
-            console.log('🔄 Novo Service Worker ativo! Recarregando para aplicar nova versão...');
-            window.location.reload();
-          }
-        });
-
-        // Adicionar timestamp para forçar busca do script mais recente
+        // Adicionar timestamp para forçar cache bust
         const timestamp = Date.now();
         const registration = await navigator.serviceWorker.register(`/sw.js?v=${timestamp}`);
         console.log('✅ Service Worker registrado:', registration.scope);
+        console.log('🔄 SW Cache bust timestamp:', timestamp);
         
-        // Se já houver um worker esperando, forçar ativação imediata
-        if (registration.waiting) {
-          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-        }
-
-        // Verificar se há atualizações em andamento
+        // Verificar se há atualizações
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
           if (newWorker) {
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                console.log('🔄 Nova versão do app instalada. Ativando...');
-                newWorker.postMessage({ type: 'SKIP_WAITING' });
+                // Nova versão disponível
+                console.log('🔄 Nova versão do app disponível');
+                // Podemos mostrar uma notificação para o usuário aqui
               }
             });
           }
