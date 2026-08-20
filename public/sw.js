@@ -1,59 +1,36 @@
 /* eslint-env serviceworker */
 /* global self, caches, fetch, console, URL, Response */
 
-// Service Worker para Radio Importante PWA
-// Estratégia: Cache-first para UI, Network-only para áudio
-// Otimizado para iOS PWA Background Audio
+// Service Worker para The Ern PWA
+// Estratégia: Network-First para HTML/Navegação, Cache-First para assets estáticos com hash, Network-Only para áudio/API
+// Otimizado para atualização imediata de versão e iOS PWA Background Audio
 
-console.log('🎵 Service Worker do Radio Importante carregado (v7 - BACKEND URL FIX - FORCE CACHE CLEAR)');
-console.log('⏰ SW Timestamp:', new Date().toISOString());
-
-const CACHE_NAME = 'radio-importante-v7-backend-fix'; // NOVA versão para limpar cache completamente
-const STATIC_CACHE_URLS = [
-  '/',
-  '/index.html',
-  // Removido '/admin.html' para sempre buscar versão mais recente
-  '/manifest.webmanifest',
-  // Incluir apenas recursos essenciais
-];
+const CACHE_NAME = 'the-ern-v1.0.0';
+console.log('🎵 Service Worker do The Ern carregado:', CACHE_NAME);
 
 // Lista de URLs que nunca devem ser cacheadas
 const NEVER_CACHE = [
   '/audio/',
   '/api/',
-  '/data/catalog.json', // Sempre buscar versão mais recente
-  '/admin.html', // CRÍTICO: admin.html sempre deve buscar a versão mais recente
+  '/data/catalog.json',
+  '/admin.html',
 ];
 
-// Função para verificar se uma URL deve ser cacheada
-function shouldCache(url) {
-  // Durante desenvolvimento, cachear menos
-  if (url.includes('localhost:')) {
-    return false;
-  }
-  return !NEVER_CACHE.some(pattern => url.includes(pattern));
+function isNeverCache(url) {
+  return NEVER_CACHE.some(pattern => url.includes(pattern));
 }
 
 // Evento de instalação
 self.addEventListener('install', (event) => {
-  console.log('🔧 Service Worker: Instalando...');
-  
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('📦 Service Worker: Cache aberto');
-      // Não pre-cachear durante desenvolvimento
-      return Promise.resolve();
-    }).then(() => {
-      console.log('✅ Service Worker: Instalado');
-      // Força a ativação imediata
-      return self.skipWaiting();
-    })
-  );
+  console.log('🔧 Service Worker (The Ern): Instalando...');
+  // Força o novo Service Worker a assumir sem esperar que o anterior seja desativado
+  self.skipWaiting();
+  event.waitUntil(Promise.resolve());
 });
 
 // Evento de ativação
 self.addEventListener('activate', (event) => {
-  console.log('🚀 Service Worker: Ativando...');
+  console.log('🚀 Service Worker (The Ern): Ativando e limpando caches antigos...');
   
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -66,59 +43,78 @@ self.addEventListener('activate', (event) => {
         })
       );
     }).then(() => {
-      console.log('✅ Service Worker: Ativado');
-      // Toma controle de todas as abas imediatamente
+      console.log('✅ Service Worker (The Ern): Ativado e caches antigos limpos');
+      // Toma controle de todas as abas abertas imediatamente
       return self.clients.claim();
     })
   );
 });
 
-// Evento de fetch - estratégia de cache
+// Evento de fetch - estratégia inteligente de cache
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
   
-  // Ignorar requisições que não são HTTP/HTTPS
+  // Ignorar requisições não-HTTP(S)
   if (!url.protocol.startsWith('http')) {
     return;
   }
   
-  // Durante desenvolvimento, sempre usar network para recursos locais
+  // Durante desenvolvimento local, sempre buscar da rede
   if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
     event.respondWith(fetch(request));
     return;
   }
-  
-  // Estratégia Network-first para arquivos que não devem ser cacheados
-  if (!shouldCache(request.url)) {
+
+  // 1. Áudio, APIs e dados dinâmicos: Network-Only
+  if (isNeverCache(request.url)) {
     event.respondWith(
-      fetch(request).catch(() => {
-        // Se falhar e for uma requisição de áudio, não fazer nada
-        // Deixar o erro ser tratado pela aplicação
-        return new Response('Network error', { status: 500 });
-      })
+      fetch(request).catch(() => new Response('Network error', { status: 500 }))
     );
     return;
   }
   
-  // Estratégia Cache-first para UI e recursos estáticos
+  // 2. HTML e Navegação principal: NETWORK-FIRST (garante sempre a UI mais recente!)
+  const isHTML = request.mode === 'navigate' || 
+                 request.headers.get('accept')?.includes('text/html') ||
+                 url.pathname === '/' || 
+                 url.pathname.endsWith('.html');
+
+  if (isHTML) {
+    event.respondWith(
+      fetch(request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, responseToCache);
+            });
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          // Se estiver offline, entrega o cache existente
+          return caches.match(request).then((cachedResponse) => {
+            return cachedResponse || caches.match('/');
+          });
+        })
+    );
+    return;
+  }
+  
+  // 3. Assets estáticos (JS, CSS, Imagens, Fontes): CACHE-FIRST com fallback na rede
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
       if (cachedResponse) {
-        // Encontrou no cache, retornar
         return cachedResponse;
       }
       
-      // Não encontrou no cache, buscar na rede
       return fetch(request).then((networkResponse) => {
-        // Verificar se a resposta é válida
         if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
           return networkResponse;
         }
         
-        // Clonar a resposta para armazenar no cache
         const responseToCache = networkResponse.clone();
-        
         caches.open(CACHE_NAME).then((cache) => {
           cache.put(request, responseToCache);
         });
@@ -129,12 +125,9 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Evento de message - para comunicação com a aplicação
+// Evento de message para controle externo
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
 });
-
-// Log de debug
-console.log('🎵 Service Worker do Radio Importante carregado (v4 - HTTPS backend configurado)');
