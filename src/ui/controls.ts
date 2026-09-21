@@ -81,7 +81,7 @@ export class Controls {
       <div class="info-modal" id="infoModal" style="display: none;">
         <div class="modal-content">
           <div class="modal-body">
-            <p class="modal-description">Você está ouvindo a rádio do The Ern. Aqui você vai escutar a essência do nosso espaço. Acreditamos que a música é ponto fundamental de qualquer experiência, assim como o café, o vinho e a comida. Sinta-se no nosso ambiente.</p>
+            <p class="modal-description">Você está ouvindo a rádio do The Ern.<br /><br />Aqui você vai escutar a essência do nosso espaço.<br /><br />Acreditamos que a música é ponto fundamental de qualquer experiência, assim como o café, o vinho e a comida.<br /><br />Sinta-se no nosso ambiente.</p>
             <div class="modal-track-info">
               <p class="modal-artist" id="modalArtist">Artista</p>
               <p class="modal-song" id="modalSong">Nome da Música</p>
