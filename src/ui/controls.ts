@@ -59,12 +59,12 @@ export class Controls {
 
         <!-- Main Controls -->
         <div class="controls">
-          <button class="btn btn-next" id="nextButton" title="Próxima">
-            <img src="/icons/next.svg" alt="Next" />
-          </button>
           <button class="btn btn-play" id="playButton" title="Reproduzir/Pausar">
             <img src="/icons/play.svg" class="play-icon" alt="Play" />
             <img src="/icons/pause.svg" class="pause-icon" style="display: none;" alt="Pause" />
+          </button>
+          <button class="btn btn-next" id="nextButton" title="Próxima">
+            <img src="/icons/next.svg" alt="Next" />
           </button>
           <button class="btn btn-info" id="infoButton" title="Informações">
             <img src="/icons/info.svg" alt="Info" />
@@ -81,7 +81,7 @@ export class Controls {
       <div class="info-modal" id="infoModal" style="display: none;">
         <div class="modal-content">
           <div class="modal-body">
-            <p class="modal-description">Você está ouvindo The Ern. Todas músicas aqui são extraídas direto de vinis de época. Nosso objetivo é levar o mundo dos discos pra você. Uma curadoria com total liberdade de gêneros e época, a única regra é que seja provinda de um disco de vinyl.</p>
+            <p class="modal-description">Você está ouvindo a rádio do The Ern. Aqui você vai escutar a essência do nosso espaço. Acreditamos que a música é ponto fundamental de qualquer experiência, assim como o café, o vinho e a comida. Sinta-se no nosso ambiente.</p>
             <div class="modal-track-info">
               <p class="modal-artist" id="modalArtist">Artista</p>
               <p class="modal-song" id="modalSong">Nome da Música</p>
@@ -141,7 +141,7 @@ export class Controls {
 
   public updateTrackInfo(title: string, artist: string = ''): void {
     const trackMetadata = this.container.querySelector('#trackMetadata') as HTMLElement;
-    
+
     if (trackMetadata) {
       if (artist && title) {
         // Formato: Artista "Título da Música"
@@ -152,7 +152,7 @@ export class Controls {
         trackMetadata.textContent = 'Selecione uma música';
       }
     }
-    
+
     this.state.currentTrack = title;
   }
 
@@ -230,12 +230,12 @@ export class Controls {
       if (trackInfo) {
         this.updateModalTrackInfo(trackInfo.artist, trackInfo.title);
       } else {
-        this.updateModalTrackInfo('Rádio Importante', 'Aguardando música...');
+        this.updateModalTrackInfo('The Ern', 'Aguardando música...');
       }
     } else {
-      this.updateModalTrackInfo('Rádio Importante', 'Música em reprodução');
+      this.updateModalTrackInfo('The Ern', 'Música em reprodução');
     }
-    
+
     this.infoModal.style.display = 'flex';
   }
 
