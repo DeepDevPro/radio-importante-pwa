@@ -13,6 +13,8 @@ on:
       - "index.html"
       - "staging_index.html" # staging HTML file
       - "admin.html"
+      - "hometest.html"
+      - "hometest/**"
       - "vite.config.*"
   workflow_dispatch:
 

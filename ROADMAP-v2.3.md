@@ -36,6 +36,29 @@
 
 ```
 
+### **🧊 Features no Gelo / Backlog Futuro (Planejado para 2027)**
+```bash
+❄️ [CONGELADO] Página de Seleção de Experiências / Dois Canais (/hometest)
+  - Descrição: Nova tela com o logo The Ern e duas opções visuais em SVG lado a lado:
+      1) Xícara de Café (canal diurno / cafeteria)
+      2) Taça de Vinho (canal noturno / bar)
+  - Status: NO GELO (Pausado até 2027)
+  - Motivo: Aguardar o cliente finalizar a reforma e montagem física do café e bar para,
+    em seguida, curar e produzir os dois canais de áudio/rádio dedicados.
+  - Estado da Implementação: Protótipo funcional concluído e 100% isolado em `hometest.html`
+    e `hometest/index.html` (links temporários apontando para https://www.the-ern.com/).
+    Validado com sucesso em Staging, mantendo o ambiente de Produção totalmente limpo.
+
+□ [BACKLOG - SEM URGÊNCIA] Upload em Lotes / Batching no Frontend (10 em 10 arquivos)
+  - Descrição: Quando o usuário selecionar muitos arquivos de áudio no painel Admin (ex: 25 arquivos de uma vez),
+    o frontend dividirá a lista automaticamente em lotes de 10 arquivos por requisição sob o capô.
+  - Motivo: O backend (Express + Multer em `server/server.js`) possui um limite padrão de no máximo 20
+    arquivos por requisição (`files: 20`) e guarda os buffers na memória antes do upload para o Digital Ocean Spaces.
+    Enviar mais de 20 arquivos simultâneos dispara erro HTTP 500 (LIMIT_FILE_COUNT).
+  - Solução Proposta: No frontend (`src/admin.ts`), implementar fila sequencial enviando pacotes de até
+    10 arquivos por POST para `/api/upload`, atualizando a barra de progresso continuamente até o final.
+```
+
 ### **🔧 Admin Panel Avançado (Prioridade Média)**
 ```bash
 □ Bulk operations

@@ -57,3 +57,7 @@ temp/
 
 # Coverage directory used by tools like istanbul
 coverage/
+
+# Local audio downloads
+audios_producao/
+*.zip

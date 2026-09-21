@@ -372,7 +372,9 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: path.resolve(__dirname, 'index.html'),
-        admin: path.resolve(__dirname, 'admin.html')
+        admin: path.resolve(__dirname, 'admin.html'),
+        hometest: path.resolve(__dirname, 'hometest.html'),
+        hometestDir: path.resolve(__dirname, 'hometest/index.html')
       }
     }
   },
