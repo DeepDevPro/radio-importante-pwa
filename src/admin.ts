@@ -13,7 +13,7 @@ declare global {
         switchTab: (tabName: string) => void;
         uploadFiles: () => Promise<void>;
         clearFiles: () => void;
-        loadMusicList: () => Promise<void>;
+        loadMusicList: (preserveScroll?: boolean) => Promise<void>;
         playPreview: (filename: string) => void;
         deleteTrack: (trackId: string, filename: string) => Promise<void>;
         editTrack: (trackId: string) => void;
@@ -265,59 +265,81 @@ async function saveEdit(trackId: string, field: 'title' | 'artist', value: strin
     const container = trackElement?.querySelector(`.${field}-container`) || 
                      trackElement?.querySelector('.music-title-container');
   
-  if (!container) return;
+    if (!container || !trackElement) return;
   
-  const displayElement = container.querySelector('.display-mode') as any;
-  const editElement = container.querySelector('.edit-mode') as any;
+    const displayElement = container.querySelector('.display-mode') as HTMLElement | null;
+    const editElement = container.querySelector('.edit-mode') as HTMLInputElement | null;
   
-  try {
-      // Validações
-      if (field === 'title' && !value.trim()) {
-          window.alert('Título não pode estar vazio');
-          editElement.focus();
-          return;
-      }
+    if (!displayElement || !editElement) return;
 
-      // Salvar no backend
-      if (currentBackend) {
-          // Usamos o próprio trackId como chave (filename/id)
-          const response = await fetch(`${currentBackend}/api/tracks/${encodeURIComponent(trackId)}/metadata`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ [field]: value })
-          });
+    // Se já não estiver mais em edição (evita chamadas redundantes em blur/Enter), ignora
+    if (!trackElement.classList.contains('editing')) {
+        return;
+    }
 
-          if (!response.ok) {
-              const txt = await response.text().catch(() => '');
-              throw new Error(`Erro ao salvar: ${response.status} ${txt}`);
-          }
-      }
+    const trimmedValue = value.trim();
 
-      // Atualizar interface
-      displayElement.textContent = value || (field === 'artist' ? 'Artista não definido' : 'Título não definido');
+    try {
+        // Validações
+        if (field === 'title' && !trimmedValue) {
+            window.alert('Título não pode estar vazio');
+            editElement.focus();
+            return;
+        }
 
-      // Remover marca de edição e alternar visibilidade
-      trackElement!.classList.remove('editing');
-      displayElement.style.display = 'inline';
-      editElement.style.display = 'none';
+        // Se o valor não mudou, apenas fecha a edição sem requisitar o backend
+        const currentText = displayElement.textContent?.trim() || '';
+        const isPlaceholder = currentText === 'Artista não definido' || currentText === 'Título não definido';
+        if (!isPlaceholder && currentText === trimmedValue) {
+            trackElement.classList.remove('editing');
+            displayElement.style.display = 'inline';
+            editElement.style.display = 'none';
+            return;
+        }
 
-      // Feedback visual suave sem recarregar a página
-      displayElement.style.background = '#d4edda';
-      displayElement.style.color = 'white';
-      setTimeout(() => {
-          displayElement.style.background = '';
-          displayElement.style.color = '';
-      }, 800);
+        // Salvar no backend em background
+        if (currentBackend) {
+            // Usamos o próprio trackId como chave (filename/id)
+            const response = await fetch(`${currentBackend}/api/tracks/${encodeURIComponent(trackId)}/metadata`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ [field]: trimmedValue })
+            });
 
-      // Recarregar a lista para refletir title/artist atualizados vindos do backend
-      await loadMusicList();
-      
-  } catch (error) {
-      console.error('Erro ao salvar:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-      window.alert(`❌ Erro ao salvar: ${errorMessage}`);
-      editElement.focus();
-  }
+            if (!response.ok) {
+                const txt = await response.text().catch(() => '');
+                throw new Error(`Erro ao salvar: ${response.status} ${txt}`);
+            }
+        }
+
+        // Atualizar interface localmente
+        const displayVal = trimmedValue || (field === 'artist' ? 'Artista não definido' : 'Título não definido');
+        displayElement.textContent = displayVal;
+        editElement.value = trimmedValue;
+
+        // Remover marca de edição e alternar visibilidade
+        trackElement.classList.remove('editing');
+        displayElement.style.display = 'inline';
+        editElement.style.display = 'none';
+
+        // Feedback visual suave sem recarregar a página e sem mexer no scroll
+        displayElement.style.backgroundColor = '#d4edda';
+        displayElement.style.color = '#155724';
+        displayElement.style.borderRadius = '4px';
+        displayElement.style.transition = 'background-color 0.4s ease, color 0.4s ease';
+        setTimeout(() => {
+            displayElement.style.backgroundColor = '';
+            displayElement.style.color = '';
+        }, 1200);
+
+        // ATENÇÃO: NÃO chamamos loadMusicList() aqui para não destruir o DOM nem resetar o scroll!
+        
+    } catch (error) {
+        console.error('Erro ao salvar:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+        window.alert(`❌ Erro ao salvar: ${errorMessage}`);
+        editElement.focus();
+    }
 }
 
 /**
@@ -362,6 +384,13 @@ function handleEditKeydown(event: any, trackId: string, field: 'title' | 'artist
     } else if (event.key === 'Escape') {
         event.preventDefault();
         cancelEdit(trackId, field);
+    } else if (event.key === 'Tab' && !event.shiftKey && field === 'title') {
+        // Ao teclar Tab no título, salva e abre diretamente o campo de artista
+        event.preventDefault();
+        saveEdit(trackId, 'title', value);
+        setTimeout(() => {
+            enableEdit(trackId, 'artist');
+        }, 50);
     }
 }
 
@@ -623,7 +652,7 @@ function clearFiles() {
 /**
  * Carrega e exibe a lista de músicas
  */
-async function loadMusicList() {
+async function loadMusicList(preserveScroll: boolean = true) {
     if (!currentBackend) {
         // Mesmo sem backend, tentar carregar lista estática local para exibir algo
         try {
@@ -639,7 +668,7 @@ async function loadMusicList() {
                     musicListFallback.innerHTML = tracks.map((track: Track, index: number) => `
                         <div class="music-item" id="track-${track.id}" style="border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin: 10px 0; background: #f9f9f9; transition: all 0.2s ease;">
                             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-                                <div style="background: #667eea; color: white; padding: 8px 12px; border-radius: 50%; font-weight: bold; min-width: 35px; text-align: center;">
+                                <div class="track-index-badge" style="background: #667eea; color: white; padding: 8px 12px; border-radius: 50%; font-weight: bold; min-width: 35px; text-align: center;">
                                     ${index + 1}
                                 </div>
                                 <div style="flex: 1; min-width: 250px;">
@@ -670,8 +699,14 @@ async function loadMusicList() {
     const musicTotals = document.getElementById('music-totals');
     if (!musicList) return;
 
+    const savedScrollY = preserveScroll ? window.scrollY : 0;
+    const hasExistingItems = musicList.querySelectorAll('.music-item').length > 0;
+
     try {
-        musicList.innerHTML = '🔄 Carregando músicas...';
+        // Se já existem itens na tela, não apagar tudo com "Carregando..." para evitar colapso da altura
+        if (!hasExistingItems) {
+            musicList.innerHTML = '🔄 Carregando músicas...';
+        }
 
         // Preferir backend dinâmico (Opção A)
         let response = await fetch(`${currentBackend}/api/catalog`, { cache: 'no-store' });
@@ -701,9 +736,9 @@ async function loadMusicList() {
         }
         
         musicList.innerHTML = tracks.map((track: Track, index: number) => `
-            <div class="music-item" id="track-${track.id}" style="border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin: 10px 0; background: #f9f9f9; transition: all 0.2s ease;">
+            <div class="music-item" id="track-${track.id}" data-duration="${track.duration || 0}" style="border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin: 10px 0; background: #f9f9f9; transition: all 0.2s ease;">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-                    <div style="background: #667eea; color: white; padding: 8px 12px; border-radius: 50%; font-weight: bold; min-width: 35px; text-align: center;">
+                    <div class="track-index-badge" style="background: #667eea; color: white; padding: 8px 12px; border-radius: 50%; font-weight: bold; min-width: 35px; text-align: center;">
                         ${index + 1}
                     </div>
                     <div style="flex: 1; min-width: 250px;">
@@ -753,6 +788,11 @@ async function loadMusicList() {
                 </div>
             </div>
         `).join('');
+
+        // Restaurar posição do scroll se solicitado
+        if (preserveScroll && savedScrollY > 0) {
+            window.scrollTo({ top: savedScrollY, behavior: 'instant' });
+        }
         
     } catch (error) {
         console.error('Erro ao carregar lista de músicas:', error);
@@ -823,8 +863,35 @@ async function deleteTrack(trackId: string, filename: string) {
         });
         
         if (response.ok) {
-            window.alert('✅ Música deletada com sucesso!');
-            loadMusicList(); // Recarregar lista
+            // Remover elemento suavemente sem recarregar a lista inteira e sem saltar a rolagem
+            const trackElement = document.getElementById(`track-${trackId}`);
+            if (trackElement) {
+                trackElement.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+                trackElement.style.opacity = '0';
+                trackElement.style.transform = 'translateX(20px)';
+                setTimeout(() => {
+                    trackElement.remove();
+                    // Renumerar itens restantes
+                    const remainingTracks = document.querySelectorAll('#music-list .music-item');
+                    remainingTracks.forEach((el, idx) => {
+                        const badge = el.querySelector('.track-index-badge');
+                        if (badge) badge.textContent = String(idx + 1);
+                    });
+                    if (remainingTracks.length === 0) {
+                        const list = document.getElementById('music-list');
+                        if (list) {
+                            list.innerHTML = `
+                                <div style="text-align: center; padding: 40px; color: #666;">
+                                    🎵 <strong>Nenhuma música encontrada</strong><br>
+                                    <span style="font-size: 14px;">Faça upload de arquivos na aba "Upload"</span>
+                                </div>
+                            `;
+                        }
+                    }
+                }, 250);
+            }
+            // Atualizar o totalizador em background
+            updateTotalsOnly();
         } else {
             const error = await response.json().catch(() => ({ message: `HTTP ${response.status}` }));
             throw new Error(error.message || `HTTP ${response.status}`);
