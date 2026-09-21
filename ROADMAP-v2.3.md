@@ -36,6 +36,20 @@
 
 ```
 
+### **🧊 Features no Gelo / Backlog Futuro (Planejado para 2027)**
+```bash
+❄️ [CONGELADO] Página de Seleção de Experiências / Dois Canais (/hometest)
+  - Descrição: Nova tela com o logo The Ern e duas opções visuais em SVG lado a lado:
+      1) Xícara de Café (canal diurno / cafeteria)
+      2) Taça de Vinho (canal noturno / bar)
+  - Status: NO GELO (Pausado até 2027)
+  - Motivo: Aguardar o cliente finalizar a reforma e montagem física do café e bar para,
+    em seguida, curar e produzir os dois canais de áudio/rádio dedicados.
+  - Estado da Implementação: Protótipo funcional concluído e 100% isolado em `hometest.html`
+    e `hometest/index.html` (links temporários apontando para https://www.the-ern.com/).
+    Validado com sucesso em Staging, mantendo o ambiente de Produção totalmente limpo.
+```
+
 ### **🔧 Admin Panel Avançado (Prioridade Média)**
 ```bash
 □ Bulk operations
