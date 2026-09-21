@@ -233,6 +233,24 @@ function calculateDurationForFile(file: File, index: number): void {
 }
 
 /**
+ * Atualiza o status visual de linha sendo editada
+ */
+function updateRowEditingState(trackElement: HTMLElement): void {
+    const editElements = trackElement.querySelectorAll<HTMLElement>('.edit-mode');
+    let isEditing = false;
+    editElements.forEach(el => {
+        if (el.style.display !== 'none' && el.style.display !== '') {
+            isEditing = true;
+        }
+    });
+    if (isEditing) {
+        trackElement.classList.add('editing');
+    } else {
+        trackElement.classList.remove('editing');
+    }
+}
+
+/**
  * Habilitar edição inline de um campo
  */
 function enableEdit(trackId: string, field: 'title' | 'artist'): void {
@@ -240,10 +258,10 @@ function enableEdit(trackId: string, field: 'title' | 'artist'): void {
     const container = trackElement?.querySelector(`.${field}-container`) || 
                      trackElement?.querySelector('.music-title-container');
     
-    if (!container) return;
+    if (!container || !trackElement) return;
     
-    const displayElement = container.querySelector('.display-mode') as any;
-    const editElement = container.querySelector('.edit-mode') as any;
+    const displayElement = container.querySelector('.display-mode') as HTMLElement | null;
+    const editElement = container.querySelector('.edit-mode') as HTMLInputElement | null;
     
     if (displayElement && editElement) {
         // Esconder display, mostrar input
@@ -252,15 +270,15 @@ function enableEdit(trackId: string, field: 'title' | 'artist'): void {
         editElement.focus();
         editElement.select();
         
-        // Marcar elemento como sendo editado
-        trackElement!.classList.add('editing');
+        // Atualiza estilo da linha
+        updateRowEditingState(trackElement);
     }
 }
 
 /**
  * Salvar edição inline
  */
-async function saveEdit(trackId: string, field: 'title' | 'artist', value: string): Promise<void> {
+async function saveEdit(trackId: string, field: 'title' | 'artist', value?: string): Promise<void> {
     const trackElement = document.getElementById(`track-${trackId}`);
     const container = trackElement?.querySelector(`.${field}-container`) || 
                      trackElement?.querySelector('.music-title-container');
@@ -272,34 +290,56 @@ async function saveEdit(trackId: string, field: 'title' | 'artist', value: strin
   
     if (!displayElement || !editElement) return;
 
-    // Se já não estiver mais em edição (evita chamadas redundantes em blur/Enter), ignora
-    if (!trackElement.classList.contains('editing')) {
+    // Se este campo específico já não estiver mais em edição (ex: já fechado por Enter), ignora blur subsequente
+    if (editElement.style.display === 'none') {
         return;
     }
 
-    const trimmedValue = value.trim();
+    const actualValue = value !== undefined ? value : editElement.value;
+    const trimmedValue = actualValue.trim();
 
+    // Validações
+    if (field === 'title' && !trimmedValue) {
+        window.alert('Título não pode estar vazio');
+        editElement.focus();
+        return;
+    }
+
+    // Guarda estado anterior para rollback caso haja falha de conexão
+    const previousDisplayText = displayElement.textContent;
+    const previousInputValue = editElement.value;
+
+    // Se o valor não mudou, apenas fecha a edição sem requisitar o backend
+    const currentText = (displayElement.textContent || '').trim();
+    const isPlaceholder = currentText === 'Artista não definido' || currentText === 'Título não definido';
+    if (!isPlaceholder && currentText === trimmedValue) {
+        displayElement.style.display = 'inline';
+        editElement.style.display = 'none';
+        updateRowEditingState(trackElement);
+        return;
+    }
+
+    // Atualização otimista imediata na interface (0ms de latência visual)
+    const displayVal = trimmedValue || (field === 'artist' ? 'Artista não definido' : 'Título não definido');
+    displayElement.textContent = displayVal;
+    editElement.value = trimmedValue;
+    displayElement.style.display = 'inline';
+    editElement.style.display = 'none';
+    updateRowEditingState(trackElement);
+
+    // Feedback visual suave de sucesso (verde claro elegante)
+    displayElement.style.backgroundColor = '#d4edda';
+    displayElement.style.color = '#155724';
+    displayElement.style.borderRadius = '4px';
+    displayElement.style.transition = 'background-color 0.4s ease, color 0.4s ease';
+    setTimeout(() => {
+        displayElement.style.backgroundColor = '';
+        displayElement.style.color = '';
+    }, 1200);
+
+    // Salvar no backend em background
     try {
-        // Validações
-        if (field === 'title' && !trimmedValue) {
-            window.alert('Título não pode estar vazio');
-            editElement.focus();
-            return;
-        }
-
-        // Se o valor não mudou, apenas fecha a edição sem requisitar o backend
-        const currentText = displayElement.textContent?.trim() || '';
-        const isPlaceholder = currentText === 'Artista não definido' || currentText === 'Título não definido';
-        if (!isPlaceholder && currentText === trimmedValue) {
-            trackElement.classList.remove('editing');
-            displayElement.style.display = 'inline';
-            editElement.style.display = 'none';
-            return;
-        }
-
-        // Salvar no backend em background
         if (currentBackend) {
-            // Usamos o próprio trackId como chave (filename/id)
             const response = await fetch(`${currentBackend}/api/tracks/${encodeURIComponent(trackId)}/metadata`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -311,31 +351,14 @@ async function saveEdit(trackId: string, field: 'title' | 'artist', value: strin
                 throw new Error(`Erro ao salvar: ${response.status} ${txt}`);
             }
         }
-
-        // Atualizar interface localmente
-        const displayVal = trimmedValue || (field === 'artist' ? 'Artista não definido' : 'Título não definido');
-        displayElement.textContent = displayVal;
-        editElement.value = trimmedValue;
-
-        // Remover marca de edição e alternar visibilidade
-        trackElement.classList.remove('editing');
-        displayElement.style.display = 'inline';
-        editElement.style.display = 'none';
-
-        // Feedback visual suave sem recarregar a página e sem mexer no scroll
-        displayElement.style.backgroundColor = '#d4edda';
-        displayElement.style.color = '#155724';
-        displayElement.style.borderRadius = '4px';
-        displayElement.style.transition = 'background-color 0.4s ease, color 0.4s ease';
-        setTimeout(() => {
-            displayElement.style.backgroundColor = '';
-            displayElement.style.color = '';
-        }, 1200);
-
-        // ATENÇÃO: NÃO chamamos loadMusicList() aqui para não destruir o DOM nem resetar o scroll!
-        
     } catch (error) {
-        console.error('Erro ao salvar:', error);
+        console.error('Erro ao salvar no servidor:', error);
+        // Em caso de falha, reverte a interface e reabre o campo
+        displayElement.textContent = previousDisplayText;
+        editElement.value = previousInputValue;
+        displayElement.style.display = 'none';
+        editElement.style.display = 'inline';
+        updateRowEditingState(trackElement);
         const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
         window.alert(`❌ Erro ao salvar: ${errorMessage}`);
         editElement.focus();
@@ -350,18 +373,22 @@ function cancelEdit(trackId: string, field: 'title' | 'artist'): void {
     const container = trackElement?.querySelector(`.${field}-container`) || 
                      trackElement?.querySelector('.music-title-container');
     
-    if (!container) return;
+    if (!container || !trackElement) return;
     
-    const displayElement = container.querySelector('.display-mode') as any;
-    const editElement = container.querySelector('.edit-mode') as any;
+    const displayElement = container.querySelector('.display-mode') as HTMLElement | null;
+    const editElement = container.querySelector('.edit-mode') as HTMLInputElement | null;
     
     if (displayElement && editElement) {
-        // Remover marca de edição
-        trackElement!.classList.remove('editing');
-        
         // Alternar visibilidade
         displayElement.style.display = 'inline';
         editElement.style.display = 'none';
+
+        // Restaura valor original do texto no input
+        const currentText = (displayElement.textContent || '').trim();
+        const isPlaceholder = currentText === 'Artista não definido' || currentText === 'Título não definido';
+        editElement.value = isPlaceholder ? '' : currentText;
+        
+        updateRowEditingState(trackElement);
     }
 }
 
@@ -378,16 +405,17 @@ function finishEdit(trackElement: Element, displayElement: HTMLElement, editElem
  * Lidar com teclas durante edição
  */
 function handleEditKeydown(event: any, trackId: string, field: 'title' | 'artist', value: string): void {
+    const targetValue = (event.target as HTMLInputElement)?.value ?? value;
     if (event.key === 'Enter') {
         event.preventDefault();
-        saveEdit(trackId, field, value);
+        saveEdit(trackId, field, targetValue);
     } else if (event.key === 'Escape') {
         event.preventDefault();
         cancelEdit(trackId, field);
     } else if (event.key === 'Tab' && !event.shiftKey && field === 'title') {
         // Ao teclar Tab no título, salva e abre diretamente o campo de artista
         event.preventDefault();
-        saveEdit(trackId, 'title', value);
+        saveEdit(trackId, 'title', targetValue);
         setTimeout(() => {
             enableEdit(trackId, 'artist');
         }, 50);
